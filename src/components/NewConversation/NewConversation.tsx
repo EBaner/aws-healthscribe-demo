@@ -35,10 +35,12 @@ import { AudioDetailSettings, AudioIdentificationType, InputName } from './FormC
 import styles from './NewConversation.module.css';
 import { verifyJobParams } from './formUtils';
 import { AudioDetails, AudioSelection } from './types';
+import { useAuthContext } from '@/store/auth';
 
 export default function NewConversation() {
     const { updateProgressBar } = useNotificationsContext();
     const navigate = useNavigate();
+    const { user } = useAuthContext(); 
 
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false); // is job submitting
     const [formError, setFormError] = useState<string | React.ReactElement[]>('');
@@ -141,6 +143,12 @@ export default function NewConversation() {
                 MediaFileUri: `s3://${s3Location.Bucket}/${s3Location.Key}`,
             },
             ...audioParams,
+            Tags: [
+                {
+                    Key: 'Username',
+                    Value: user?.username, // Assuming `user.username` contains the username
+                },
+            ],
         };
 
         const verifyParamResults = verifyJobParams(jobParams);

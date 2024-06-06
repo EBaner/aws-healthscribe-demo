@@ -1,8 +1,6 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
 
-import logo from '@/components/TopNav/AURIBUS.png';
-
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 
 import TopNavigation from '@cloudscape-design/components/top-navigation';
@@ -147,8 +145,7 @@ export default function TopNav() {
             <TopNavigation
                 identity={{
                     href: '/',
-                    logoSrc: logo,
-                    //title: 'Auribus Technologies',
+                    title: 'Auribus Technologies',
                 }}
                 utilities={navUtils}
             />
