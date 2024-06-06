@@ -1,6 +1,5 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
-
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 
 import TopNavigation from '@cloudscape-design/components/top-navigation';

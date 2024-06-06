@@ -143,12 +143,6 @@ export default function NewConversation() {
                 MediaFileUri: `s3://${s3Location.Bucket}/${s3Location.Key}`,
             },
             ...audioParams,
-            Tags: [
-                {
-                    Key: 'Username',
-                    Value: user?.username, // Assuming `user.username` contains the username
-                },
-            ],
         };
 
         const verifyParamResults = verifyJobParams(jobParams);

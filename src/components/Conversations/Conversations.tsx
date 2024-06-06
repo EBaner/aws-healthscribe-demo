@@ -17,7 +17,6 @@ import { TableHeader, TablePreferences } from './ConversationsTableComponents';
 import TableEmptyState from './TableEmptyState';
 import { columnDefs } from './tableColumnDefs';
 import { DEFAULT_PREFERENCES, TablePreferencesDef } from './tablePrefs';
-import { useAuthContext } from '@/store/auth';
 
 //const getCurrentUserId = () => 'current-user-id';
 //const getCurrentUser = () => 'current-user';
@@ -38,8 +37,6 @@ export default function Conversations() {
         'Conversation-Table-Preferences',
         DEFAULT_PREFERENCES
     ); // Conversation table preferences
-    const { user } = useAuthContext();
-    const username = user?.username;
 
     // Header counter for the number of HealthScribe jobs
     const headerCounterText = `(${healthScribeJobs.length}${Object.keys(moreHealthScribeJobs).length > 0 ? '+' : ''})`;
@@ -64,17 +61,13 @@ export default function Conversations() {
 
             const listResults: MedicalScribeJobSummary[] = listHealthScribeJobsRsp.MedicalScribeJobSummaries;
 
-            const filteredResults = listResults.filter(job =>
-                job.Tags?.some(tag => tag.Key === 'Username' && tag.Value === username)
-            );
-
             //const currentUserId = getCurrentUserId();
             //const filteredResults = listResults.filter(job => job.SubmittedBy === currentUserId);
             // if NextToken is specified, append search results to existing results
             if (processedSearchFilter.NextToken) {
-                setHealthScribeJobs((prevHealthScribeJobs) => prevHealthScribeJobs.concat(filteredResults));
+                setHealthScribeJobs((prevHealthScribeJobs) => prevHealthScribeJobs.concat(listResults));
             } else {
-                setHealthScribeJobs(filteredResults);
+                setHealthScribeJobs(listResults);
             }
 
             //If the research returned NextToken, there are additional jobs. Set moreHealthScribeJobs to enable pagination
@@ -96,7 +89,7 @@ export default function Conversations() {
             });
         }
         setTableLoading(false);
-    }, [username]);
+    }, []);
 
     // Property for <Pagination /> to enable ... on navigation if there are additional HealthScribe jobs
     const openEndPaginationProp = useMemo(() => {
