@@ -14,7 +14,5 @@
 }
 
 .AuribusIcon {
-    width: 100%; /* Make the icon responsive */
-    max-width: 1500px; /* Set a maximum width for larger screens */
-    height: auto; /* Maintain the aspect ratio */
+    width: 1020px; /* Maintain the aspect ratio */
 }
