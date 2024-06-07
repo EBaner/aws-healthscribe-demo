@@ -148,7 +148,8 @@ export default function TopNav() {
                     logo: {
                         src: '/AURIBUS.png',
                         alt: 'Auribus Technologies',
-                    },
+                        style: '3rem'
+                    }, 
                     //title: 'Auribus Technologies',
                 }}
                 utilities={navUtils}
