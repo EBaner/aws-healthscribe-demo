@@ -147,11 +147,10 @@ export default function TopNav() {
             <TopNavigation
                 identity={{
                     href: '/',
-                    logo: (
-                        <div className={styles.Auribus}>
-                            <img className={styles.AuribusIcon} src="/AURIBUS.png" alt={"Auribus Technologies"} />
-                        </div>
-                    ),
+                    logo: {
+                        src: '/AURIBUS.png',
+                        alt: 'Auribus Technologies'
+                    },
                     //title: 'Auribus Technologies',
                 }}
                 utilities={navUtils}
