@@ -13,7 +13,7 @@ import ModalLoader from '@/components/SuspenseLoader/ModalLoader';
 import { useAppThemeContext } from '@/store/appTheme';
 import { useAuthContext } from '@/store/auth';
 
-import './TopNav.css';
+import './TopNav.module.css';
 
 const Auth = lazy(() => import('@/components/Auth'));
 
