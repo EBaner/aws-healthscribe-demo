@@ -1,8 +1,5 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
-
-import styles from './TopNav.module.css';
-
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 
 import TopNavigation from '@cloudscape-design/components/top-navigation';
@@ -13,6 +10,7 @@ import ModalLoader from '@/components/SuspenseLoader/ModalLoader';
 import { useAppThemeContext } from '@/store/appTheme';
 import { useAuthContext } from '@/store/auth';
 
+import styles from './TopNav.module.css';
 import './TopNav.module.css';
 
 const Auth = lazy(() => import('@/components/Auth'));
@@ -149,7 +147,7 @@ export default function TopNav() {
                     href: '/',
                     logo: {
                         src: '/AURIBUS.png',
-                        alt: 'Auribus Technologies'
+                        alt: 'Auribus Technologies',
                     },
                     //title: 'Auribus Technologies',
                 }}
