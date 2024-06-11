@@ -23,6 +23,8 @@ import { ListHealthScribeJobsProps, deleteHealthScribeJob } from '@/utils/Health
 
 import { TablePreferencesDef, collectionPreferencesProps } from './tablePrefs';
 
+//import { sendInsightsEmail } from '@/utils/EmailUtils';
+
 type DeleteModalProps = {
     selectedHealthScribeJob: MedicalScribeJobSummary[];
     deleteModalActive: boolean;
@@ -145,6 +147,7 @@ function TableHeader({ selectedHealthScribeJob, headerCounterText, listHealthScr
     const [deleteModalActive, setDeleteModalActive] = useState<boolean>(false);
     const [searchParams, setSearchParams] = useState<ListHealthScribeJobsProps>({});
     const [debouncedSearchParams] = useDebounce(searchParams, 500);
+    //const [email, setEmail] = useState('');
 
     // Update list initially & deboucned search params
     useEffect(() => {
@@ -160,6 +163,24 @@ function TableHeader({ selectedHealthScribeJob, headerCounterText, listHealthScr
             };
         });
     }
+
+    /*function handleEmailChange(event) {
+        setEmail(event.target.value);
+    }
+
+    async function handleSendEmail() {
+        if (email) {
+            try {
+                await sendInsightsEmail(email, selectedHealthScribeJob);
+                alert('Insights sent successfully');
+            } catch (error) {
+                alert('Error sending insights');
+            }
+        } else {
+            alert('Please enter a valid email address');
+        }
+    }*/
+
 
     // Manual refresh function for the header actions
     function refreshTable() {
