@@ -4,20 +4,24 @@
     top: 0;
     z-index: 1999;
 }
-
-.awsui-util-logo img {
-    width: 1000px; /* Adjust the width as needed */
-    height: 1000px; /* Adjust the height as needed */
-}
-
-.Auribus {
+.custom-top-nav {
     display: flex;
-    justify-content: center;
-    width: 60%;
-    height: 60%;
     align-items: center;
+    padding: 0 16px;
+    background-color: #fff; /* Adjust the background color as needed */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.AuribusIcon {
-    width: 1020px; /* Maintain the aspect ratio */
+.custom-top-nav a {
+    margin-right: auto; /* Pushes the utilities to the right */
+}
+
+.custom-top-nav img {
+    width: 100px; /* Adjust the width as needed */
+    height: 100px; /* Adjust the height as needed */
+}
+
+.utilities {
+    display: flex;
+    align-items: center;
 }

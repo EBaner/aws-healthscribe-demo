@@ -3,12 +3,9 @@
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 import TopNavigation, { TopNavigationProps } from '@cloudscape-design/components/top-navigation';
 import { Density, Mode, applyDensity, applyMode } from '@cloudscape-design/global-styles';
-
 import ModalLoader from '@/components/SuspenseLoader/ModalLoader';
 import { useAppThemeContext } from '@/store/appTheme';
 import { useAuthContext } from '@/store/auth';
-
-import styles from './TopNav.module.css';
 import './TopNav.module.css';
 
 const Auth = lazy(() => import('@/components/Auth'));
@@ -40,7 +37,7 @@ const CustomTopNav: React.FC<CustomTopNavProps> = ({ logo, utilities }) => {
             </a>
             <div className="utilities">
                 {utilities.map((utility, index) => (
-                    <div key={index}>{/* Render utility items here as needed */}</div>
+                    <TopNavigation.Utility key={index} {...utility} />
                 ))}
             </div>
         </div>
@@ -159,7 +156,7 @@ export default function TopNav() {
               onClick: () => setAuthVisible(true),
           };
 
-    const navUtils = [utilVisual, utilUser];
+    const navUtils: (TopNavigationProps.MenuDropdownUtility | TopNavigationProps.ButtonUtility)[] = [utilVisual, utilUser];
 
     return (
         <>
