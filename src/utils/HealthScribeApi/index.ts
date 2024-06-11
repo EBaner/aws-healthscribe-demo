@@ -56,7 +56,6 @@ async function getHealthScribeJob({ MedicalScribeJobName }: GetHealthScribeJobPr
     const transcribeClient = await getTranscribeClient();
     const getMedicalScribeJobCmd = new GetMedicalScribeJobCommand({
         MedicalScribeJobName: MedicalScribeJobName,
-        
     });
     const getMedicalScribeJobRsp = await transcribeClient.send(getMedicalScribeJobCmd);
 

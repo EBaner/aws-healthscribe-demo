@@ -18,11 +18,13 @@ import Spinner from '@cloudscape-design/components/spinner';
 import StatusIndicator from '@cloudscape-design/components/status-indicator';
 import TokenGroup from '@cloudscape-design/components/token-group';
 
+import { Tag } from '@aws-sdk/client-s3/dist-types/models/models_0';
 import { MedicalScribeParticipantRole, StartMedicalScribeJobRequest } from '@aws-sdk/client-transcribe';
 import { Progress } from '@aws-sdk/lib-storage';
 import dayjs from 'dayjs';
 
 import { useS3 } from '@/hooks/useS3';
+import { useAuthContext } from '@/store/auth';
 import { useNotificationsContext } from '@/store/notifications';
 import { startMedicalScribeJob } from '@/utils/HealthScribeApi';
 import { multipartUpload } from '@/utils/S3Api';
@@ -35,8 +37,6 @@ import { AudioDetailSettings, AudioIdentificationType, InputName } from './FormC
 import styles from './NewConversation.module.css';
 import { verifyJobParams } from './formUtils';
 import { AudioDetails, AudioSelection } from './types';
-import { Tag } from '@aws-sdk/client-s3/dist-types/models/models_0';
-import { useAuthContext } from '@/store/auth';
 
 export default function NewConversation() {
     const { updateProgressBar } = useNotificationsContext();
@@ -135,11 +135,11 @@ export default function NewConversation() {
             Key: `${uploadLocation.key}/${(filePath as File).name}`,
         };
 
-        const { isUserAuthenticated, user, signOut } = useAuthContext();
+        //const { isUserAuthenticated, user, signOut } = useAuthContext();
 
         const userNameTag: Tag = {
             Key: 'UserName',
-            Value: user?.username,
+            Value: 'Ethan',
         };
 
         const jobParams: StartMedicalScribeJobRequest = {
@@ -150,11 +150,8 @@ export default function NewConversation() {
                 MediaFileUri: `s3://${s3Location.Bucket}/${s3Location.Key}`,
             },
             ...audioParams,
-            Tags:[userNameTag] ,
-
+            Tags: [userNameTag],
         };
-
-    
 
         const verifyParamResults = verifyJobParams(jobParams);
         if (!verifyParamResults.verified) {
