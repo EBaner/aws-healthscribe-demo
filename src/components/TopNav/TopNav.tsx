@@ -30,17 +30,13 @@ const CustomTopNav: React.FC<CustomTopNavProps> = ({ logo, utilities }) => {
         height: '100px', // Adjust the height as needed
     };
 
+    const identity: TopNavigationProps['identity'] = {
+        logo: { src: logo.src, alt: logo.alt },
+        href: '/',
+    };
+
     return (
-        <div className="custom-top-nav">
-            <a href="/">
-                <img style={logoStyle} src={logo.src} alt={logo.alt} />
-            </a>
-            <div className="utilities">
-                {utilities.map((utility, index) => (
-                    <TopNavigation.Utility key={index} {...utility} />
-                ))}
-            </div>
-        </div>
+        <TopNavigation identity={identity} utilities={utilities} />
     );
 };
 
@@ -156,7 +152,10 @@ export default function TopNav() {
               onClick: () => setAuthVisible(true),
           };
 
-    const navUtils: (TopNavigationProps.MenuDropdownUtility | TopNavigationProps.ButtonUtility)[] = [utilVisual, utilUser];
+    const navUtils: (TopNavigationProps.MenuDropdownUtility | TopNavigationProps.ButtonUtility)[] = [
+        utilVisual,
+        utilUser,
+    ];
 
     return (
         <>
