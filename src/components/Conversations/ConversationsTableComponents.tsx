@@ -181,7 +181,6 @@ function TableHeader({ selectedHealthScribeJob, headerCounterText, listHealthScr
         }
     }*/
 
-
     // Manual refresh function for the header actions
     function refreshTable() {
         listHealthScribeJobs(debouncedSearchParams).catch(console.error);

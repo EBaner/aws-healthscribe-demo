@@ -148,6 +148,7 @@ export default function TopNav() {
                     logo: {
                         src: '/image2vector.svg',
                         alt: 'Auribus Technologies',
+                        
                     },
                     //title: 'Auribus Technologies',
                 }}
