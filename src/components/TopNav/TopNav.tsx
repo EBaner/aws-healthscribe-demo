@@ -1,7 +1,6 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
 import React, { Suspense, lazy, useEffect, useState } from 'react';
-
 import TopNavigation from '@cloudscape-design/components/top-navigation';
 import { TopNavigationProps } from '@cloudscape-design/components/top-navigation';
 import { Density, Mode, applyDensity, applyMode } from '@cloudscape-design/global-styles';
@@ -21,13 +20,29 @@ type TopNavClick = {
     };
 };
 
+const CustomTopNav = ({ logo, utilities }) => {
+    const logoStyle = {
+        width: '100px', // Adjust the width as needed
+        height: '100px', // Adjust the height as needed
+    };
+
+    return (
+        <div className="custom-top-nav">
+            <a href="/">
+                <img style={logoStyle} src={logo.src} alt={logo.alt} />
+            </a>
+            <div className="utilities">{utilities}</div>
+        </div>
+    );
+};
+
 export default function TopNav() {
     const { isUserAuthenticated, user, signOut } = useAuthContext();
     const { appTheme, setAppThemeColor, setAppThemeDensity } = useAppThemeContext();
 
     const [authVisible, setAuthVisible] = useState(false); // authentication modal visibility
 
-    // Set app appTheme
+    // Set app theme
     useEffect(() => {
         if (appTheme.color === 'appTheme.light') {
             applyMode(Mode.Light);
@@ -47,7 +62,7 @@ export default function TopNav() {
         if (isUserAuthenticated) {
             setAuthVisible(false);
         }
-        // no else because we want the appAuth window to only pop up by clicking sign in, not automatically
+        // no else because we want the auth window to only pop up by clicking sign in, not automatically
     }, [isUserAuthenticated]);
 
     // Change visualization
@@ -70,7 +85,7 @@ export default function TopNav() {
         }
     }
 
-    // App appTheme dropdown
+    // App theme dropdown
     const utilVisual: TopNavigationProps.MenuDropdownUtility = {
         type: 'menu-dropdown',
         iconName: 'settings',
@@ -117,7 +132,7 @@ export default function TopNav() {
         onItemClick: (e) => handleUtilVisualClick(e),
     };
 
-    // User appAuth dropdown (if appAuth) else sign-in
+    // User auth dropdown (if auth) else sign-in
     const utilUser: TopNavigationProps.ButtonUtility | TopNavigationProps.MenuDropdownUtility = isUserAuthenticated
         ? {
               type: 'menu-dropdown',
@@ -142,14 +157,10 @@ export default function TopNav() {
                     <Auth setVisible={setAuthVisible} />
                 </Suspense>
             )}
-            <TopNavigation
-                identity={{
-                    href: '/',
-                    logo: {
-                        src: '/AURIBUS.png',
-                        alt: 'Auribus Technologies',
-                    },
-                    //title: 'Auribus Technologies',
+            <CustomTopNav
+                logo={{
+                    src: '/AURIBUS.png',
+                    alt: 'Auribus Technologies',
                 }}
                 utilities={navUtils}
             />
