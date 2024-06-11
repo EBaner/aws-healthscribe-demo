@@ -35,6 +35,8 @@ import { AudioDetailSettings, AudioIdentificationType, InputName } from './FormC
 import styles from './NewConversation.module.css';
 import { verifyJobParams } from './formUtils';
 import { AudioDetails, AudioSelection } from './types';
+import { Tag } from '@aws-sdk/client-s3/dist-types/models/models_0';
+import { useAuthContext } from '@/store/auth';
 
 export default function NewConversation() {
     const { updateProgressBar } = useNotificationsContext();
@@ -133,6 +135,13 @@ export default function NewConversation() {
             Key: `${uploadLocation.key}/${(filePath as File).name}`,
         };
 
+        const { isUserAuthenticated, user, signOut } = useAuthContext();
+
+        const userNameTag: Tag = {
+            Key: 'UserName',
+            Value: user?.username,
+        };
+
         const jobParams: StartMedicalScribeJobRequest = {
             MedicalScribeJobName: jobName,
             DataAccessRoleArn: amplifyCustom.healthScribeServiceRole,
@@ -141,7 +150,11 @@ export default function NewConversation() {
                 MediaFileUri: `s3://${s3Location.Bucket}/${s3Location.Key}`,
             },
             ...audioParams,
+            Tags:[userNameTag] ,
+
         };
+
+    
 
         const verifyParamResults = verifyJobParams(jobParams);
         if (!verifyParamResults.verified) {

@@ -145,7 +145,7 @@ export default function TopNav() {
             <TopNavigation
                 identity={{
                     href: '/',
-                    title: "Auribus Technologies",
+                    title: 'Auribus Technologies',
                     logo: {
                         src: '/AURIBUSICON.png',
                         alt: 'Auribus Technologies',
