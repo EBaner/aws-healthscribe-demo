@@ -1,11 +1,14 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
 import React, { Suspense, lazy, useEffect, useState } from 'react';
+
 import TopNavigation, { TopNavigationProps } from '@cloudscape-design/components/top-navigation';
 import { Density, Mode, applyDensity, applyMode } from '@cloudscape-design/global-styles';
+
 import ModalLoader from '@/components/SuspenseLoader/ModalLoader';
 import { useAppThemeContext } from '@/store/appTheme';
 import { useAuthContext } from '@/store/auth';
+
 import './TopNav.module.css';
 
 const Auth = lazy(() => import('@/components/Auth'));
@@ -21,23 +24,20 @@ interface CustomTopNavProps {
         src: string;
         alt: string;
     };
+    logoStyle: {
+        width: string;
+        height: string;
+    };
     utilities: (TopNavigationProps.MenuDropdownUtility | TopNavigationProps.ButtonUtility)[];
 }
 
-const CustomTopNav: React.FC<CustomTopNavProps> = ({ logo, utilities }) => {
-    const logoStyle = {
-        width: '100px', // Adjust the width as needed
-        height: '100px', // Adjust the height as needed
-    };
-
+const CustomTopNav: React.FC<CustomTopNavProps> = ({ logo, logoStyle, utilities }) => {
     const identity: TopNavigationProps['identity'] = {
         logo: { src: logo.src, alt: logo.alt },
         href: '/',
     };
 
-    return (
-        <TopNavigation identity={identity} utilities={utilities} />
-    );
+    return <TopNavigation identity={identity} utilities={utilities} />;
 };
 
 export default function TopNav() {
@@ -169,6 +169,7 @@ export default function TopNav() {
                     src: '/AURIBUS.png',
                     alt: 'Auribus Technologies',
                 }}
+                logoStyle={{ width: '800px', height: '600px' }} // Define logoStyle
                 utilities={navUtils}
             />
         </>
