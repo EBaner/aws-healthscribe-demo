@@ -1,8 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
 import React, { Suspense, lazy, useEffect, useState } from 'react';
-import TopNavigation from '@cloudscape-design/components/top-navigation';
-import { TopNavigationProps } from '@cloudscape-design/components/top-navigation';
+import TopNavigation, { TopNavigationProps } from '@cloudscape-design/components/top-navigation';
 import { Density, Mode, applyDensity, applyMode } from '@cloudscape-design/global-styles';
 
 import ModalLoader from '@/components/SuspenseLoader/ModalLoader';
@@ -20,7 +19,15 @@ type TopNavClick = {
     };
 };
 
-const CustomTopNav = ({ logo, utilities }) => {
+interface CustomTopNavProps {
+    logo: {
+        src: string;
+        alt: string;
+    };
+    utilities: (TopNavigationProps.MenuDropdownUtility | TopNavigationProps.ButtonUtility)[];
+}
+
+const CustomTopNav: React.FC<CustomTopNavProps> = ({ logo, utilities }) => {
     const logoStyle = {
         width: '100px', // Adjust the width as needed
         height: '100px', // Adjust the height as needed
@@ -31,7 +38,11 @@ const CustomTopNav = ({ logo, utilities }) => {
             <a href="/">
                 <img style={logoStyle} src={logo.src} alt={logo.alt} />
             </a>
-            <div className="utilities">{utilities}</div>
+            <div className="utilities">
+                {utilities.map((utility, index) => (
+                    <div key={index}>{/* Render utility items here as needed */}</div>
+                ))}
+            </div>
         </div>
     );
 };
