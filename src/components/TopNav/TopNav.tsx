@@ -2,13 +2,15 @@
 // SPDX-License-Identifier: MIT-0
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 
-import TopNavigation, { TopNavigationProps } from '@cloudscape-design/components/top-navigation';
+import TopNavigation from '@cloudscape-design/components/top-navigation';
+import { TopNavigationProps } from '@cloudscape-design/components/top-navigation';
 import { Density, Mode, applyDensity, applyMode } from '@cloudscape-design/global-styles';
 
 import ModalLoader from '@/components/SuspenseLoader/ModalLoader';
 import { useAppThemeContext } from '@/store/appTheme';
 import { useAuthContext } from '@/store/auth';
 
+import styles from './TopNav.module.css';
 import './TopNav.module.css';
 
 const Auth = lazy(() => import('@/components/Auth'));
@@ -19,34 +21,13 @@ type TopNavClick = {
     };
 };
 
-interface CustomTopNavProps {
-    logo: {
-        src: string;
-        alt: string;
-    };
-    logoStyle: {
-        width: string;
-        height: string;
-    };
-    utilities: (TopNavigationProps.MenuDropdownUtility | TopNavigationProps.ButtonUtility)[];
-}
-
-const CustomTopNav: React.FC<CustomTopNavProps> = ({ logo, logoStyle, utilities }) => {
-    const identity: TopNavigationProps['identity'] = {
-        logo: { src: logo.src, alt: logo.alt },
-        href: '/',
-    };
-
-    return <TopNavigation identity={identity} utilities={utilities} />;
-};
-
 export default function TopNav() {
     const { isUserAuthenticated, user, signOut } = useAuthContext();
     const { appTheme, setAppThemeColor, setAppThemeDensity } = useAppThemeContext();
 
     const [authVisible, setAuthVisible] = useState(false); // authentication modal visibility
 
-    // Set app theme
+    // Set app appTheme
     useEffect(() => {
         if (appTheme.color === 'appTheme.light') {
             applyMode(Mode.Light);
@@ -66,7 +47,7 @@ export default function TopNav() {
         if (isUserAuthenticated) {
             setAuthVisible(false);
         }
-        // no else because we want the auth window to only pop up by clicking sign in, not automatically
+        // no else because we want the appAuth window to only pop up by clicking sign in, not automatically
     }, [isUserAuthenticated]);
 
     // Change visualization
@@ -89,7 +70,7 @@ export default function TopNav() {
         }
     }
 
-    // App theme dropdown
+    // App appTheme dropdown
     const utilVisual: TopNavigationProps.MenuDropdownUtility = {
         type: 'menu-dropdown',
         iconName: 'settings',
@@ -136,7 +117,7 @@ export default function TopNav() {
         onItemClick: (e) => handleUtilVisualClick(e),
     };
 
-    // User auth dropdown (if auth) else sign-in
+    // User appAuth dropdown (if appAuth) else sign-in
     const utilUser: TopNavigationProps.ButtonUtility | TopNavigationProps.MenuDropdownUtility = isUserAuthenticated
         ? {
               type: 'menu-dropdown',
@@ -152,10 +133,7 @@ export default function TopNav() {
               onClick: () => setAuthVisible(true),
           };
 
-    const navUtils: (TopNavigationProps.MenuDropdownUtility | TopNavigationProps.ButtonUtility)[] = [
-        utilVisual,
-        utilUser,
-    ];
+    const navUtils = [utilVisual, utilUser];
 
     return (
         <>
@@ -164,12 +142,16 @@ export default function TopNav() {
                     <Auth setVisible={setAuthVisible} />
                 </Suspense>
             )}
-            <CustomTopNav
-                logo={{
-                    src: '/AURIBUS.png',
-                    alt: 'Auribus Technologies',
+            <TopNavigation
+                identity={{
+                    href: '/',
+                    title: "Auribus Technologies",
+                    logo: {
+                        src: '/AURIBUSICON.png',
+                        alt: 'Auribus Technologies',
+                    },
+                    //title: 'Auribus Technologies',
                 }}
-                logoStyle={{ width: '800px', height: '600px' }} // Define logoStyle
                 utilities={navUtils}
             />
         </>
