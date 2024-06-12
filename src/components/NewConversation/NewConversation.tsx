@@ -139,7 +139,7 @@ export default function NewConversation() {
 
         const userNameTag: Tag = {
             Key: 'UserName',
-            Value: user?.username || "No username found",
+            Value: user?.signInDetails?.loginId || 'No username found',
         };
 
         const jobParams: StartMedicalScribeJobRequest = {

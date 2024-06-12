@@ -1,27 +1,34 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
 import React, { Suspense, lazy, useEffect, useState } from 'react';
+
 import { useParams } from 'react-router-dom';
+
 import ContentLayout from '@cloudscape-design/components/content-layout';
 import Grid from '@cloudscape-design/components/grid';
+
 import { MedicalScribeJob } from '@aws-sdk/client-transcribe';
+
 import ModalLoader from '@/components/SuspenseLoader/ModalLoader';
 import { useAudio } from '@/hooks/useAudio';
+import { useAuthContext } from '@/store/auth';
 import { useNotificationsContext } from '@/store/notifications';
 import { IAuraClinicalDocOutput, IAuraTranscriptOutput } from '@/types/HealthScribe';
 import { getHealthScribeJob } from '@/utils/HealthScribeApi';
 import { getObject, getS3Object } from '@/utils/S3Api';
+
 import LeftPanel from './LeftPanel';
 import RightPanel from './RightPanel';
 import TopPanel from './TopPanel';
-import { useAuthContext } from '@/store/auth'; // Import your auth context
+
+// Import your auth context
 
 const ViewOutput = lazy(() => import('./ViewOutput'));
 
 export default function Conversation() {
     const { conversationName } = useParams();
     const { addFlashMessage } = useNotificationsContext();
-    const { isUserAuthenticated, user, signOut } = useAuthContext();// Get the current user
+    const { isUserAuthenticated, user, signOut } = useAuthContext(); // Get the current user
 
     const [jobLoading, setJobLoading] = useState(true);
     const [jobDetails, setJobDetails] = useState<MedicalScribeJob | null>(null);
@@ -53,7 +60,9 @@ export default function Conversation() {
                 }
 
                 // Check if the job has the correct tag
-                const userTag = medicalScribeJob.Tags?.find(tag => tag.Key === 'UserName' && tag.Value === user?.username);
+                const userTag = medicalScribeJob.Tags?.find(
+                    (tag) => tag.Key === 'UserName' && tag.Value === user?.signInDetails?.loginId
+                );
                 if (!userTag) {
                     setJobDetails(null);
                     setJobLoading(false);
