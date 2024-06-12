@@ -135,11 +135,11 @@ export default function NewConversation() {
             Key: `${uploadLocation.key}/${(filePath as File).name}`,
         };
 
-        //const { isUserAuthenticated, user, signOut } = useAuthContext();
+        const { isUserAuthenticated, user, signOut } = useAuthContext();
 
         const userNameTag: Tag = {
             Key: 'UserName',
-            Value: 'Ethan',
+            Value: user?.username || "No username found",
         };
 
         const jobParams: StartMedicalScribeJobRequest = {
