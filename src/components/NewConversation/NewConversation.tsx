@@ -1,6 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
 import React, { useEffect, useMemo, useState } from 'react';
+
 import { useNavigate } from 'react-router-dom';
 
 import Box from '@cloudscape-design/components/box';
@@ -141,7 +142,7 @@ export default function NewConversation() {
 
         const userNameTag: Tag = {
             Key: 'UserName',
-            Value: user?.signInDetails?.loginId || 'No username found',
+            Value: 'No username found',
         };
 
         const jobParams: StartMedicalScribeJobRequest = {
