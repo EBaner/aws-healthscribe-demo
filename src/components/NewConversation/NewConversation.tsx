@@ -1,7 +1,6 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
 import React, { useEffect, useMemo, useState } from 'react';
-
 import { useNavigate } from 'react-router-dom';
 
 import Box from '@cloudscape-design/components/box';
@@ -41,6 +40,9 @@ import { AudioDetails, AudioSelection } from './types';
 export default function NewConversation() {
     const { updateProgressBar } = useNotificationsContext();
     const navigate = useNavigate();
+
+    const { user } = useAuthContext(); // Retrieve user info
+    const loginId = user?.signInDetails?.loginId || 'No username found'; // Extract login ID
 
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false); // is job submitting
     const [formError, setFormError] = useState<string | React.ReactElement[]>('');
@@ -250,6 +252,9 @@ export default function NewConversation() {
                     />
                 }
             >
+                <Box margin={{ bottom: 's' }} color="text-status-success" fontSize="heading-m">
+                    Logged in as: {loginId} {/* Display login ID */}
+                </Box>
                 <form onSubmit={(e) => submitJob(e)}>
                     <Form
                         errorText={formError}
