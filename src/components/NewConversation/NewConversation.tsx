@@ -142,7 +142,7 @@ export default function NewConversation() {
 
         const userNameTag: Tag = {
             Key: 'UserName',
-            Value: 'No username found',
+            Value: 'Ethan',
         };
 
         const jobParams: StartMedicalScribeJobRequest = {

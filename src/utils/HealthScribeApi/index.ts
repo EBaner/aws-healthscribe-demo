@@ -29,6 +29,7 @@ async function listHealthScribeJobs({
     MaxResults = 100,
     NextToken,
     Status,
+    UserLoginId,
 }: ListHealthScribeJobsProps) {
     const start = performance.now();
     const transcribeClient = await getTranscribeClient();

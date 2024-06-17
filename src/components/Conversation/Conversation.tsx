@@ -59,16 +59,7 @@ export default function Conversation() {
                     return;
                 }
 
-                // Check if the job has the correct tag
-                const userTag = medicalScribeJob.Tags?.find(
-                    (tag) => tag.Key === 'UserName' && tag.Value === user?.signInDetails?.loginId
-                );
-                if (!userTag) {
-                    setJobDetails(null);
-                    setJobLoading(false);
-                    return;
-                }
-
+                
                 setJobDetails(medicalScribeJob);
 
                 const clinicalDocumentUri = medicalScribeJob.MedicalScribeOutput?.ClinicalDocumentUri;
