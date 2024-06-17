@@ -59,7 +59,6 @@ export default function Conversation() {
                     return;
                 }
 
-                
                 setJobDetails(medicalScribeJob);
 
                 const clinicalDocumentUri = medicalScribeJob.MedicalScribeOutput?.ClinicalDocumentUri;
