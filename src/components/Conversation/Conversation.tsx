@@ -6,7 +6,6 @@ import { useParams } from 'react-router-dom';
 
 import ContentLayout from '@cloudscape-design/components/content-layout';
 import Grid from '@cloudscape-design/components/grid';
-import Box from '@cloudscape-design/components/box';
 
 import { MedicalScribeJob } from '@aws-sdk/client-transcribe';
 
@@ -60,6 +59,7 @@ export default function Conversation() {
                     return;
                 }
                
+
                 setJobDetails(medicalScribeJob);
 
                 const clinicalDocumentUri = medicalScribeJob.MedicalScribeOutput?.ClinicalDocumentUri;
@@ -106,17 +106,6 @@ export default function Conversation() {
                     { colspan: { default: 6 } },
                 ]}
             >
-                <Box margin={{ bottom: 's' }} fontSize="heading-m" fontWeight="bold">
-                    {jobDetails?.Tags && jobDetails.Tags.length > 0 ? (
-                        jobDetails.Tags.map((tag) => (
-                            <Box key={tag.Key} display="inline-block" margin="xxs">
-                                {tag.Key}: {tag.Value}
-                            </Box>
-                        ))
-                    ) : (
-                        'No tags'
-                    )}
-                </Box>
                 <TopPanel
                     jobLoading={jobLoading}
                     jobDetails={jobDetails}
