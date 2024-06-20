@@ -34,6 +34,7 @@ export default function Conversations() {
         'Conversation-Table-Preferences',
         DEFAULT_PREFERENCES
     ); // Conversation table preferences
+    const [showTaggedJobs, setShowTaggedJobs] = useState(false); // Toggle state for showing tagged jobs
 
     const { isUserAuthenticated, user, signOut } = useAuthContext(); // Get the current user
 
@@ -84,7 +85,7 @@ export default function Conversations() {
                     if (job.MedicalScribeJobName) {
                         // Check if MedicalScribeJobName is defined
                         const tags = await getMedicalScribeJobTags(job.MedicalScribeJobName);
-                        if (tags.some((tag) => tag.Key === 'UserName' && tag.Value === user?.signInDetails?.loginId)) {
+                        if (!showTaggedJobs || (tags.some((tag) => tag.Key === 'UserID' && tag.Value === user?.signInDetails?.loginId))) {
                             filteredResults.push(job);
                         }
                     }
@@ -117,7 +118,7 @@ export default function Conversations() {
             }
             setTableLoading(false);
         },
-        [user?.signInDetails?.loginId]
+        [user?.signInDetails?.loginId, showTaggedJobs]
     );
 
     // Property for <Pagination /> to enable ... on navigation if there are additional HealthScribe jobs
@@ -147,45 +148,50 @@ export default function Conversations() {
     });
 
     return (
-        <Table
-            {...collectionProps}
-            columnDefinitions={columnDefs}
-            header={
-                <TableHeader
-                    selectedHealthScribeJob={selectedHealthScribeJob}
-                    headerCounterText={headerCounterText}
-                    listHealthScribeJobs={listHealthScribeJobsWrapper}
-                />
-            }
-            items={items}
-            loading={tableLoading}
-            loadingText="Loading HealthScribe jobs"
-            onSelectionChange={({ detail }) => setSelectedHealthScribeJob(detail.selectedItems)}
-            pagination={
-                <Pagination
-                    {...openEndPaginationProp}
-                    {...paginationProps}
-                    onChange={(event) => {
-                        if (event.detail?.currentPageIndex > paginationProps.pagesCount) {
-                            listHealthScribeJobsWrapper({
-                                ...moreHealthScribeJobs.searchFilter,
-                                NextToken: moreHealthScribeJobs.NextToken,
-                            }).catch(console.error);
-                        }
-                        paginationProps.onChange(event);
-                    }}
-                />
-            }
-            preferences={<TablePreferences preferences={preferences} setPreferences={setPreferences} />}
-            resizableColumns={true}
-            selectedItems={selectedHealthScribeJob}
-            selectionType="single"
-            stickyHeader={true}
-            stripedRows={preferences.stripedRows}
-            trackBy="MedicalScribeJobName"
-            variant="full-page"
-            visibleColumns={preferences.visibleContent}
-            wrapLines={preferences.wrapLines}
-        />
+        <div>
+            <Button onClick={() => setShowTaggedJobs(!showTaggedJobs)}>
+                {showTaggedJobs ? 'Show All Jobs' : 'Show Tagged Jobs Only'}
+            </Button>
+            <Table
+                {...collectionProps}
+                columnDefinitions={columnDefs}
+                header={
+                    <TableHeader
+                        selectedHealthScribeJob={selectedHealthScribeJob}
+                        headerCounterText={headerCounterText}
+                        listHealthScribeJobs={listHealthScribeJobsWrapper}
+                    />
+                }
+                items={items}
+                loading={tableLoading}
+                loadingText="Loading HealthScribe jobs"
+                onSelectionChange={({ detail }) => setSelectedHealthScribeJob(detail.selectedItems)}
+                pagination={
+                    <Pagination
+                        {...openEndPaginationProp}
+                        {...paginationProps}
+                        onChange={(event) => {
+                            if (event.detail?.currentPageIndex > paginationProps.pagesCount) {
+                                listHealthScribeJobsWrapper({
+                                    ...moreHealthScribeJobs.searchFilter,
+                                    NextToken: moreHealthScribeJobs.NextToken,
+                                }).catch(console.error);
+                            }
+                            paginationProps.onChange(event);
+                        }}
+                    />
+                }
+                preferences={<TablePreferences preferences={preferences} setPreferences={setPreferences} />}
+                resizableColumns={true}
+                selectedItems={selectedHealthScribeJob}
+                selectionType="single"
+                stickyHeader={true}
+                stripedRows={preferences.stripedRows}
+                trackBy="MedicalScribeJobName"
+                variant="full-page"
+                visibleColumns={preferences.visibleContent}
+                wrapLines={preferences.wrapLines}
+            />
+        </div>
     );
 }
