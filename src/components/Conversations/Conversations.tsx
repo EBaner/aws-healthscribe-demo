@@ -1,5 +1,3 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-// SPDX-License-Identifier: MIT-0
 import React, { useCallback, useMemo, useState } from 'react';
 
 import { useCollection } from '@cloudscape-design/collection-hooks';
@@ -86,27 +84,28 @@ export default function Conversations() {
                     })
                 );
 
-                const filteredResults = listResults.filter(
-                    (job): job is MedicalScribeJob => {
-                        if (!job || !Array.isArray(job.Tags)) {
+                const filteredResults = listResults.filter((job): job is MedicalScribeJob => {
+                    if (!job || !Array.isArray(job.Tags)) {
+                        return false;
+                    }
+
+                    return job.Tags.some((tag) => {
+                        if (!tag || typeof tag.Key !== 'string' || typeof tag.Value !== 'string') {
                             return false;
                         }
-                
-                        return job.Tags.some(
-                            (tag) => {
-                                if (!tag || typeof tag.Key !== 'string' || typeof tag.Value !== 'string') {
-                                    return false;
-                                }
-                
-                                return (
-                                    tag.Key === 'UserName' &&
-                                    tag.Value === user?.signInDetails?.loginId
-                                );
-                            }
-                        );
-                    }
-                );
-                
+
+                        return tag.Key === 'UserName' && tag.Value === user?.signInDetails?.loginId;
+                    });
+                });
+
+                // Print the filtered results as a notification
+                addFlashMessage({
+                    id: 'filteredResults',
+                    header: 'Filtered HealthScribe Jobs',
+                    content: `Found ${filteredResults.length} job(s).`,
+                    type: 'info',
+                });
+
                 // if NextToken is specified, append search results to existing results
                 if (processedSearchFilter.NextToken) {
                     setHealthScribeJobs((prevHealthScribeJobs) => prevHealthScribeJobs.concat(filteredResults));
