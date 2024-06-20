@@ -7,7 +7,7 @@ import Button from '@cloudscape-design/components/button';
 import Pagination from '@cloudscape-design/components/pagination';
 import Table from '@cloudscape-design/components/table';
 
-import { GetMedicalScribeJobCommand, MedicalScribeJobSummary, TranscribeClient } from '@aws-sdk/client-transcribe';
+import { GetMedicalScribeJobCommand, MedicalScribeJob, TranscribeClient } from '@aws-sdk/client-transcribe';
 
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useAuthContext } from '@/store/auth';
@@ -26,9 +26,9 @@ type MoreHealthScribeJobs = {
 
 export default function Conversations() {
     const { addFlashMessage } = useNotificationsContext();
-    const [healthScribeJobs, setHealthScribeJobs] = useState<MedicalScribeJobSummary[]>([]); // HealthScribe jobs from API
+    const [healthScribeJobs, setHealthScribeJobs] = useState<MedicalScribeJob[]>([]); // HealthScribe jobs from API
     const [moreHealthScribeJobs, setMoreHealthScribeJobs] = useState<MoreHealthScribeJobs>({}); // More HealthScribe jobs from API (NextToken returned)
-    const [selectedHealthScribeJob, setSelectedHealthScribeJob] = useState<MedicalScribeJobSummary[] | []>([]); // Selected HealthScribe job
+    const [selectedHealthScribeJob, setSelectedHealthScribeJob] = useState<MedicalScribeJob[] | []>([]); // Selected HealthScribe job
     const [tableLoading, setTableLoading] = useState(false); // Loading state for table
     const [preferences, setPreferences] = useLocalStorage<TablePreferencesDef>(
         'Conversation-Table-Preferences',
@@ -40,8 +40,8 @@ export default function Conversations() {
     // Header counter for the number of HealthScribe jobs
     const headerCounterText = `(${healthScribeJobs.length}${Object.keys(moreHealthScribeJobs).length > 0 ? '+' : ''})`;
 
-    // Function to get tags for a specific MedicalScribeJob
-    const getMedicalScribeJobTags = async (jobName: string) => {
+    // Function to get MedicalScribeJob details
+    const getMedicalScribeJobDetails = async (jobName: string): Promise<MedicalScribeJob | null> => {
         const client = new TranscribeClient({ region: 'us-east-1' });
 
         const getMedicalScribeJobCommand = new GetMedicalScribeJobCommand({
@@ -50,10 +50,10 @@ export default function Conversations() {
 
         try {
             const response = await client.send(getMedicalScribeJobCommand);
-            return response.MedicalScribeJob?.Tags || [];
+            return response.MedicalScribeJob || null;
         } catch (err) {
             console.error('Error retrieving MedicalScribeJob:', err);
-            return [];
+            return null;
         }
     };
 
@@ -69,27 +69,44 @@ export default function Conversations() {
                 }
                 const listHealthScribeJobsRsp = await listHealthScribeJobs(processedSearchFilter);
 
-                // Handle undefined MedicalScribeJobSummaries (the service should return an empty array)
-                if (typeof listHealthScribeJobsRsp.MedicalScribeJobSummaries === 'undefined') {
+                // Handle undefined MedicalScribeJobs (the service should return an empty array)
+                if (!listHealthScribeJobsRsp.MedicalScribeJobSummaries) {
                     setHealthScribeJobs([]);
                     setTableLoading(false);
                     return;
                 }
 
-                const listResults: MedicalScribeJobSummary[] = listHealthScribeJobsRsp.MedicalScribeJobSummaries;
-
-                const filteredResults: MedicalScribeJobSummary[] = [];
-
-                for (const job of listResults) {
-                    if (job.MedicalScribeJobName) {
-                        // Check if MedicalScribeJobName is defined
-                        const tags = await getMedicalScribeJobTags(job.MedicalScribeJobName);
-                        if (tags.some((tag) => tag.Key === 'UserName' && tag.Value === user?.signInDetails?.loginId || 'No username found')) {
-                            filteredResults.push(job);
+                const listResults = await Promise.all(
+                    listHealthScribeJobsRsp.MedicalScribeJobSummaries.map(async (summary) => {
+                        if (summary.MedicalScribeJobName) {
+                            const jobDetails = await getMedicalScribeJobDetails(summary.MedicalScribeJobName);
+                            return jobDetails;
                         }
-                    }
-                }
+                        return null;
+                    })
+                );
 
+                const filteredResults = listResults.filter(
+                    (job): job is MedicalScribeJob => {
+                        if (!job || !Array.isArray(job.Tags)) {
+                            return false;
+                        }
+                
+                        return job.Tags.some(
+                            (tag) => {
+                                if (!tag || typeof tag.Key !== 'string' || typeof tag.Value !== 'string') {
+                                    return false;
+                                }
+                
+                                return (
+                                    tag.Key === 'UserName' &&
+                                    tag.Value === user?.signInDetails?.loginId
+                                );
+                            }
+                        );
+                    }
+                );
+                
                 // if NextToken is specified, append search results to existing results
                 if (processedSearchFilter.NextToken) {
                     setHealthScribeJobs((prevHealthScribeJobs) => prevHealthScribeJobs.concat(filteredResults));
