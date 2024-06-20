@@ -7,7 +7,7 @@ import Button from '@cloudscape-design/components/button';
 import Pagination from '@cloudscape-design/components/pagination';
 import Table from '@cloudscape-design/components/table';
 
-import { MedicalScribeJobSummary } from '@aws-sdk/client-transcribe';
+import { MedicalScribeJobSummary, TranscribeClient, GetMedicalScribeJobCommand } from '@aws-sdk/client-transcribe';
 
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useNotificationsContext } from '@/store/notifications';
@@ -17,9 +17,7 @@ import { TableHeader, TablePreferences } from './ConversationsTableComponents';
 import TableEmptyState from './TableEmptyState';
 import { columnDefs } from './tableColumnDefs';
 import { DEFAULT_PREFERENCES, TablePreferencesDef } from './tablePrefs';
-
-//const getCurrentUserId = () => 'current-user-id';
-//const getCurrentUser = () => 'current-user';
+import { useAuthContext } from '@/store/auth';
 
 type MoreHealthScribeJobs = {
     searchFilter?: ListHealthScribeJobsProps;
@@ -37,8 +35,27 @@ export default function Conversations() {
         DEFAULT_PREFERENCES
     ); // Conversation table preferences
 
+    const { isUserAuthenticated, user, signOut } = useAuthContext(); // Get the current user
+
     // Header counter for the number of HealthScribe jobs
     const headerCounterText = `(${healthScribeJobs.length}${Object.keys(moreHealthScribeJobs).length > 0 ? '+' : ''})`;
+
+    // Function to get tags for a specific MedicalScribeJob
+    const getMedicalScribeJobTags = async (jobName: string) => {
+        const client = new TranscribeClient({ region: "YOUR_AWS_REGION" });
+
+        const getMedicalScribeJobCommand = new GetMedicalScribeJobCommand({
+            MedicalScribeJobName: jobName,
+        });
+
+        try {
+            const response = await client.send(getMedicalScribeJobCommand);
+            return response.MedicalScribeJob?.Tags || [];
+        } catch (err) {
+            console.error("Error retrieving MedicalScribeJob:", err);
+            return [];
+        }
+    };
 
     // Call Transcribe API to list HealthScribe jobs - optional search filter
     const listHealthScribeJobsWrapper = useCallback(async (searchFilter: ListHealthScribeJobsProps) => {
@@ -60,16 +77,25 @@ export default function Conversations() {
 
             const listResults: MedicalScribeJobSummary[] = listHealthScribeJobsRsp.MedicalScribeJobSummaries;
 
-            //const currentUserId = getCurrentUserId();
-            //const filteredResults = listResults.filter(job => job.SubmittedBy === currentUserId);
-            // if NextToken is specified, append search results to existing results
-            if (processedSearchFilter.NextToken) {
-                setHealthScribeJobs((prevHealthScribeJobs) => prevHealthScribeJobs.concat(listResults));
-            } else {
-                setHealthScribeJobs(listResults);
+            const filteredResults: MedicalScribeJobSummary[] = [];
+
+            for (const job of listResults) {
+                if (job.MedicalScribeJobName) { // Check if MedicalScribeJobName is defined
+                    const tags = await getMedicalScribeJobTags(job.MedicalScribeJobName);
+                    if (tags.some(tag => tag.Key === 'UserID' && tag.Value === user?.username)) {
+                        filteredResults.push(job);
+                    }
+                }
             }
 
-            //If the research returned NextToken, there are additional jobs. Set moreHealthScribeJobs to enable pagination
+            // if NextToken is specified, append search results to existing results
+            if (processedSearchFilter.NextToken) {
+                setHealthScribeJobs((prevHealthScribeJobs) => prevHealthScribeJobs.concat(filteredResults));
+            } else {
+                setHealthScribeJobs(filteredResults);
+            }
+
+            // If the research returned NextToken, there are additional jobs. Set moreHealthScribeJobs to enable pagination
             if (listHealthScribeJobsRsp?.NextToken) {
                 setMoreHealthScribeJobs({
                     searchFilter: searchFilter,
@@ -88,7 +114,7 @@ export default function Conversations() {
             });
         }
         setTableLoading(false);
-    }, []);
+    }, [user?.username]);
 
     // Property for <Pagination /> to enable ... on navigation if there are additional HealthScribe jobs
     const openEndPaginationProp = useMemo(() => {
