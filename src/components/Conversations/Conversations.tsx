@@ -84,7 +84,7 @@ export default function Conversations() {
                     if (job.MedicalScribeJobName) {
                         // Check if MedicalScribeJobName is defined
                         const tags = await getMedicalScribeJobTags(job.MedicalScribeJobName);
-                        if (tags.some((tag) => tag.Key === 'UserID' && tag.Value === user?.signInDetails?.loginId)) {
+                        if (tags.some((tag) => tag.Key === 'UserName' && tag.Value === user?.signInDetails?.loginId)) {
                             filteredResults.push(job);
                         }
                     }
