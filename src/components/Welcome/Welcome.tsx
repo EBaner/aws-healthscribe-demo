@@ -22,9 +22,8 @@ function Welcome() {
         if (isUserAuthenticated) {
             return (
                 <TextContent>
-                    <p>This sample ReactJS-based web app shows the art of the possible in using AWS HealthScribe.</p>
                     <p>
-                        AWS HealthScribe is a HIPAA-eligible service empowering healthcare software vendors to build
+                        Auribus Scribe is a HIPAA-eligible service empowering healthcare software vendors to build
                         clinical applications that automatically generate clinical notes by analyzing patient-clinician
                         conversations.
                     </p>
@@ -62,14 +61,6 @@ function Welcome() {
                             <Link onFollow={() => navigate('/new')}>Submit or record your own audio file</Link> to AWS
                             HealthScribe.
                         </li>
-                        <li>
-                            <Link onFollow={() => navigate('/generate')}>Generate a multi-speaker audio file</Link>{' '}
-                            using{' '}
-                            <Link external href="https://aws.amazon.com/polly/">
-                                Amazon Polly
-                            </Link>
-                            .
-                        </li>
                     </ul>
                 </TextContent>
             );
@@ -81,27 +72,19 @@ function Welcome() {
     function Footer() {
         return (
             <Box textAlign="center" color="text-body-secondary" fontSize="body-s">
-                <p>Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.</p>
+                <p>Copyright Auribus Technologies LLC. All Rights Reserved.</p>
                 <p>
-                    Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
-                    associated documentation files (the &quot;Software&quot;), to deal in the Software without
-                    restriction, including without limitation the rights to use, copy, modify, merge, publish,
-                    distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
-                    Software is furnished to do so.
-                </p>
-                <p>
-                    THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-                    INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-                    NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES
-                    OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-                    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+                    Visit us at{' '}
+                    <Link external href="auribustech.com">
+                        auribustech.com
+                    </Link>
                 </p>
             </Box>
         );
     }
 
     return (
-        <ContentLayout header={<Header variant="h2">Demo Application Experience powered by AWS HealthScribe</Header>}>
+        <ContentLayout header={<Header variant="h2">Welcome to Auribus Scribe powered by AWS</Header>}>
             <Container footer={<Footer />}>
                 <Content />
             </Container>
