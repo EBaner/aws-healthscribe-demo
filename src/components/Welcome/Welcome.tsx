@@ -75,7 +75,7 @@ function Welcome() {
                 <p>Copyright Auribus Technologies LLC. All Rights Reserved.</p>
                 <p>
                     Visit us at{' '}
-                    <Link external href="auribustech.com">
+                    <Link external href="https://www.auribustech.com/">
                         auribustech.com
                     </Link>
                 </p>
