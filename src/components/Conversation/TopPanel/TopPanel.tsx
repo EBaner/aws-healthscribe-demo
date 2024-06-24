@@ -1,6 +1,6 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, visible, setVisible } from 'react';
 
 import { useNavigate } from 'react-router-dom';
 
@@ -67,6 +67,11 @@ export default function TopPanel({
     const [email, setEmail] = useState('');
 
     const waveformElement = document.getElementById('waveform'); // wavesurfer.js wrapper element
+
+    interface ModalProps {
+        visible: boolean;
+        onDismiss: () => void;
+    }
 
     // Get small talk from HealthScribe transcript
     const smallTalkList: SmallTalkList = useMemo(() => {
@@ -226,6 +231,10 @@ export default function TopPanel({
             }
         }
 
+        const Modal: React.FC<ModalProps> = ({ visible, onDismiss}) => {
+            //TODO modal compontent implementaion
+        };
+
         // <Button onClick={() => handleEmailPrompt()}>Export Summary</Button>
 
 
@@ -263,7 +272,7 @@ export default function TopPanel({
                                 label=""
                                 description="Please enter the patient's email here:"
                             >
-                                <Input />
+                                <Input value={email} onChange={(e) => setEmail(e.target.value)}/>
                             </FormField>
                         </Modal>
                         <Button onClick={() => setShowOutputModal(true)}>View HealthScribe Output</Button>
