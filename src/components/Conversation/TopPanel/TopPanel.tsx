@@ -1,6 +1,6 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
-import React, { useEffect, useMemo, useState, visible, setVisible } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import { useNavigate } from 'react-router-dom';
 
@@ -15,7 +15,6 @@ import Spinner from '@cloudscape-design/components/spinner';
 import Modal from '@cloudscape-design/components/modal';
 import FormField from '@cloudscape-design/components/form-field';
 import Input from '@cloudscape-design/components/input';
-import Box from '@cloudscape-design/components/box';
 
 import { MedicalScribeJob } from '@aws-sdk/client-transcribe';
 import reduce from 'lodash/reduce';
@@ -71,6 +70,9 @@ export default function TopPanel({
     interface ModalProps {
         visible: boolean;
         onDismiss: () => void;
+        children: React.ReactNode;
+        footer?: React.ReactNode;
+        header?: React.ReactNode;
     }
 
     // Get small talk from HealthScribe transcript
@@ -231,13 +233,23 @@ export default function TopPanel({
             }
         }
 
+        const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+            setEmail(e.target.value);
+        }
+
         const Modal: React.FC<ModalProps> = ({ visible, onDismiss}) => {
-            //TODO modal compontent implementaion
+            if (!visible) return null;
+
+            return (
+                <div>
+                    <button onClick={onDismiss}>Close</button>
+                </div>
+            );
         };
 
         // <Button onClick={() => handleEmailPrompt()}>Export Summary</Button>
 
-
+        const [visible, setVisible] = React.useState(false);
         return (
             <Header
                 variant="h3"
@@ -272,7 +284,12 @@ export default function TopPanel({
                                 label=""
                                 description="Please enter the patient's email here:"
                             >
-                                <Input value={email} onChange={(e) => setEmail(e.target.value)}/>
+                                <Input 
+                                    type="email" 
+                                    value={email} 
+                                    onChange={handleInputChange} 
+                                    placeholder="Email address"
+                                />
                             </FormField>
                         </Modal>
                         <Button onClick={() => setShowOutputModal(true)}>View HealthScribe Output</Button>
