@@ -222,7 +222,7 @@ export default function TopPanel({
                 setEmail(enteredEmail);
                 //TODO: additional actions with email here
             }
-        };
+        }
 
         return (
             <Header
@@ -239,7 +239,7 @@ export default function TopPanel({
                         >
                             Download
                         </ButtonDropdown>
-                        <Button onCLick={(event) => handleEmailPrompt(event)}>Export Summary</Button>
+                        <Button onClick={(event) => handleEmailPrompt(event)}>Export Summary</Button>
                         <Button onClick={() => setShowOutputModal(true)}>View HealthScribe Output</Button>
                         <Button variant="primary" onClick={() => navigate('/conversations')}>
                             Exit Conversation
