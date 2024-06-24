@@ -12,6 +12,10 @@ import Container from '@cloudscape-design/components/container';
 import Header from '@cloudscape-design/components/header';
 import SpaceBetween from '@cloudscape-design/components/space-between';
 import Spinner from '@cloudscape-design/components/spinner';
+import Modal from '@cloudscape-design/components/modal';
+import FormField from '@cloudscape-design/components/form-field';
+import Input from '@cloudscape-design/components/input';
+import Box from '@cloudscape-design/components/box';
 
 import { MedicalScribeJob } from '@aws-sdk/client-transcribe';
 import reduce from 'lodash/reduce';
@@ -222,6 +226,9 @@ export default function TopPanel({
             }
         }
 
+        // <Button onClick={() => handleEmailPrompt()}>Export Summary</Button>
+
+
         return (
             <Header
                 variant="h3"
@@ -237,7 +244,28 @@ export default function TopPanel({
                         >
                             Download
                         </ButtonDropdown>
-                        <Button onClick={() => handleEmailPrompt()}>Export Summary</Button>
+                        <Modal
+                            onDismiss={() => setVisible(false)}
+                            visible={visible}
+                            footer={
+                                <Box float="right">
+                                    <SpaceBetween direction="horizontal" size="xs">
+                                        <Button variant="link">Cancel</Button>
+                                        <Button variant="primary">Ok</Button>
+                                    </SpaceBetween>
+                                </Box>
+                            }
+                            header={
+                                <React.Fragment>Export Summary</React.Fragment>
+                            }
+                        >
+                            <FormField
+                                label=""
+                                description="Please enter the patient's email here:"
+                            >
+                                <Input />
+                            </FormField>
+                        </Modal>
                         <Button onClick={() => setShowOutputModal(true)}>View HealthScribe Output</Button>
                         <Button variant="primary" onClick={() => navigate('/conversations')}>
                             Exit Conversation
