@@ -60,6 +60,7 @@ export default function TopPanel({
     const [silencePeaks, setSilencePeaks] = useState<number[]>([]); // silence peaks
     const [silencePercent, setSilencePercent] = useState<number>(0); // silence percentage
     const [smallTalkPercent, setSmallTalkPercent] = useState<number>(0); // small talk percentage
+    const [email, setEmail] = useState('');
 
     const waveformElement = document.getElementById('waveform'); // wavesurfer.js wrapper element
 
@@ -213,6 +214,14 @@ export default function TopPanel({
             }
         }
 
+        const handleEmailPrompt = () => {
+            const enteredEmail = window.prompt('Please enter patient email address:');
+            if (enteredEmail) {
+                setEmail(enteredEmail);
+                //TODO: additional actions with email here
+            }
+        }
+
         return (
             <Header
                 variant="h3"
@@ -228,6 +237,7 @@ export default function TopPanel({
                         >
                             Download
                         </ButtonDropdown>
+                        <Button onCLick={handleEmailPrompt}>Export Summary</Button>
                         <Button onClick={() => setShowOutputModal(true)}>View HealthScribe Output</Button>
                         <Button variant="primary" onClick={() => navigate('/conversations')}>
                             Exit Conversation
