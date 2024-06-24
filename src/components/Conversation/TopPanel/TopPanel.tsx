@@ -214,13 +214,15 @@ export default function TopPanel({
             }
         }
 
-        const handleEmailPrompt = () => {
+        const handleEmailPrompt = (event: React.MouseEvent<HTMLButtonElement>) => {
+            event.preventDefault(); //prevents default button click behavior to save error
+
             const enteredEmail = window.prompt('Please enter patient email address:');
             if (enteredEmail) {
                 setEmail(enteredEmail);
                 //TODO: additional actions with email here
             }
-        }
+        };
 
         return (
             <Header
@@ -237,7 +239,7 @@ export default function TopPanel({
                         >
                             Download
                         </ButtonDropdown>
-                        <Button onCLick={() => handleEmailPrompt()}>Export Summary</Button>
+                        <Button onCLick={(event) => handleEmailPrompt(event)}>Export Summary</Button>
                         <Button onClick={() => setShowOutputModal(true)}>View HealthScribe Output</Button>
                         <Button variant="primary" onClick={() => navigate('/conversations')}>
                             Exit Conversation
