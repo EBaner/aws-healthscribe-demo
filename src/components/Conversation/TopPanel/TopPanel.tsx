@@ -237,7 +237,7 @@ export default function TopPanel({
                         >
                             Download
                         </ButtonDropdown>
-                        <Button onCLick={handleEmailPrompt}>Export Summary</Button>
+                        <Button onCLick={() => handleEmailPrompt()}>Export Summary</Button>
                         <Button onClick={() => setShowOutputModal(true)}>View HealthScribe Output</Button>
                         <Button variant="primary" onClick={() => navigate('/conversations')}>
                             Exit Conversation
