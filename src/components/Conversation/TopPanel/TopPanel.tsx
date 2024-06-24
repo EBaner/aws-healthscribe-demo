@@ -214,9 +214,9 @@ export default function TopPanel({
             }
         }
 
-        const handleEmailPrompt = (event: React.MouseEvent<HTMLButtonElement>) => {
-            event.preventDefault(); //prevents default button click behavior to save error
-
+        const handleEmailPrompt = (event: React.MouseEvent) => {
+            event.preventDefault();
+            
             const enteredEmail = window.prompt('Please enter patient email address:');
             if (enteredEmail) {
                 setEmail(enteredEmail);
