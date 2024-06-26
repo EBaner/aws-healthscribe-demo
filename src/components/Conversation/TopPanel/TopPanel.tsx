@@ -275,7 +275,7 @@ export default function TopPanel({
                             footer={
                                 <Box float="right">
                                     <SpaceBetween direction="horizontal" size="xs">
-                                        <Button variant="link" onClick={() => setVisible(false)}>Cancel</Button>
+                                        <Button variant="link">Cancel</Button>
                                         <Button variant="primary">Ok</Button>
                                     </SpaceBetween>
                                 </Box>
