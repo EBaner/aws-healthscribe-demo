@@ -13,20 +13,23 @@ import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useAuthContext } from '@/store/auth';
 import { useNotificationsContext } from '@/store/notifications';
 import { ListHealthScribeJobsProps, listHealthScribeJobs } from '@/utils/HealthScribeApi';
+import { getConfigRegion, getCredentials } from '@/utils/Sdk';
 
 import { TableHeader, TablePreferences } from './ConversationsTableComponents';
 import TableEmptyState from './TableEmptyState';
 import { columnDefs } from './tableColumnDefs';
 import { DEFAULT_PREFERENCES, TablePreferencesDef } from './tablePrefs';
-import { getConfigRegion, getCredentials } from '@/utils/Sdk';
 
 async function getTranscribeClient() {
+    const credentials = await getCredentials();
     return new TranscribeClient({
         region: getConfigRegion(),
-        credentials: await getCredentials(),
+        credentials,
     });
 }
-const transcribeClient = getTranscribeClient;
+
+const transcribeClient = getTranscribeClient();
+
 
 type MoreHealthScribeJobs = {
     searchFilter?: ListHealthScribeJobsProps;
@@ -40,9 +43,11 @@ async function getHealthScribeJob(MedicalScribeJobName: string | undefined) {
 
     const input = { MedicalScribeJobName };
     const command = new GetMedicalScribeJobCommand(input);
-    const response = await transcribeClient.send(command);
+    const client = await transcribeClient; // Await the Promise
+    const response = await client.send(command); // Call send on the resolved instance
     return response.MedicalScribeJob;
 }
+
 
 export default function Conversations() {
     const { user } = useAuthContext(); // Retrieve user info
