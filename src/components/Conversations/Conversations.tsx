@@ -30,7 +30,6 @@ async function getTranscribeClient() {
 
 const transcribeClient = getTranscribeClient();
 
-
 type MoreHealthScribeJobs = {
     searchFilter?: ListHealthScribeJobsProps;
     NextToken?: string;
@@ -47,7 +46,6 @@ async function getHealthScribeJob(MedicalScribeJobName: string | undefined) {
     const response = await client.send(command); // Call send on the resolved instance
     return response.MedicalScribeJob;
 }
-
 
 export default function Conversations() {
     const { user } = useAuthContext(); // Retrieve user info
