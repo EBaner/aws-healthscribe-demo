@@ -36,11 +36,13 @@ import styles from './NewConversation.module.css';
 import { verifyJobParams } from './formUtils';
 import { AudioDetails, AudioSelection } from './types';
 import { useAuthContext } from '@/store/auth';
+import { useAuthContext } from '@/store/auth';
 
 export default function NewConversation() {
     const { updateProgressBar } = useNotificationsContext();
     const navigate = useNavigate();
     const { user } = useAuthContext(); 
+    const loginId = user?.signInDetails?.loginId || 'No username found'; // Extract login ID
 
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false); // is job submitting
     const [formError, setFormError] = useState<string | React.ReactElement[]>('');
