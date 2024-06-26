@@ -1,27 +1,48 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: MIT-0
 import React, { useCallback, useMemo, useState } from 'react';
+
 import { useCollection } from '@cloudscape-design/collection-hooks';
 import Button from '@cloudscape-design/components/button';
 import Pagination from '@cloudscape-design/components/pagination';
 import Table from '@cloudscape-design/components/table';
-import { MedicalScribeJobSummary } from '@aws-sdk/client-transcribe';
+
+import { GetMedicalScribeJobCommand, MedicalScribeJobSummary, TranscribeClient } from '@aws-sdk/client-transcribe';
+
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useNotificationsContext } from '@/store/notifications';
-import { ListHealthScribeJobsProps, listHealthScribeJobs, getMedicalScribeJobSummary } from '@/utils/HealthScribeApi'; // Import getMedicalScribeJobSummary
+import { ListHealthScribeJobsProps, listHealthScribeJobs } from '@/utils/HealthScribeApi';
+
 import { TableHeader, TablePreferences } from './ConversationsTableComponents';
 import TableEmptyState from './TableEmptyState';
 import { columnDefs } from './tableColumnDefs';
 import { DEFAULT_PREFERENCES, TablePreferencesDef } from './tablePrefs';
-import { useAuthContext } from '@/store/auth'; // Import useAuthContext to get the user's login ID
+import { useAuthContext } from '@/store/auth';
+
+const transcribeClient = new TranscribeClient({ region: 'us-east-1' });
 
 type MoreHealthScribeJobs = {
     searchFilter?: ListHealthScribeJobsProps;
     NextToken?: string;
 };
 
+async function getHealthScribeJob(MedicalScribeJobName: string | undefined) {
+    if (!MedicalScribeJobName) {
+        throw new Error('MedicalScribeJobName is required');
+    }
+
+    const input = { MedicalScribeJobName };
+    const command = new GetMedicalScribeJobCommand(input);
+    const response = await transcribeClient.send(command);
+    return response.MedicalScribeJob;
+}
+
+
 export default function Conversations() {
+    const { user } = useAuthContext(); // Retrieve user info
+    const loginId = user?.signInDetails?.loginId || 'No username found'; // Extract login ID
+
     const { addFlashMessage } = useNotificationsContext();
-    const { user } = useAuthContext();
-    const loginId = user?.signInDetails?.loginId || 'No username found'; // Get the user's login ID
     const [healthScribeJobs, setHealthScribeJobs] = useState<MedicalScribeJobSummary[]>([]); // HealthScribe jobs from API
     const [moreHealthScribeJobs, setMoreHealthScribeJobs] = useState<MoreHealthScribeJobs>({}); // More HealthScribe jobs from API (NextToken returned)
     const [selectedHealthScribeJob, setSelectedHealthScribeJob] = useState<MedicalScribeJobSummary[] | []>([]); // Selected HealthScribe job
@@ -44,34 +65,40 @@ export default function Conversations() {
                 processedSearchFilter.Status = undefined;
             }
             const listHealthScribeJobsRsp = await listHealthScribeJobs(processedSearchFilter);
-
+    
             // Handle undefined MedicalScribeJobSummaries (the service should return an empty array)
             if (typeof listHealthScribeJobsRsp.MedicalScribeJobSummaries === 'undefined') {
                 setHealthScribeJobs([]);
                 setTableLoading(false);
                 return;
             }
-
+    
             const listResults: MedicalScribeJobSummary[] = listHealthScribeJobsRsp.MedicalScribeJobSummaries;
-
-            // Fetch detailed summaries and filter jobs based on the login ID
+    
+            // Fetch detailed job summaries and filter by user's login ID
             const detailedJobSummaries = await Promise.all(
                 listResults.map(async (job) => {
-                    const jobSummary = await getMedicalScribeJobSummary(job.MedicalScribeJobName);
-                    const userTag = jobSummary.Tags?.find((tag: { Key: string; }) => tag.Key === 'UserName');
-                    return userTag?.Value === loginId ? job : null;
+                    try {
+                        const jobDetails = await getHealthScribeJob(job.MedicalScribeJobName);
+                        const userTag = jobDetails?.Tags?.find(tag => tag.Key === 'UserName');
+                        return userTag?.Value === loginId ? job : null;
+                    } catch (error) {
+                        console.error(`Failed to fetch details for job ${job.MedicalScribeJobName}:`, error);
+                        return null;
+                    }
                 })
             );
-
-            const filteredResults = detailedJobSummaries.filter(job => job !== null) as MedicalScribeJobSummary[];
-
-            // If NextToken is specified, append search results to existing results
+    
+            // Filter out null values
+            const filteredResults = detailedJobSummaries.filter((job): job is MedicalScribeJobSummary => job !== null);
+    
+            // if NextToken is specified, append search results to existing results
             if (processedSearchFilter.NextToken) {
                 setHealthScribeJobs((prevHealthScribeJobs) => prevHealthScribeJobs.concat(filteredResults));
             } else {
                 setHealthScribeJobs(filteredResults);
             }
-
+    
             // If the research returned NextToken, there are additional jobs. Set moreHealthScribeJobs to enable pagination
             if (listHealthScribeJobsRsp?.NextToken) {
                 setMoreHealthScribeJobs({
@@ -91,7 +118,9 @@ export default function Conversations() {
             });
         }
         setTableLoading(false);
-    }, []);
+    }, [addFlashMessage, setTableLoading, setHealthScribeJobs, setMoreHealthScribeJobs]);
+    
+    
 
     // Property for <Pagination /> to enable ... on navigation if there are additional HealthScribe jobs
     const openEndPaginationProp = useMemo(() => {
