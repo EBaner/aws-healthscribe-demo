@@ -243,14 +243,7 @@ export default function NewConversation() {
                 </Header>
             }
         >
-            <Container
-                header={
-                    <Header
-                        variant="h3"
-                        description="Note: AWS HealthScribe offers additional features not built into this demo, such as Custom Vocabulary, Content Removal, and more. This is available via the AWS console, API, or SDK."
-                    />
-                }
-            >
+            <Container>
                 <Box margin={{ bottom: 's' }} color="text-status-success" fontSize="heading-m">
                     Logged in as: {loginId} {/* Display login ID */}
                 </Box>
@@ -294,9 +287,9 @@ export default function NewConversation() {
                                         >
                                             <Popover
                                                 header="Live Recording"
-                                                content="The audio file will be submitted to AWS HealthScribe after the recording is complete. Please position your device or microphone so it can capture all conversation participants."
+                                                content="Please position your device or microphone so it can capture all conversation participants."
                                             >
-                                                <StatusIndicator type="info">New</StatusIndicator>
+                                                <StatusIndicator type="info">Info</StatusIndicator>
                                             </Popover>
                                         </Box>
                                     </SpaceBetween>

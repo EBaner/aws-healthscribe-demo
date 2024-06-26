@@ -1,7 +1,5 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
-import Modal from '@cloudscape-design/components/modal';
-
 import React, { useEffect, useMemo, useState } from 'react';
 
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +12,7 @@ import Container from '@cloudscape-design/components/container';
 import FormField from '@cloudscape-design/components/form-field';
 import Header from '@cloudscape-design/components/header';
 import Input from '@cloudscape-design/components/input';
+import Modal from '@cloudscape-design/components/modal';
 import SpaceBetween from '@cloudscape-design/components/space-between';
 import Spinner from '@cloudscape-design/components/spinner';
 
