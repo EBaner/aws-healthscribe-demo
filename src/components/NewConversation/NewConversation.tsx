@@ -18,6 +18,7 @@ import Spinner from '@cloudscape-design/components/spinner';
 import StatusIndicator from '@cloudscape-design/components/status-indicator';
 import TokenGroup from '@cloudscape-design/components/token-group';
 
+import { Tag } from '@aws-sdk/client-s3/dist-types/models/models_0';
 import { MedicalScribeParticipantRole, StartMedicalScribeJobRequest } from '@aws-sdk/client-transcribe';
 import { Progress } from '@aws-sdk/lib-storage';
 import dayjs from 'dayjs';
@@ -40,7 +41,8 @@ import { AudioDetails, AudioSelection } from './types';
 export default function NewConversation() {
     const { updateProgressBar } = useNotificationsContext();
     const navigate = useNavigate();
-    const { user } = useAuthContext();
+
+    const { user } = useAuthContext(); // Retrieve user info
     const loginId = user?.signInDetails?.loginId || 'No username found'; // Extract login ID
 
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false); // is job submitting
@@ -136,6 +138,11 @@ export default function NewConversation() {
             Key: `${uploadLocation.key}/${(filePath as File).name}`,
         };
 
+        const userNameTag: Tag = {
+            Key: 'UserName',
+            Value: loginId,
+        };
+
         const jobParams: StartMedicalScribeJobRequest = {
             MedicalScribeJobName: jobName,
             DataAccessRoleArn: amplifyCustom.healthScribeServiceRole,
@@ -144,6 +151,7 @@ export default function NewConversation() {
                 MediaFileUri: `s3://${s3Location.Bucket}/${s3Location.Key}`,
             },
             ...audioParams,
+            Tags: [userNameTag],
         };
 
         const verifyParamResults = verifyJobParams(jobParams);
@@ -243,6 +251,9 @@ export default function NewConversation() {
                     />
                 }
             >
+                <Box margin={{ bottom: 's' }} color="text-status-success" fontSize="heading-m">
+                    Logged in as: {loginId} {/* Display login ID */}
+                </Box>
                 <form onSubmit={(e) => submitJob(e)}>
                     <Form
                         errorText={formError}
