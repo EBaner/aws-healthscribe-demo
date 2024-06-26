@@ -15,7 +15,6 @@ import Spinner from '@cloudscape-design/components/spinner';
 import Modal from '@cloudscape-design/components/modal';
 import FormField from '@cloudscape-design/components/form-field';
 import Input from '@cloudscape-design/components/input';
-import { BaseChangeDetail, NonCancelableEventHandler } from '@awsui/components-react';
 
 import { MedicalScribeJob } from '@aws-sdk/client-transcribe';
 import reduce from 'lodash/reduce';
@@ -235,11 +234,12 @@ export default function TopPanel({
             }
         }
 
-        //made for modal
-        function handleInputChange(event: React.ChangeEvent<HTMLInputElement>) {
-            console.log(event.target.value);
-            setEmail(event.target.value);
+        /*made for modal
+        function handleInputChange(event: BaseChangeDetail) {
+            console.log(event.detail.value);
+            setEmail(event.detail.value);
         }
+        */
 
         const Modal: React.FC<ModalProps> = ({ visible, onDismiss}) => {
             if (!visible) return null;
@@ -280,9 +280,7 @@ export default function TopPanel({
                                     </SpaceBetween>
                                 </Box>
                             }
-                            header={
-                                <React.Fragment>Export Summary</React.Fragment>
-                            }
+                            header="Export Summary"
                         >
                             <FormField
                                 label=""
@@ -291,7 +289,6 @@ export default function TopPanel({
                                 <Input 
                                     type="email" 
                                     value={email} 
-                                    onChange={handleInputChange} 
                                     placeholder="Email address"
                                 />
                             </FormField>
