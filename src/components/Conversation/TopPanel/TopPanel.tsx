@@ -285,6 +285,7 @@ export default function TopPanel({
                             <FormField label="" description="Please enter the patient's email here:">
                                 <Input type="email" value={email} placeholder="Email address" />
                             </FormField>
+                            Export Summary
                         </Modal>
                         <Button onClick={() => setShowOutputModal(true)}>View HealthScribe Output</Button>
                         <Button variant="primary" onClick={() => navigate('/conversations')}>
