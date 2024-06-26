@@ -1,25 +1,17 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-// SPDX-License-Identifier: MIT-0
 import React, { useCallback, useMemo, useState } from 'react';
-
 import { useCollection } from '@cloudscape-design/collection-hooks';
 import Button from '@cloudscape-design/components/button';
 import Pagination from '@cloudscape-design/components/pagination';
 import Table from '@cloudscape-design/components/table';
-
 import { MedicalScribeJobSummary } from '@aws-sdk/client-transcribe';
-
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useNotificationsContext } from '@/store/notifications';
-import { ListHealthScribeJobsProps, listHealthScribeJobs } from '@/utils/HealthScribeApi';
-
+import { ListHealthScribeJobsProps, listHealthScribeJobs, getMedicalScribeJobSummary } from '@/utils/HealthScribeApi'; // Import getMedicalScribeJobSummary
 import { TableHeader, TablePreferences } from './ConversationsTableComponents';
 import TableEmptyState from './TableEmptyState';
 import { columnDefs } from './tableColumnDefs';
 import { DEFAULT_PREFERENCES, TablePreferencesDef } from './tablePrefs';
-
-//const getCurrentUserId = () => 'current-user-id';
-//const getCurrentUser = () => 'current-user';
+import { useAuthContext } from '@/store/auth'; // Import useAuthContext to get the user's login ID
 
 type MoreHealthScribeJobs = {
     searchFilter?: ListHealthScribeJobsProps;
@@ -28,6 +20,8 @@ type MoreHealthScribeJobs = {
 
 export default function Conversations() {
     const { addFlashMessage } = useNotificationsContext();
+    const { user } = useAuthContext();
+    const loginId = user?.signInDetails?.loginId || 'No username found'; // Get the user's login ID
     const [healthScribeJobs, setHealthScribeJobs] = useState<MedicalScribeJobSummary[]>([]); // HealthScribe jobs from API
     const [moreHealthScribeJobs, setMoreHealthScribeJobs] = useState<MoreHealthScribeJobs>({}); // More HealthScribe jobs from API (NextToken returned)
     const [selectedHealthScribeJob, setSelectedHealthScribeJob] = useState<MedicalScribeJobSummary[] | []>([]); // Selected HealthScribe job
@@ -60,16 +54,25 @@ export default function Conversations() {
 
             const listResults: MedicalScribeJobSummary[] = listHealthScribeJobsRsp.MedicalScribeJobSummaries;
 
-            //const currentUserId = getCurrentUserId();
-            //const filteredResults = listResults.filter(job => job.SubmittedBy === currentUserId);
-            // if NextToken is specified, append search results to existing results
+            // Fetch detailed summaries and filter jobs based on the login ID
+            const detailedJobSummaries = await Promise.all(
+                listResults.map(async (job) => {
+                    const jobSummary = await getMedicalScribeJobSummary(job.MedicalScribeJobName);
+                    const userTag = jobSummary.Tags?.find((tag: { Key: string; }) => tag.Key === 'UserName');
+                    return userTag?.Value === loginId ? job : null;
+                })
+            );
+
+            const filteredResults = detailedJobSummaries.filter(job => job !== null) as MedicalScribeJobSummary[];
+
+            // If NextToken is specified, append search results to existing results
             if (processedSearchFilter.NextToken) {
-                setHealthScribeJobs((prevHealthScribeJobs) => prevHealthScribeJobs.concat(listResults));
+                setHealthScribeJobs((prevHealthScribeJobs) => prevHealthScribeJobs.concat(filteredResults));
             } else {
-                setHealthScribeJobs(listResults);
+                setHealthScribeJobs(filteredResults);
             }
 
-            //If the research returned NextToken, there are additional jobs. Set moreHealthScribeJobs to enable pagination
+            // If the research returned NextToken, there are additional jobs. Set moreHealthScribeJobs to enable pagination
             if (listHealthScribeJobsRsp?.NextToken) {
                 setMoreHealthScribeJobs({
                     searchFilter: searchFilter,
