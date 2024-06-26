@@ -225,7 +225,8 @@ export default function TopPanel({
                 window.open(presignedUrl, '_blank');
             }
         }
-
+        
+        //made for button
         async function handleEmailPrompt() {
             const enteredEmail = window.prompt('Please enter patient email address:');
             if (enteredEmail) {
@@ -234,10 +235,11 @@ export default function TopPanel({
             }
         }
 
-        const handleInputChange: NonCancelableEventHandler<BaseChangeDetail> = (event) => {
-            const target = event.target as HTMLInputElement;
-            setEmail(target.value);
-        };
+        //made for modal
+        function handleInputChange(event: React.ChangeEvent<HTMLInputElement>) {
+            console.log(event.target.value);
+            setEmail(event.target.value);
+        }
 
         const Modal: React.FC<ModalProps> = ({ visible, onDismiss}) => {
             if (!visible) return null;
