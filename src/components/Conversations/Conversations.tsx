@@ -10,6 +10,7 @@ import Table from '@cloudscape-design/components/table';
 import { GetMedicalScribeJobCommand, MedicalScribeJobSummary, TranscribeClient } from '@aws-sdk/client-transcribe';
 
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useAuthContext } from '@/store/auth';
 import { useNotificationsContext } from '@/store/notifications';
 import { ListHealthScribeJobsProps, listHealthScribeJobs } from '@/utils/HealthScribeApi';
 
@@ -17,7 +18,6 @@ import { TableHeader, TablePreferences } from './ConversationsTableComponents';
 import TableEmptyState from './TableEmptyState';
 import { columnDefs } from './tableColumnDefs';
 import { DEFAULT_PREFERENCES, TablePreferencesDef } from './tablePrefs';
-import { useAuthContext } from '@/store/auth';
 
 const transcribeClient = new TranscribeClient({ region: 'us-east-1' });
 
@@ -36,7 +36,6 @@ async function getHealthScribeJob(MedicalScribeJobName: string | undefined) {
     const response = await transcribeClient.send(command);
     return response.MedicalScribeJob;
 }
-
 
 export default function Conversations() {
     const { user } = useAuthContext(); // Retrieve user info
@@ -68,20 +67,24 @@ export default function Conversations() {
     
             // Handle undefined MedicalScribeJobSummaries (the service should return an empty array)
             if (typeof listHealthScribeJobsRsp.MedicalScribeJobSummaries === 'undefined') {
+                console.log('No MedicalScribeJobSummaries returned');
                 setHealthScribeJobs([]);
                 setTableLoading(false);
                 return;
             }
     
             const listResults: MedicalScribeJobSummary[] = listHealthScribeJobsRsp.MedicalScribeJobSummaries;
+            console.log('List results from API:', listResults);
     
             // Fetch detailed job summaries and filter by user's login ID
             const detailedJobSummaries = await Promise.all(
                 listResults.map(async (job) => {
                     try {
                         const jobDetails = await getHealthScribeJob(job.MedicalScribeJobName);
-                        const userTag = jobDetails?.Tags?.find(tag => tag.Key === 'UserName');
-                        return userTag?.Value === loginId ? job : null;
+                        const userTag = jobDetails?.Tags?.find((tag) => tag.Key === 'UserName');
+                        const isUserJob = userTag?.Value === loginId;
+                        console.log(`Job: ${job.MedicalScribeJobName}, UserTag: ${userTag?.Value}, IsUserJob: ${isUserJob}`);
+                        return isUserJob ? job : null;
                     } catch (error) {
                         console.error(`Failed to fetch details for job ${job.MedicalScribeJobName}:`, error);
                         return null;
@@ -90,7 +93,11 @@ export default function Conversations() {
             );
     
             // Filter out null values
-            const filteredResults = detailedJobSummaries.filter((job): job is MedicalScribeJobSummary => job !== null);
+            const filteredResults = detailedJobSummaries.filter(
+                (job): job is MedicalScribeJobSummary => job !== null
+            );
+    
+            console.log('Filtered results:', filteredResults);
     
             // if NextToken is specified, append search results to existing results
             if (processedSearchFilter.NextToken) {
@@ -119,7 +126,6 @@ export default function Conversations() {
         }
         setTableLoading(false);
     }, [addFlashMessage, setTableLoading, setHealthScribeJobs, setMoreHealthScribeJobs]);
-    
     
 
     // Property for <Pagination /> to enable ... on navigation if there are additional HealthScribe jobs
