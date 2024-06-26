@@ -9,12 +9,12 @@ import Button from '@cloudscape-design/components/button';
 import ButtonDropdown from '@cloudscape-design/components/button-dropdown';
 import Checkbox from '@cloudscape-design/components/checkbox';
 import Container from '@cloudscape-design/components/container';
+import FormField from '@cloudscape-design/components/form-field';
 import Header from '@cloudscape-design/components/header';
+import Input from '@cloudscape-design/components/input';
+import Modal from '@cloudscape-design/components/modal';
 import SpaceBetween from '@cloudscape-design/components/space-between';
 import Spinner from '@cloudscape-design/components/spinner';
-import Modal from '@cloudscape-design/components/modal';
-import FormField from '@cloudscape-design/components/form-field';
-import Input from '@cloudscape-design/components/input';
 
 import { MedicalScribeJob } from '@aws-sdk/client-transcribe';
 import reduce from 'lodash/reduce';
@@ -224,7 +224,7 @@ export default function TopPanel({
                 window.open(presignedUrl, '_blank');
             }
         }
-        
+
         //made for button
         async function handleEmailPrompt() {
             const enteredEmail = window.prompt('Please enter patient email address:');
@@ -241,7 +241,7 @@ export default function TopPanel({
         }
         */
 
-        const Modal: React.FC<ModalProps> = ({ visible, onDismiss}) => {
+        const Modal: React.FC<ModalProps> = ({ visible, onDismiss }) => {
             if (!visible) return null;
 
             return (
@@ -253,7 +253,7 @@ export default function TopPanel({
 
         // <Button onClick={() => handleEmailPrompt()}>Export Summary</Button>
 
-        const [visible, setVisible] = React.useState(false);
+        const [visible, setVisible] = React.useState(true);
         return (
             <Header
                 variant="h3"
@@ -275,22 +275,15 @@ export default function TopPanel({
                             footer={
                                 <Box float="right">
                                     <SpaceBetween direction="horizontal" size="xs">
-                                        <Button variant="link">Cancel</Button>
+                                        <Button variant="link" onClick={() => setVisible(false)}>Cancel</Button>
                                         <Button variant="primary">Ok</Button>
                                     </SpaceBetween>
                                 </Box>
                             }
                             header="Export Summary"
                         >
-                            <FormField
-                                label=""
-                                description="Please enter the patient's email here:"
-                            >
-                                <Input 
-                                    type="email" 
-                                    value={email} 
-                                    placeholder="Email address"
-                                />
+                            <FormField label="" description="Please enter the patient's email here:">
+                                <Input type="email" value={email} placeholder="Email address" />
                             </FormField>
                         </Modal>
                         <Button onClick={() => setShowOutputModal(true)}>View HealthScribe Output</Button>
