@@ -23,6 +23,7 @@ import { Progress } from '@aws-sdk/lib-storage';
 import dayjs from 'dayjs';
 
 import { useS3 } from '@/hooks/useS3';
+import { useAuthContext } from '@/store/auth';
 import { useNotificationsContext } from '@/store/notifications';
 import { startMedicalScribeJob } from '@/utils/HealthScribeApi';
 import { multipartUpload } from '@/utils/S3Api';
@@ -35,13 +36,11 @@ import { AudioDetailSettings, AudioIdentificationType, InputName } from './FormC
 import styles from './NewConversation.module.css';
 import { verifyJobParams } from './formUtils';
 import { AudioDetails, AudioSelection } from './types';
-import { useAuthContext } from '@/store/auth';
-import { useAuthContext } from '@/store/auth';
 
 export default function NewConversation() {
     const { updateProgressBar } = useNotificationsContext();
     const navigate = useNavigate();
-    const { user } = useAuthContext(); 
+    const { user } = useAuthContext();
     const loginId = user?.signInDetails?.loginId || 'No username found'; // Extract login ID
 
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false); // is job submitting

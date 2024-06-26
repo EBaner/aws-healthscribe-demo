@@ -21,7 +21,6 @@ import { DEFAULT_PREFERENCES, TablePreferencesDef } from './tablePrefs';
 //const getCurrentUserId = () => 'current-user-id';
 //const getCurrentUser = () => 'current-user';
 
-
 type MoreHealthScribeJobs = {
     searchFilter?: ListHealthScribeJobsProps;
     NextToken?: string;
