@@ -9,9 +9,10 @@ import {
     StartMedicalScribeJobRequest,
     TranscribeClient,
 } from '@aws-sdk/client-transcribe';
+import { remove } from 'aws-amplify/storage';
 
-import { getConfigRegion, getCredentials, printTiming } from '@/utils/Sdk';
 import { useS3 } from '@/hooks/useS3';
+import { getConfigRegion, getCredentials, printTiming } from '@/utils/Sdk';
 
 async function getTranscribeClient() {
     return new TranscribeClient({
@@ -79,6 +80,7 @@ async function getS3LocationForJob(jobName: string) {
     return { bucket: bucketName, key };
 }
 
+
 async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScribeJobProps) {
     const start = performance.now();
 
@@ -92,6 +94,16 @@ async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScrib
     // Get the S3 location for the job
     const { bucket, key } = await getS3LocationForJob(MedicalScribeJobName);
 
+    try {
+        await remove({ 
+          key: 'healthscribe-demo-storageca5a3-devb/${MedicalScribeJobName}', 
+          options: { 
+            accessLevel: 'guest' // defaults to `guest` but can be 'private' | 'protected' | 'guest'
+          } 
+        });
+      } catch (error) {
+        console.log('Error ', error);
+      }
     // Delete the S3 object
     const s3Client = new S3Client({
         region: getConfigRegion(), // Use the same region as the TranscribeClient
@@ -108,7 +120,6 @@ async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScrib
 
     return deleteMedicalScribeJobRsp;
 }
-
 
 async function startMedicalScribeJob(startMedicalScribeJobParams: StartMedicalScribeJobRequest) {
     const start = performance.now();
