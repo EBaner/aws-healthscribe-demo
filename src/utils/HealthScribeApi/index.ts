@@ -13,6 +13,7 @@ import { remove } from 'aws-amplify/storage';
 
 import { useS3 } from '@/hooks/useS3';
 import { getConfigRegion, getCredentials, printTiming } from '@/utils/Sdk';
+import { getS3Object } from '../S3Api';
 
 async function getTranscribeClient() {
     return new TranscribeClient({
@@ -82,59 +83,45 @@ async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScrib
     });
     const deleteMedicalScribeJobRsp = await transcribeClient.send(deleteMedicalScribeJobCmd);
 
-    // Delete the S3 objects
-    const s3Client = new S3Client({
-        region: getConfigRegion(),
-        credentials: await getCredentials(),
-    });
+    // Construct the S3 URI for the job folder
+    const s3Uri = `s3://healthscribe-demo-storageca5a3-devb/${MedicalScribeJobName}/`;
 
-    const [outputBucket, getUploadMetadata] = useS3();
-    const uploadLocation = getUploadMetadata();
-
-    // Construct the base key for the job folder
-    const baseKey = `${uploadLocation.key}/${MedicalScribeJobName}`;
-
-    // Define the files to delete
-    const filesToDelete = ['summary.json', 'transcript.json'];
-
-    for (const file of filesToDelete) {
-        const key = `${baseKey}/${file}`;
-        const deleteObjectCmd = new DeleteObjectCommand({
-            Bucket: outputBucket,
-            Key: key,
-        });
-
-        try {
-            await s3Client.send(deleteObjectCmd);
-            console.log(`Successfully deleted S3 object: s3://${outputBucket}/${key}`);
-        } catch (error) {
-            console.error(`Error deleting S3 object: s3://${outputBucket}/${key}`, error);
-        }
-
-        // Attempt to remove using aws-amplify/storage as well
-        try {
-            await remove({
-                key: key,
-                options: {
-                    accessLevel: 'guest',
-                },
-            });
-            console.log(`Successfully removed object using aws-amplify/storage: ${key}`);
-        } catch (error) {
-            console.error(`Error removing object using aws-amplify/storage: ${key}`, error);
-        }
-    }
-
-    // Optionally, delete the folder itself if your S3 setup requires it
     try {
-        const deleteFolderCmd = new DeleteObjectCommand({
-            Bucket: outputBucket,
-            Key: baseKey + '/',
-        });
-        await s3Client.send(deleteFolderCmd);
-        console.log(`Successfully deleted S3 folder: s3://${outputBucket}/${baseKey}/`);
+        // Get the S3 object (folder) using the getS3Object function
+        const s3object = await getS3Object(s3Uri);
+
+        if (s3object) {
+            // If the object exists, delete it
+            const s3Client = new S3Client({
+                region: getConfigRegion(),
+                credentials: await getCredentials(),
+            });
+
+            const deleteObjectCmd = new DeleteObjectCommand({
+                Bucket: s3object.Bucket,
+                Key: s3object.Key,
+            });
+
+            await s3Client.send(deleteObjectCmd);
+            console.log(`Successfully deleted S3 folder: ${s3Uri}`);
+
+            // Attempt to remove using aws-amplify/storage as well
+            try {
+                await remove({
+                    key: s3object.Key,
+                    options: {
+                        accessLevel: 'guest',
+                    },
+                });
+                console.log(`Successfully removed folder using aws-amplify/storage: ${s3object.Key}`);
+            } catch (error) {
+                console.error(`Error removing folder using aws-amplify/storage: ${s3object.Key}`, error);
+            }
+        } else {
+            console.log(`S3 folder not found: ${s3Uri}`);
+        }
     } catch (error) {
-        console.error(`Error deleting S3 folder: s3://${outputBucket}/${baseKey}/`, error);
+        console.error(`Error deleting S3 folder: ${s3Uri}`, error);
     }
 
     const end = performance.now();
