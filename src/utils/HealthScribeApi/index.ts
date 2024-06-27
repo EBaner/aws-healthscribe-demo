@@ -13,7 +13,10 @@ import { remove } from 'aws-amplify/storage';
 
 import { useS3 } from '@/hooks/useS3';
 import { getConfigRegion, getCredentials, printTiming } from '@/utils/Sdk';
+
 import { getS3Object } from '../S3Api';
+
+
 
 async function getTranscribeClient() {
     return new TranscribeClient({
@@ -73,61 +76,46 @@ export type DeleteHealthScribeJobProps = {
     MedicalScribeJobName: string;
 };
 
+
 async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScribeJobProps) {
     const start = performance.now();
 
-    // Delete the MedicalScribe job
-    const transcribeClient = await getTranscribeClient();
-    const deleteMedicalScribeJobCmd = new DeleteMedicalScribeJobCommand({
-        MedicalScribeJobName: MedicalScribeJobName,
-    });
-    const deleteMedicalScribeJobRsp = await transcribeClient.send(deleteMedicalScribeJobCmd);
-
-    // Construct the S3 URI for the job folder
-    const s3Uri = `s3://healthscribe-demo-storageca5a3-devb/${MedicalScribeJobName}/`;
-
     try {
-        // Get the S3 object (folder) using the getS3Object function
-        const s3object = await getS3Object(s3Uri);
+        // Delete the MedicalScribe job
+        const transcribeClient = new TranscribeClient({
+            region: getConfigRegion(),
+            credentials: await getCredentials(),
+        });
+        const deleteMedicalScribeJobCmd = new DeleteMedicalScribeJobCommand({
+            MedicalScribeJobName: MedicalScribeJobName,
+        });
+        await transcribeClient.send(deleteMedicalScribeJobCmd);
+        console.log(`Successfully deleted MedicalScribe job: ${MedicalScribeJobName}`);
 
-        if (s3object) {
-            // If the object exists, delete it
-            const s3Client = new S3Client({
-                region: getConfigRegion(),
-                credentials: await getCredentials(),
-            });
+        // Delete the S3 object
+        const s3Client = new S3Client({
+            region: getConfigRegion(),
+            credentials: await getCredentials(),
+        });
 
-            const deleteObjectCmd = new DeleteObjectCommand({
-                Bucket: s3object.Bucket,
-                Key: s3object.Key,
-            });
+        const bucketName = 'healthscribe-demo-storageca5a3-devb';
+        const objectKey = `${MedicalScribeJobName}/`;
 
-            await s3Client.send(deleteObjectCmd);
-            console.log(`Successfully deleted S3 folder: ${s3Uri}`);
+        const deleteObjectCmd = new DeleteObjectCommand({
+            Bucket: bucketName,
+            Key: objectKey,
+        });
 
-            // Attempt to remove using aws-amplify/storage as well
-            try {
-                await remove({
-                    key: s3object.Key,
-                    options: {
-                        accessLevel: 'guest',
-                    },
-                });
-                console.log(`Successfully removed folder using aws-amplify/storage: ${s3object.Key}`);
-            } catch (error) {
-                console.error(`Error removing folder using aws-amplify/storage: ${s3object.Key}`, error);
-            }
-        } else {
-            console.log(`S3 folder not found: ${s3Uri}`);
-        }
+        await s3Client.send(deleteObjectCmd);
+        console.log(`Successfully deleted S3 object: s3://${bucketName}/${objectKey}`);
+
     } catch (error) {
-        console.error(`Error deleting S3 folder: ${s3Uri}`, error);
+        console.error('Error in deleteHealthScribeJob:', error);
+        throw error; // Re-throw the error for the caller to handle
     }
 
     const end = performance.now();
     printTiming(end - start, 'DeleteMedicalScribeJobCommand');
-
-    return deleteMedicalScribeJobRsp;
 }
 
 async function startMedicalScribeJob(startMedicalScribeJobParams: StartMedicalScribeJobRequest) {
