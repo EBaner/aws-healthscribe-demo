@@ -21,6 +21,8 @@ async function getTranscribeClient() {
     });
 }
 
+
+
 export type ListHealthScribeJobsProps = {
     JobNameContains?: string;
     MaxResults?: number;
@@ -75,11 +77,10 @@ export type DeleteHealthScribeJobProps = {
 async function getS3LocationForJob(jobName: string) {
     // Fetch the S3 bucket and key from your data store or metadata
     const [bucketName] = useS3();
-    const key = `uploads/HealthScribeDemo/${jobName}`; // Adjust key generation logic as needed
+    const key = `s3://healthscribe-demo-storageca5a3-devb/${jobName}`; // Adjust key generation logic as needed
 
     return { bucket: bucketName, key };
 }
-
 
 async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScribeJobProps) {
     const start = performance.now();
@@ -91,29 +92,39 @@ async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScrib
     });
     const deleteMedicalScribeJobRsp = await transcribeClient.send(deleteMedicalScribeJobCmd);
 
-    // Get the S3 location for the job
-    const { bucket, key } = await getS3LocationForJob(MedicalScribeJobName);
-
-    try {
-        await remove({ 
-          key: 'healthscribe-demo-storageca5a3-devb/${MedicalScribeJobName}', 
-          options: { 
-            accessLevel: 'guest' // defaults to `guest` but can be 'private' | 'protected' | 'guest'
-          } 
-        });
-      } catch (error) {
-        console.log('Error ', error);
-      }
     // Delete the S3 object
     const s3Client = new S3Client({
-        region: getConfigRegion(), // Use the same region as the TranscribeClient
+        region: getConfigRegion(),
         credentials: await getCredentials(),
     });
+
+    const bucketName = 'healthscribe-demo-storageca5a3-devb';
+    const key = MedicalScribeJobName;
+
     const deleteObjectCmd = new DeleteObjectCommand({
-        Bucket: bucket,
+        Bucket: bucketName,
         Key: key,
     });
-    await s3Client.send(deleteObjectCmd);
+
+    try {
+        await s3Client.send(deleteObjectCmd);
+        console.log(`Successfully deleted S3 object: s3://${bucketName}/${key}`);
+    } catch (error) {
+        console.error(`Error deleting S3 object: s3://${bucketName}/${key}`, error);
+    }
+
+    // Attempt to remove using aws-amplify/storage as well
+    try {
+        await remove({
+            key: MedicalScribeJobName,
+            options: {
+                accessLevel: 'guest',
+            },
+        });
+        console.log(`Successfully removed object using aws-amplify/storage: ${MedicalScribeJobName}`);
+    } catch (error) {
+        console.error(`Error removing object using aws-amplify/storage: ${MedicalScribeJobName}`, error);
+    }
 
     const end = performance.now();
     printTiming(end - start, 'DeleteMedicalScribeJobCommand');
