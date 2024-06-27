@@ -1,5 +1,6 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
+import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import {
     DeleteMedicalScribeJobCommand,
     GetMedicalScribeJobCommand,
@@ -8,9 +9,9 @@ import {
     StartMedicalScribeJobRequest,
     TranscribeClient,
 } from '@aws-sdk/client-transcribe';
-import { DeleteObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 import { getConfigRegion, getCredentials, printTiming } from '@/utils/Sdk';
+import { useS3 } from '@/hooks/useS3';
 
 async function getTranscribeClient() {
     return new TranscribeClient({
@@ -70,16 +71,15 @@ export type DeleteHealthScribeJobProps = {
     MedicalScribeJobName: string;
 };
 
-async function getS3LocationForJob(jobName: any) {
+async function getS3LocationForJob(jobName: string) {
     // Fetch the S3 bucket and key from your data store or metadata
-    // This is a placeholder implementation. Replace it with your actual logic.
-    const bucket = 'your-s3-bucket-name'; // Replace with actual bucket name
-    const key = `your-s3-key/${jobName}`; // Replace with logic to get the correct key
+    const [bucketName] = useS3();
+    const key = `uploads/HealthScribeDemo/${jobName}`; // Adjust key generation logic as needed
 
-    return { bucket, key };
+    return { bucket: bucketName, key };
 }
 
-async function deleteHealthScribeJob({ MedicalScribeJobName }: { MedicalScribeJobName: string }) {
+async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScribeJobProps) {
     const start = performance.now();
 
     // Delete the MedicalScribe job
@@ -93,7 +93,10 @@ async function deleteHealthScribeJob({ MedicalScribeJobName }: { MedicalScribeJo
     const { bucket, key } = await getS3LocationForJob(MedicalScribeJobName);
 
     // Delete the S3 object
-    const s3Client = new S3Client();
+    const s3Client = new S3Client({
+        region: getConfigRegion(), // Use the same region as the TranscribeClient
+        credentials: await getCredentials(),
+    });
     const deleteObjectCmd = new DeleteObjectCommand({
         Bucket: bucket,
         Key: key,
@@ -105,6 +108,7 @@ async function deleteHealthScribeJob({ MedicalScribeJobName }: { MedicalScribeJo
 
     return deleteMedicalScribeJobRsp;
 }
+
 
 async function startMedicalScribeJob(startMedicalScribeJobParams: StartMedicalScribeJobRequest) {
     const start = performance.now();
