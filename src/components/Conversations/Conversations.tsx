@@ -169,9 +169,6 @@ export default function Conversations() {
 
     return (
         <>
-            <Button onClick={() => setShowFiltered(!showFiltered)}>
-                {showFiltered ? 'Show All Results' : 'Show Filtered Results'}
-            </Button>
             <Table
                 {...collectionProps}
                 columnDefinitions={columnDefs}
