@@ -21,8 +21,6 @@ async function getTranscribeClient() {
     });
 }
 
-
-
 export type ListHealthScribeJobsProps = {
     JobNameContains?: string;
     MaxResults?: number;
@@ -74,14 +72,6 @@ export type DeleteHealthScribeJobProps = {
     MedicalScribeJobName: string;
 };
 
-async function getS3LocationForJob(jobName: string) {
-    // Fetch the S3 bucket and key from your data store or metadata
-    const [bucketName] = useS3();
-    const key = `s3://healthscribe-demo-storageca5a3-devb/${jobName}`; // Adjust key generation logic as needed
-
-    return { bucket: bucketName, key };
-}
-
 async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScribeJobProps) {
     const start = performance.now();
 
@@ -94,12 +84,12 @@ async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScrib
 
     // Delete the S3 object
     const s3Client = new S3Client({
-        region: getConfigRegion(),
+        region: 'us-east-1', // Specified region
         credentials: await getCredentials(),
     });
 
-    const bucketName = 'healthscribe-demo-storageca5a3-devb';
-    const key = MedicalScribeJobName;
+    const bucketName = 'amplify-awshealthscribedemo-devb-ca5a3-deployment';
+    const key = `studio-backend/storage/healthScribeDemoStorage/${MedicalScribeJobName}`;
 
     const deleteObjectCmd = new DeleteObjectCommand({
         Bucket: bucketName,
@@ -116,7 +106,7 @@ async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScrib
     // Attempt to remove using aws-amplify/storage as well
     try {
         await remove({
-            key: MedicalScribeJobName,
+            key: `studio-backend/storage/healthScribeDemoStorage/${MedicalScribeJobName}`,
             options: {
                 accessLevel: 'guest',
             },
@@ -131,7 +121,6 @@ async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScrib
 
     return deleteMedicalScribeJobRsp;
 }
-
 async function startMedicalScribeJob(startMedicalScribeJobParams: StartMedicalScribeJobRequest) {
     const start = performance.now();
     const transcribeClient = await getTranscribeClient();
