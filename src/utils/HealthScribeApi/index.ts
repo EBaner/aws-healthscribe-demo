@@ -82,38 +82,59 @@ async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScrib
     });
     const deleteMedicalScribeJobRsp = await transcribeClient.send(deleteMedicalScribeJobCmd);
 
-    // Delete the S3 object
+    // Delete the S3 objects
     const s3Client = new S3Client({
-        region: 'us-east-1', // Specified region
+        region: getConfigRegion(),
         credentials: await getCredentials(),
     });
 
-    const bucketName = 'amplify-awshealthscribedemo-devb-ca5a3-deployment';
-    const key = `studio-backend/storage/healthScribeDemoStorage/${MedicalScribeJobName}`;
+    const [outputBucket, getUploadMetadata] = useS3();
+    const uploadLocation = getUploadMetadata();
 
-    const deleteObjectCmd = new DeleteObjectCommand({
-        Bucket: bucketName,
-        Key: key,
-    });
+    // Construct the base key for the job folder
+    const baseKey = `${uploadLocation.key}/${MedicalScribeJobName}`;
 
-    try {
-        await s3Client.send(deleteObjectCmd);
-        console.log(`Successfully deleted S3 object: s3://${bucketName}/${key}`);
-    } catch (error) {
-        console.error(`Error deleting S3 object: s3://${bucketName}/${key}`, error);
+    // Define the files to delete
+    const filesToDelete = ['summary.json', 'transcript.json'];
+
+    for (const file of filesToDelete) {
+        const key = `${baseKey}/${file}`;
+        const deleteObjectCmd = new DeleteObjectCommand({
+            Bucket: outputBucket,
+            Key: key,
+        });
+
+        try {
+            await s3Client.send(deleteObjectCmd);
+            console.log(`Successfully deleted S3 object: s3://${outputBucket}/${key}`);
+        } catch (error) {
+            console.error(`Error deleting S3 object: s3://${outputBucket}/${key}`, error);
+        }
+
+        // Attempt to remove using aws-amplify/storage as well
+        try {
+            await remove({
+                key: key,
+                options: {
+                    accessLevel: 'guest',
+                },
+            });
+            console.log(`Successfully removed object using aws-amplify/storage: ${key}`);
+        } catch (error) {
+            console.error(`Error removing object using aws-amplify/storage: ${key}`, error);
+        }
     }
 
-    // Attempt to remove using aws-amplify/storage as well
+    // Optionally, delete the folder itself if your S3 setup requires it
     try {
-        await remove({
-            key: `studio-backend/storage/healthScribeDemoStorage/${MedicalScribeJobName}`,
-            options: {
-                accessLevel: 'guest',
-            },
+        const deleteFolderCmd = new DeleteObjectCommand({
+            Bucket: outputBucket,
+            Key: baseKey + '/',
         });
-        console.log(`Successfully removed object using aws-amplify/storage: ${MedicalScribeJobName}`);
+        await s3Client.send(deleteFolderCmd);
+        console.log(`Successfully deleted S3 folder: s3://${outputBucket}/${baseKey}/`);
     } catch (error) {
-        console.error(`Error removing object using aws-amplify/storage: ${MedicalScribeJobName}`, error);
+        console.error(`Error deleting S3 folder: s3://${outputBucket}/${baseKey}/`, error);
     }
 
     const end = performance.now();
@@ -121,6 +142,7 @@ async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScrib
 
     return deleteMedicalScribeJobRsp;
 }
+
 async function startMedicalScribeJob(startMedicalScribeJobParams: StartMedicalScribeJobRequest) {
     const start = performance.now();
     const transcribeClient = await getTranscribeClient();
