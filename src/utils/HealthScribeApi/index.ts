@@ -137,7 +137,6 @@ async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScrib
     printTiming(end - start, 'DeleteMedicalScribeJobCommand');
 }
 
-
 async function startMedicalScribeJob(startMedicalScribeJobParams: StartMedicalScribeJobRequest) {
     const start = performance.now();
     const transcribeClient = await getTranscribeClient();

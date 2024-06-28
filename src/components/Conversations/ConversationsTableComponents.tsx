@@ -106,7 +106,7 @@ function TableHeaderActions({
     setDeleteModalActive,
     refreshTable,
     showFiltered,
-    setShowFiltered
+    setShowFiltered,
 }: TableHeaderActionsProps) {
     const DO_NOT_DELETE = ['Demo-Fatigue', 'Demo-Kidney', 'Demo-Knee'];
 
@@ -131,10 +131,8 @@ function TableHeaderActions({
             >
                 Delete
             </Button>
-            <Button
-                onClick={() => setShowFiltered(!showFiltered)}
-            >
-                {showFiltered ? "Show All" : "Show Filtered"}
+            <Button onClick={() => setShowFiltered(!showFiltered)}>
+                {showFiltered ? 'Show All' : 'Show Filtered'}
             </Button>
         </SpaceBetween>
     );
@@ -154,7 +152,13 @@ type TableHeaderProps = {
     showFiltered: boolean;
     setShowFiltered: React.Dispatch<React.SetStateAction<boolean>>;
 };
-function TableHeader({ selectedHealthScribeJob, headerCounterText, listHealthScribeJobs, showFiltered, setShowFiltered }: TableHeaderProps) {
+function TableHeader({
+    selectedHealthScribeJob,
+    headerCounterText,
+    listHealthScribeJobs,
+    showFiltered,
+    setShowFiltered,
+}: TableHeaderProps) {
     const [deleteModalActive, setDeleteModalActive] = useState<boolean>(false);
     const [searchParams, setSearchParams] = useState<ListHealthScribeJobsProps>({});
     const [debouncedSearchParams] = useDebounce(searchParams, 500);
