@@ -8,7 +8,7 @@ export function override(resources: AmplifyS3ResourceTemplate, amplifyProjectInf
      **/
     resources.s3AuthPublicPolicy.policyDocument.Statement.push({
         Effect: 'Allow',
-        Action: ['s3:PutObject', 's3:PutObjectAcl', 's3:GetObject', 's3:PutObjectTagging'],
+        Action: ['s3:PutObject', 's3:PutObjectAcl', 's3:GetObject', 's3:PutObjectTagging', 's3:RemoveObject'],
         Resource: `${resources.s3Bucket.attrArn}/*`,
     });
 
