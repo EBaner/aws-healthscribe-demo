@@ -9,14 +9,13 @@ import {
     StartMedicalScribeJobRequest,
     TranscribeClient,
 } from '@aws-sdk/client-transcribe';
-import { remove } from 'aws-amplify/storage';
+import { remove, list} from 'aws-amplify/storage';
+
 
 import { useS3 } from '@/hooks/useS3';
 import { getConfigRegion, getCredentials, printTiming } from '@/utils/Sdk';
 
 import { getS3Object } from '../S3Api';
-
-
 
 async function getTranscribeClient() {
     return new TranscribeClient({
@@ -76,7 +75,6 @@ export type DeleteHealthScribeJobProps = {
     MedicalScribeJobName: string;
 };
 
-
 async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScribeJobProps) {
     const start = performance.now();
 
@@ -92,22 +90,21 @@ async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScrib
         await transcribeClient.send(deleteMedicalScribeJobCmd);
         console.log(`Successfully deleted MedicalScribe job: ${MedicalScribeJobName}`);
 
-        // Delete the S3 object
-        const s3Client = new S3Client({
-            region: getConfigRegion(),
-            credentials: await getCredentials(),
-        });
+        // Delete the S3 folder and its contents
+        const folderKey = `${MedicalScribeJobName}/`;
+        
+        // List all objects in the folder
+        const listResult = await list({ prefix: folderKey });
+        
+        // Delete each object in the folder
+        for (const item of listResult.items) {
+            await remove({ key: item.key });
+            console.log(`Deleted object: ${item.key}`);
+        }
 
-        const bucketName = 'healthscribe-demo-storageca5a3-devb';
-        const objectKey = `${MedicalScribeJobName}/`;
-
-        const deleteObjectCmd = new DeleteObjectCommand({
-            Bucket: bucketName,
-            Key: objectKey,
-        });
-
-        await s3Client.send(deleteObjectCmd);
-        console.log(`Successfully deleted S3 object: s3://${bucketName}/${objectKey}`);
+        // Delete the folder itself (if necessary)
+        await remove({ key: folderKey });
+        console.log(`Successfully deleted S3 folder: ${folderKey}`);
 
     } catch (error) {
         console.error('Error in deleteHealthScribeJob:', error);
