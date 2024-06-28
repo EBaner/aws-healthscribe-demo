@@ -9,8 +9,7 @@ import {
     StartMedicalScribeJobRequest,
     TranscribeClient,
 } from '@aws-sdk/client-transcribe';
-import { remove, list} from 'aws-amplify/storage';
-
+import { list, remove } from 'aws-amplify/storage';
 
 import { useS3 } from '@/hooks/useS3';
 import { getConfigRegion, getCredentials, printTiming } from '@/utils/Sdk';
@@ -75,6 +74,7 @@ export type DeleteHealthScribeJobProps = {
     MedicalScribeJobName: string;
 };
 
+
 async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScribeJobProps) {
     const start = performance.now();
 
@@ -90,14 +90,17 @@ async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScrib
         await transcribeClient.send(deleteMedicalScribeJobCmd);
         console.log(`Successfully deleted MedicalScribe job: ${MedicalScribeJobName}`);
 
+        // Get the S3 bucket name
+        const [bucketName] = useS3();
+
         // Delete the S3 folder and its contents
-        const folderKey = `${MedicalScribeJobName}/`;
-        
+        const folderKey = `uploads/HealthScribeDemo/${MedicalScribeJobName}/`;
+
         // List all objects in the folder
         const listResult = await list({ prefix: folderKey });
-        
+
         // Delete each object in the folder
-        for (const item of listResult.items) {
+        for (const item of listResult.items || []) {
             await remove({ key: item.key });
             console.log(`Deleted object: ${item.key}`);
         }
@@ -105,7 +108,6 @@ async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScrib
         // Delete the folder itself (if necessary)
         await remove({ key: folderKey });
         console.log(`Successfully deleted S3 folder: ${folderKey}`);
-
     } catch (error) {
         console.error('Error in deleteHealthScribeJob:', error);
         throw error; // Re-throw the error for the caller to handle
