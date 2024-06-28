@@ -35,11 +35,11 @@ const authUiComponents = {
                     <Authenticator.SignUp.FormFields />
                     <div>
                         <label>Clinic</label>
-                        <input name="custom:Clinic" placeholder="Enter your clinic name" required />
+                        <input name="custom:Clinic" placeholder="Enter your clinic name" />
                     </div>
                 </React.Fragment>
             );
-        },
+        }
     },
 };
 

@@ -20,10 +20,7 @@
             "Requires Numbers",
             "Requires Symbols"
         ],
-        "requiredAttributes": ["email",  {
-            "attributeDataType": "String",
-            "attributeName": "custom:Clinic"
-        }],
+        "requiredAttributes": ["email"],
         "aliasAttributes": [],
         "userpoolClientGenerateSecret": false,
         "userpoolClientRefreshTokenValidity": "7",
@@ -44,6 +41,13 @@
         "userPoolGroupList": [],
         "serviceName": "Cognito",
         "usernameCaseSensitive": false,
-        "useEnabledMfas": true
+        "useEnabledMfas": true,
+        "schema": [
+            {
+                "name": "custom:Clinic",
+                "isRequired": false,
+                "mutable": true
+            }
+        ]
     }
 }
