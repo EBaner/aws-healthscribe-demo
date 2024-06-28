@@ -235,11 +235,11 @@ export default function TopPanel({
         }
 
         /*made for modal
+
         function handleInputChange(event: BaseChangeDetail) {
             console.log(event.detail.value);
             setEmail(event.detail.value);
         }
-        */
 
         const Modal: React.FC<ModalProps> = ({ visible, onDismiss }) => {
             if (!visible) return null;
@@ -250,10 +250,11 @@ export default function TopPanel({
                 </div>
             );
         };
+        */
 
         // <Button onClick={() => handleEmailPrompt()}>Export Summary</Button>
 
-        const [visible, setVisible] = React.useState(true);
+        const [visible, setVisible] = useState<boolean>(false);
         return (
             <Header
                 variant="h3"
@@ -282,10 +283,9 @@ export default function TopPanel({
                             }
                             header="Export Summary"
                         >
-                            <FormField label="" description="Please enter the patient's email here:">
-                                <Input type="email" value={email} placeholder="Email address" />
+                            <FormField label="Export patient summary" description="Please enter the patient's email here:">
+                                <Input value={email} />
                             </FormField>
-                            Export Summary
                         </Modal>
                         <Button onClick={() => setShowOutputModal(true)}>View HealthScribe Output</Button>
                         <Button variant="primary" onClick={() => navigate('/conversations')}>
