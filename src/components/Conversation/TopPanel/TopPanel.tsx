@@ -33,12 +33,9 @@ import { extractRegions } from './extractRegions';
 type ExportModalProps = {
     exportModalActive: boolean;
     setExportModalActive: React.Dispatch<React.SetStateAction<boolean>>;
-}
+};
 
-function ExportModal({
-    exportModalActive,
-    setExportModalActive,
-}: ExportModalProps) {
+function ExportModal({ exportModalActive, setExportModalActive }: ExportModalProps) {
     const [patientEmail, setPatientEmail] = useState<string>('');
 
     async function doExport(email: string) {
@@ -52,22 +49,20 @@ function ExportModal({
             footer={
                 <Box float="right">
                     <SpaceBetween direction="horizontal" size="xs">
-                        <Button variant="link" onClick={() => setExportModalActive(false)}>Cancel</Button>
+                        <Button variant="link" onClick={() => setExportModalActive(false)}>
+                            Cancel
+                        </Button>
                         <Button variant="primary">Ok</Button>
                     </SpaceBetween>
                 </Box>
-                }
-                header="Export Summary"
-                >
-                <FormField
-                    label="Export patient summary"
-                    description="Please enter the patient's email here:"
-                >
-                    <Input value={patientEmail}/>
-                </FormField>
+            }
+            header="Export Summary"
+        >
+            <FormField label="Export patient summary" description="Please enter the patient's email here:">
+                <Input value={patientEmail} />
+            </FormField>
         </Modal>
-    )
-
+    );
 }
 
 type TopPanelProps = {
@@ -293,8 +288,8 @@ export default function TopPanel({
                             Download
                         </ButtonDropdown>
                         <ExportModal
-                            exportModalActive = {exportModalActive}
-                            setExportModalActive = {setExportModalActive}
+                            exportModalActive={exportModalActive}
+                            setExportModalActive={setExportModalActive}
                         />
                         <Button onClick={() => setShowOutputModal(true)}>View HealthScribe Output</Button>
                         <Button variant="primary" onClick={() => navigate('/conversations')}>
