@@ -1,15 +1,20 @@
 import React, { createContext, useContext } from 'react';
+
 import { useAuthenticator } from '@aws-amplify/ui-react';
 import { Amplify } from 'aws-amplify';
 import { AuthUser } from 'aws-amplify/auth';
+
 import config from '@/amplifyconfiguration.json';
 
+
+
 Amplify.configure(config);
+
 
 type ExtendedAuthUser = AuthUser & {
     attributes?: {
         'custom:Clinic'?: string;
-        [key: string]: any;
+        [key: string]: string | undefined;
     };
 };
 
