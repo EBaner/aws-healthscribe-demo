@@ -65,7 +65,7 @@ function ExportModal({ exportModalActive, setExportModalActive }: ExportModalPro
             header="Export Summary"
         >
             <FormField label="Export patient summary" description="Please enter the patient's email here:">
-                <Input value={patientEmail} onChange={({ detail }) => setPatientEmail(detail.value)} />
+                <Input value={patientEmail} placeholder="example@gmail.com" onChange={({ detail }) => setPatientEmail(detail.value)} />
             </FormField>
         </Modal>
     );
