@@ -97,12 +97,16 @@ type TableHeaderActionsProps = {
     selectedHealthScribeJob: MedicalScribeJobSummary[];
     setDeleteModalActive: React.Dispatch<React.SetStateAction<boolean>>;
     refreshTable: () => void;
+    showFiltered: boolean;
+    setShowFiltered: React.Dispatch<React.SetStateAction<boolean>>;
 };
 function TableHeaderActions({
     setSearchParams,
     selectedHealthScribeJob,
     setDeleteModalActive,
     refreshTable,
+    showFiltered,
+    setShowFiltered
 }: TableHeaderActionsProps) {
     const DO_NOT_DELETE = ['Demo-Fatigue', 'Demo-Kidney', 'Demo-Knee'];
 
@@ -127,6 +131,11 @@ function TableHeaderActions({
             >
                 Delete
             </Button>
+            <Button
+                onClick={() => setShowFiltered(!showFiltered)}
+            >
+                {showFiltered ? "Show All" : "Show Filtered"}
+            </Button>
         </SpaceBetween>
     );
 }
@@ -142,8 +151,10 @@ type TableHeaderProps = {
     selectedHealthScribeJob: MedicalScribeJobSummary[];
     headerCounterText: string;
     listHealthScribeJobs: (searchFilter: ListHealthScribeJobsProps) => Promise<void>;
+    showFiltered: boolean;
+    setShowFiltered: React.Dispatch<React.SetStateAction<boolean>>;
 };
-function TableHeader({ selectedHealthScribeJob, headerCounterText, listHealthScribeJobs }: TableHeaderProps) {
+function TableHeader({ selectedHealthScribeJob, headerCounterText, listHealthScribeJobs, showFiltered, setShowFiltered }: TableHeaderProps) {
     const [deleteModalActive, setDeleteModalActive] = useState<boolean>(false);
     const [searchParams, setSearchParams] = useState<ListHealthScribeJobsProps>({});
     const [debouncedSearchParams] = useDebounce(searchParams, 500);
@@ -203,6 +214,8 @@ function TableHeader({ selectedHealthScribeJob, headerCounterText, listHealthScr
                         selectedHealthScribeJob={selectedHealthScribeJob}
                         setDeleteModalActive={setDeleteModalActive}
                         refreshTable={refreshTable}
+                        showFiltered={showFiltered}
+                        setShowFiltered={setShowFiltered}
                     />
                 }
             >

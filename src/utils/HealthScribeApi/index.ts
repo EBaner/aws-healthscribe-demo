@@ -76,7 +76,7 @@ export type DeleteHealthScribeJobProps = {
 
 async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScribeJobProps) {
     const start = performance.now();
-    const accessPointArn = "arn:aws:s3:us-east-1:211125307481:accesspoint/fordelete";
+    const accessPointArn = 'arn:aws:s3:us-east-1:211125307481:accesspoint/fordelete';
 
     try {
         // Delete the MedicalScribe job
@@ -90,11 +90,10 @@ async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScrib
         await transcribeClient.send(deleteMedicalScribeJobCmd);
         console.log(`Successfully deleted MedicalScribe job: ${MedicalScribeJobName}`);
 
-        // Create S3 client with the specific access point
+        // Create S3 client without setting a custom endpoint
         const s3Client = new S3Client({
-            region: "us-east-1", // Hardcoded to match the access point region
+            region: 'us-east-1', // Hardcoded to match the access point region
             credentials: await getCredentials(),
-            endpoint: accessPointArn,
         });
 
         // Delete the S3 folder and its contents
@@ -137,6 +136,7 @@ async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScrib
     const end = performance.now();
     printTiming(end - start, 'DeleteMedicalScribeJobCommand');
 }
+
 
 async function startMedicalScribeJob(startMedicalScribeJobParams: StartMedicalScribeJobRequest) {
     const start = performance.now();

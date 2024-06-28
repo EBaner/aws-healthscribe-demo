@@ -283,7 +283,10 @@ export default function TopPanel({
                             }
                             header="Export Summary"
                         >
-                            <FormField label="Export patient summary" description="Please enter the patient's email here:">
+                            <FormField
+                                label="Export patient summary"
+                                description="Please enter the patient's email here:"
+                            >
                                 <Input value={email} />
                             </FormField>
                         </Modal>
