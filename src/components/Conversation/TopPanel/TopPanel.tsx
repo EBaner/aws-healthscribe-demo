@@ -30,6 +30,46 @@ import { SmallTalkList } from '../types';
 import styles from './TopPanel.module.css';
 import { extractRegions } from './extractRegions';
 
+type ExportModalProps = {
+    exportModalActive: boolean;
+    setExportModalActive: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+function ExportModal({
+    exportModalActive,
+    setExportModalActive,
+}: ExportModalProps) {
+    const [patientEmail, setPatientEmail] = useState<string>('');
+
+    async function doExport(email: string) {
+        console.log('Exporting to ' + email);
+    }
+
+    return (
+        <Modal
+            onDismiss={() => setExportModalActive(false)}
+            visible={exportModalActive}
+            footer={
+                <Box float="right">
+                    <SpaceBetween direction="horizontal" size="xs">
+                        <Button variant="link" onClick={() => setExportModalActive(false)}>Cancel</Button>
+                        <Button variant="primary">Ok</Button>
+                    </SpaceBetween>
+                </Box>
+                }
+                header="Export Summary"
+                >
+                <FormField
+                    label="Export patient summary"
+                    description="Please enter the patient's email here:"
+                >
+                    <Input value={patientEmail}/>
+                </FormField>
+        </Modal>
+    )
+
+}
+
 type TopPanelProps = {
     jobLoading: boolean;
     jobDetails: MedicalScribeJob | null;
@@ -210,6 +250,8 @@ export default function TopPanel({
     }, [wavesurfer, smallTalkCheck, smallTalkList, silenceChecked, silencePeaks]);
 
     function AudioHeader() {
+        const [exportModalActive, setExportModalActive] = useState<boolean>(false);
+
         async function openUrl(detail: { id: string }) {
             let jobUrl: string = '';
             if (detail.id === 'audio') {
@@ -234,26 +276,6 @@ export default function TopPanel({
             }
         }
 
-        /*made for modal
-
-        function handleInputChange(event: BaseChangeDetail) {
-            console.log(event.detail.value);
-            setEmail(event.detail.value);
-        }
-
-        const Modal: React.FC<ModalProps> = ({ visible, onDismiss }) => {
-            if (!visible) return null;
-
-            return (
-                <div>
-                    <button onClick={onDismiss}>Close</button>
-                </div>
-            );
-        };
-        */
-
-        // <Button onClick={() => handleEmailPrompt()}>Export Summary</Button>
-
         const [visible, setVisible] = useState<boolean>(false);
         return (
             <Header
@@ -270,23 +292,10 @@ export default function TopPanel({
                         >
                             Download
                         </ButtonDropdown>
-                        <Modal
-                            onDismiss={() => setVisible(false)}
-                            visible={visible}
-                            footer={
-                                <Box float="right">
-                                    <SpaceBetween direction="horizontal" size="xs">
-                                        <Button variant="link">Cancel</Button>
-                                        <Button variant="primary">Ok</Button>
-                                    </SpaceBetween>
-                                </Box>
-                            }
-                            header="Export Summary"
-                        >
-                            <FormField label="Export patient summary" description="Please enter the patient's email here:">
-                                <Input value={email} />
-                            </FormField>
-                        </Modal>
+                        <ExportModal
+                            exportModalActive = {exportModalActive}
+                            setExportModalActive = {setExportModalActive}
+                        />
                         <Button onClick={() => setShowOutputModal(true)}>View HealthScribe Output</Button>
                         <Button variant="primary" onClick={() => navigate('/conversations')}>
                             Exit Conversation
