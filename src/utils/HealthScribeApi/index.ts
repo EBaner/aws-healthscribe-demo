@@ -1,6 +1,6 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
-import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3';
 import {
     DeleteMedicalScribeJobCommand,
     GetMedicalScribeJobCommand,
@@ -74,9 +74,9 @@ export type DeleteHealthScribeJobProps = {
     MedicalScribeJobName: string;
 };
 
-
 async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScribeJobProps) {
     const start = performance.now();
+    const accessPointArn = 'arn:aws:s3:us-east-1:211125307481:accesspoint/fordelete';
 
     try {
         // Delete the MedicalScribe job
@@ -90,23 +90,43 @@ async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScrib
         await transcribeClient.send(deleteMedicalScribeJobCmd);
         console.log(`Successfully deleted MedicalScribe job: ${MedicalScribeJobName}`);
 
-        // Get the S3 bucket name
-        const [bucketName] = useS3();
+        // Create S3 client without setting a custom endpoint
+        const s3Client = new S3Client({
+            region: 'us-east-1', // Hardcoded to match the access point region
+            credentials: await getCredentials(),
+        });
 
         // Delete the S3 folder and its contents
         const folderKey = `uploads/HealthScribeDemo/${MedicalScribeJobName}/`;
 
         // List all objects in the folder
-        const listResult = await list({ prefix: folderKey });
+        const listParams = {
+            Bucket: accessPointArn, // Use the access point ARN as the "bucket"
+            Prefix: folderKey,
+        };
+        const listCommand = new ListObjectsV2Command(listParams);
+        const listResult = await s3Client.send(listCommand);
 
         // Delete each object in the folder
-        for (const item of listResult.items || []) {
-            await remove({ key: item.key });
-            console.log(`Deleted object: ${item.key}`);
+        for (const item of listResult.Contents || []) {
+            if (item.Key) {
+                const deleteParams = {
+                    Bucket: accessPointArn, // Use the access point ARN as the "bucket"
+                    Key: item.Key,
+                };
+                const deleteCommand = new DeleteObjectCommand(deleteParams);
+                await s3Client.send(deleteCommand);
+                console.log(`Deleted object: ${item.Key}`);
+            }
         }
 
         // Delete the folder itself (if necessary)
-        await remove({ key: folderKey });
+        const deleteFolderParams = {
+            Bucket: accessPointArn, // Use the access point ARN as the "bucket"
+            Key: folderKey,
+        };
+        const deleteFolderCommand = new DeleteObjectCommand(deleteFolderParams);
+        await s3Client.send(deleteFolderCommand);
         console.log(`Successfully deleted S3 folder: ${folderKey}`);
     } catch (error) {
         console.error('Error in deleteHealthScribeJob:', error);
@@ -116,6 +136,7 @@ async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScrib
     const end = performance.now();
     printTiming(end - start, 'DeleteMedicalScribeJobCommand');
 }
+
 
 async function startMedicalScribeJob(startMedicalScribeJobParams: StartMedicalScribeJobRequest) {
     const start = performance.now();

@@ -58,7 +58,7 @@ export default function Conversations() {
         'Conversation-Table-Preferences',
         DEFAULT_PREFERENCES
     ); // Conversation table preferences
-    const [showFiltered, setShowFiltered] = useState(true); // State for toggling filtered and non-filtered results
+    const [showFiltered, setShowFiltered] = useState<boolean>(true);
 
     // Header counter for the number of HealthScribe jobs
     const headerCounterText = `(${healthScribeJobs.length}${Object.keys(moreHealthScribeJobs).length > 0 ? '+' : ''})`;
@@ -177,6 +177,8 @@ export default function Conversations() {
                         selectedHealthScribeJob={selectedHealthScribeJob}
                         headerCounterText={headerCounterText}
                         listHealthScribeJobs={listHealthScribeJobsWrapper}
+                        showFiltered={showFiltered}
+                        setShowFiltered={setShowFiltered}
                     />
                 }
                 items={showFiltered ? items : healthScribeJobs}
