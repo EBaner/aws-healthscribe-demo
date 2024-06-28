@@ -56,17 +56,16 @@ function ExportModal({ exportModalActive, setExportModalActive }: ExportModalPro
                         <Button variant="link" onClick={() => setExportModalActive(false)}>
                             Cancel
                         </Button>
-                        <Button variant="primary" onClick={doExport}>Export</Button>
+                        <Button variant="primary" onClick={doExport}>
+                            Export
+                        </Button>
                     </SpaceBetween>
                 </Box>
             }
             header="Export Summary"
         >
             <FormField label="Export patient summary" description="Please enter the patient's email here:">
-                <Input 
-                    value={patientEmail} 
-                    onChange={({ detail }) => setPatientEmail(detail.value)}
-                />
+                <Input value={patientEmail} onChange={({ detail }) => setPatientEmail(detail.value)} />
             </FormField>
         </Modal>
     );
@@ -252,8 +251,7 @@ export default function TopPanel({
         });
     }, [wavesurfer, smallTalkCheck, smallTalkList, silenceChecked, silencePeaks]);
 
-    function AudioHeader(setExportModalActive) {
-
+    function AudioHeader() {
         async function openUrl(detail: { id: string }) {
             let jobUrl: string = '';
             if (detail.id === 'audio') {
@@ -284,9 +282,7 @@ export default function TopPanel({
                         >
                             Download
                         </ButtonDropdown>
-                        <Button onClick={() => setExportModalActive(true)}>
-                            Export
-                        </Button>
+                        <Button onClick={() => setExportModalActive(true)}>Export</Button>
                         <Button onClick={() => setShowOutputModal(true)}>View HealthScribe Output</Button>
                         <Button variant="primary" onClick={() => navigate('/conversations')}>
                             Exit Conversation
@@ -355,10 +351,7 @@ export default function TopPanel({
                 playBackSpeed={playBackSpeed}
                 setPlayBackSpeed={setPlayBackSpeed}
             />
-            <Container header={<AudioHeader 
-                setExportModalActive={setExportModalActive}
-                />
-            }>
+            <Container header={<AudioHeader />}>
                 {(jobLoading || audioLoading) && <Loading />}
                 <SegmentControls />
                 <div style={{ height: audioLoading ? 0 : '' }}>
@@ -371,10 +364,7 @@ export default function TopPanel({
                     />
                 </div>
             </Container>
-            <ExportModal
-                exportModalActive={exportModalActive}
-                setExportModalActive={setExportModalActive}
-            />
+            <ExportModal exportModalActive={exportModalActive} setExportModalActive={setExportModalActive} />
         </>
     );
 }
