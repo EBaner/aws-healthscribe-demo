@@ -12,6 +12,20 @@ import { useAppSettingsContext } from '@/store/appSettings';
 import { ComprehendMedicalNereCost, EnableComprehendMedicalPopover } from '../Common/ComprehendMedical';
 import styles from './SummarizedConcepts.module.css';
 
+/*
+Comprehend medical extraction button (right after settings icon)
+
+<Button
+    disabled={!extractHealthDataEnabled || dataExtracted}
+    loading={extractingData}
+    onClick={() => handleExtractHealthData()}
+>
+    Extract Health Data
+</Button>
+<EnableComprehendMedicalPopover />
+<ComprehendMedicalNereCost clinicalDocumentNereUnits={clinicalDocumentNereUnits} />
+*/
+
 type RightPanelActionsProps = {
     hasInsightSections: boolean;
     dataExtracted: boolean;
@@ -38,15 +52,6 @@ export function RightPanelActions({
     return (
         <SpaceBetween size={'xs'} alignItems="center" direction={'horizontal'}>
             <Button iconName="settings" variant="icon" onClick={() => setRightPanelSettingsOpen(true)} />
-            <Button
-                disabled={!extractHealthDataEnabled || dataExtracted}
-                loading={extractingData}
-                onClick={() => handleExtractHealthData()}
-            >
-                Extract Health Data
-            </Button>
-            <EnableComprehendMedicalPopover />
-            <ComprehendMedicalNereCost clinicalDocumentNereUnits={clinicalDocumentNereUnits} />
         </SpaceBetween>
     );
 }
