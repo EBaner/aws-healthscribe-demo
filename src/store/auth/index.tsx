@@ -1,16 +1,21 @@
 import React, { createContext, useContext } from 'react';
-
 import { useAuthenticator } from '@aws-amplify/ui-react';
 import { Amplify } from 'aws-amplify';
 import { AuthUser } from 'aws-amplify/auth';
-
 import config from '@/amplifyconfiguration.json';
 
 Amplify.configure(config);
 
+type ExtendedAuthUser = AuthUser & {
+    attributes?: {
+        'custom:Clinic'?: string;
+        [key: string]: any;
+    };
+};
+
 type AuthContextType = {
     isUserAuthenticated: boolean;
-    user: AuthUser | null;
+    user: ExtendedAuthUser | null;
     signOut: () => void;
 };
 
@@ -33,7 +38,7 @@ export default function AuthContextProvider({ children }: { children: React.Reac
 
     const authContextValue = {
         isUserAuthenticated: authStatus === 'authenticated',
-        user: user,
+        user: user as ExtendedAuthUser,
         signOut: signOut,
     };
 

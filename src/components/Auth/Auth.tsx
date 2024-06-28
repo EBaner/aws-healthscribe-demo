@@ -39,7 +39,7 @@ const authUiComponents = {
                     </div>
                 </React.Fragment>
             );
-        }
+        },
     },
 };
 
