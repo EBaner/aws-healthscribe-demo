@@ -20,7 +20,10 @@
             "Requires Numbers",
             "Requires Symbols"
         ],
-        "requiredAttributes": ["email", "custom:Clinic"],
+        "requiredAttributes": ["email",  {
+            "attributeDataType": "String",
+            "attributeName": "custom:Clinic"
+        }],
         "aliasAttributes": [],
         "userpoolClientGenerateSecret": false,
         "userpoolClientRefreshTokenValidity": "7",
