@@ -38,8 +38,12 @@ type ExportModalProps = {
 function ExportModal({ exportModalActive, setExportModalActive }: ExportModalProps) {
     const [patientEmail, setPatientEmail] = useState<string>('');
 
-    async function doExport(email: string) {
-        console.log('Exporting to ' + email);
+    async function doExport() {
+        console.log('Exporting to ' + patientEmail);
+
+        //Todo export logic
+
+        setExportModalActive(false);
     }
 
     return (
@@ -52,14 +56,17 @@ function ExportModal({ exportModalActive, setExportModalActive }: ExportModalPro
                         <Button variant="link" onClick={() => setExportModalActive(false)}>
                             Cancel
                         </Button>
-                        <Button variant="primary">Ok</Button>
+                        <Button variant="primary" onClick={doExport}>Export</Button>
                     </SpaceBetween>
                 </Box>
             }
             header="Export Summary"
         >
             <FormField label="Export patient summary" description="Please enter the patient's email here:">
-                <Input value={patientEmail} />
+                <Input 
+                    value={patientEmail} 
+                    onChange={({ detail }) => setPatientEmail(detail.value)}
+                />
             </FormField>
         </Modal>
     );
@@ -99,6 +106,7 @@ export default function TopPanel({
     const [silencePercent, setSilencePercent] = useState<number>(0); // silence percentage
     const [smallTalkPercent, setSmallTalkPercent] = useState<number>(0); // small talk percentage
     const [email, setEmail] = useState('');
+    const [exportModalActive, setExportModalActive] = useState<boolean>(false);
 
     const waveformElement = document.getElementById('waveform'); // wavesurfer.js wrapper element
 
@@ -244,8 +252,7 @@ export default function TopPanel({
         });
     }, [wavesurfer, smallTalkCheck, smallTalkList, silenceChecked, silencePeaks]);
 
-    function AudioHeader() {
-        const [exportModalActive, setExportModalActive] = useState<boolean>(false);
+    function AudioHeader(setExportModalActive) {
 
         async function openUrl(detail: { id: string }) {
             let jobUrl: string = '';
@@ -262,16 +269,6 @@ export default function TopPanel({
             }
         }
 
-        //made for button
-        async function handleEmailPrompt() {
-            const enteredEmail = window.prompt('Please enter patient email address:');
-            if (enteredEmail) {
-                setEmail(enteredEmail);
-                //TODO: additional actions with email here
-            }
-        }
-
-        const [visible, setVisible] = useState<boolean>(false);
         return (
             <Header
                 variant="h3"
@@ -287,10 +284,9 @@ export default function TopPanel({
                         >
                             Download
                         </ButtonDropdown>
-                        <ExportModal
-                            exportModalActive={exportModalActive}
-                            setExportModalActive={setExportModalActive}
-                        />
+                        <Button onClick={() => setExportModalActive(true)}>
+                            Export
+                        </Button>
                         <Button onClick={() => setShowOutputModal(true)}>View HealthScribe Output</Button>
                         <Button variant="primary" onClick={() => navigate('/conversations')}>
                             Exit Conversation
@@ -359,7 +355,10 @@ export default function TopPanel({
                 playBackSpeed={playBackSpeed}
                 setPlayBackSpeed={setPlayBackSpeed}
             />
-            <Container header={<AudioHeader />}>
+            <Container header={<AudioHeader 
+                setExportModalActive={setExportModalActive}
+                />
+            }>
                 {(jobLoading || audioLoading) && <Loading />}
                 <SegmentControls />
                 <div style={{ height: audioLoading ? 0 : '' }}>
@@ -372,6 +371,10 @@ export default function TopPanel({
                     />
                 </div>
             </Container>
+            <ExportModal
+                exportModalActive={exportModalActive}
+                setExportModalActive={setExportModalActive}
+            />
         </>
     );
 }
