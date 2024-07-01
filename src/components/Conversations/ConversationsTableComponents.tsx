@@ -1,3 +1,5 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: MIT-0
 import React, { useEffect, useMemo, useState } from 'react';
 
 import Alert from '@cloudscape-design/components/alert';
@@ -20,8 +22,6 @@ import { useNotificationsContext } from '@/store/notifications';
 import { ListHealthScribeJobsProps, deleteHealthScribeJob } from '@/utils/HealthScribeApi';
 
 import { TablePreferencesDef, collectionPreferencesProps } from './tablePrefs';
-import { useAuthContext } from '@/store/auth';
-import { fetchUserAttributes, getCurrentUser } from '@aws-amplify/auth';
 
 type DeleteModalProps = {
     selectedHealthScribeJob: MedicalScribeJobSummary[];
@@ -32,15 +32,6 @@ type DeleteModalProps = {
     loginId: string;
     clinicName: string | null;
 };
-
-const statusSelections = [
-    { label: 'All', value: 'ALL' },
-    { label: 'Completed', value: 'COMPLETED' },
-    { label: 'In Progress', value: 'IN_PROGRESS' },
-    { label: 'Queued', value: 'QUEUED' },
-    { label: 'Failed', value: 'FAILED' },
-];
-
 function DeleteModal({
     selectedHealthScribeJob,
     deleteModalActive,
@@ -55,7 +46,6 @@ function DeleteModal({
 
     async function doDelete(medicalScribeJobName: string) {
         if (!medicalScribeJobName) return;
-
         setIsDeleting(true);
         try {
             await deleteHealthScribeJob({ MedicalScribeJobName: medicalScribeJobName });
@@ -67,10 +57,9 @@ function DeleteModal({
                 content: err?.toString() || 'Error deleting HealthScribe job',
                 type: 'error',
             });
-        } finally {
-            setDeleteModalActive(false);
-            setIsDeleting(false);
         }
+        setDeleteModalActive(false);
+        setIsDeleting(false);
     }
 
     return (
@@ -117,10 +106,7 @@ type TableHeaderActionsProps = {
     filterBy: 'UserName' | 'ClinicName';
     loginId: string;
     clinicName: string | null;
-    includeClinicFilter: boolean; // Add includeClinicFilter to the type definition
-    setIncludeClinicFilter: React.Dispatch<React.SetStateAction<boolean>>;
 };
-
 function TableHeaderActions({
     setSearchParams,
     selectedHealthScribeJob,
@@ -162,64 +148,33 @@ function TableHeaderActions({
     );
 }
 
-interface TableHeaderProps {
+const statusSelections = [
+    { label: 'All', value: 'ALL' },
+    { label: 'Completed', value: 'COMPLETED' },
+    { label: 'In Progress', value: 'IN_PROGRESS' },
+    { label: 'Queued', value: 'QUEUED' },
+    { label: 'Failed', value: 'FAILED' },
+];
+type TableHeaderProps = {
     selectedHealthScribeJob: MedicalScribeJobSummary[];
     headerCounterText: string;
     listHealthScribeJobs: (searchFilter: ListHealthScribeJobsProps) => Promise<void>;
     showFiltered: boolean;
     setShowFiltered: React.Dispatch<React.SetStateAction<boolean>>;
-    includeClinicFilter: boolean;
-    setIncludeClinicFilter: React.Dispatch<React.SetStateAction<boolean>>;
     filterBy: 'UserName' | 'ClinicName';
-    setFilterBy: React.Dispatch<React.SetStateAction<'UserName' | 'ClinicName'>>;
-}
-
-const TableHeader: React.FC<TableHeaderProps> = ({
+    loginId: string;
+    clinicName: string | null;
+};
+function TableHeader({
     selectedHealthScribeJob,
     headerCounterText,
     listHealthScribeJobs,
     showFiltered,
     setShowFiltered,
-    includeClinicFilter,
-    setIncludeClinicFilter,
     filterBy,
-    setFilterBy,
-}) => {
-    const { user } = useAuthContext();
-    const loginId = user?.signInDetails?.loginId || 'No username found';
-
-    const [clinicName, setClinicName] = useState<string | null>(null);
-
-
-    async function getUserAttributes(username: string) {
-        try {
-            const user = await getCurrentUser();
-            const attributes = await fetchUserAttributes();
-            const clinicAttribute = attributes['custom:Clinic'];
-            return clinicAttribute || null;
-        } catch (error) {
-            console.error('Error fetching user attributes: ', error);
-            throw error;
-        }
-    }
-    useEffect(() => {
-        async function fetchClinicName() {
-            try {
-                const clinicName = await getUserAttributes(loginId);
-                if (!clinicName) {
-                    setClinicName('No clinic name found');
-                    return;
-                }
-                setClinicName(clinicName);
-            } catch (error) {
-                console.error('Failed to fetch clinic name', error);
-                // Handle the error appropriately
-            }
-        }
-
-        fetchClinicName();
-    }, [loginId]);
-
+    loginId,
+    clinicName,
+}: TableHeaderProps) {
     const [deleteModalActive, setDeleteModalActive] = useState<boolean>(false);
     const [searchParams, setSearchParams] = useState<ListHealthScribeJobsProps>({});
     const [debouncedSearchParams] = useDebounce(searchParams, 500);
@@ -231,10 +186,12 @@ const TableHeader: React.FC<TableHeaderProps> = ({
 
     // Update searchParam to id: value
     function handleInputChange(id: string, value: string) {
-        setSearchParams((currentSearchParams) => ({
-            ...currentSearchParams,
-            [id]: value,
-        }));
+        setSearchParams((currentSearchParams) => {
+            return {
+                ...currentSearchParams,
+                [id]: value,
+            };
+        });
     }
 
     // Manual refresh function for the header actions
@@ -265,10 +222,8 @@ const TableHeader: React.FC<TableHeaderProps> = ({
                         showFiltered={showFiltered}
                         setShowFiltered={setShowFiltered}
                         filterBy={filterBy}
-                        loginId={loginId} // Pass loginId here
-                        clinicName={clinicName} // Pass clinicName here
-                        includeClinicFilter={includeClinicFilter}
-                        setIncludeClinicFilter={setIncludeClinicFilter}
+                        loginId={loginId}
+                        clinicName={clinicName}
                     />
                 }
             >
@@ -291,13 +246,12 @@ const TableHeader: React.FC<TableHeaderProps> = ({
             </Form>
         </SpaceBetween>
     );
-};
+}
 
 type TablePreferencesProps = {
     preferences: TablePreferencesDef;
     setPreferences: (newValue: TablePreferencesDef) => void;
 };
-
 function TablePreferences({ preferences, setPreferences }: TablePreferencesProps) {
     return (
         <CollectionPreferences
