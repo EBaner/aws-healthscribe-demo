@@ -1,7 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-// SPDX-License-Identifier: MIT-0
 import React, { useEffect, useMemo, useState } from 'react';
-
 import Alert from '@cloudscape-design/components/alert';
 import Box from '@cloudscape-design/components/box';
 import Button from '@cloudscape-design/components/button';
@@ -23,25 +20,40 @@ import { ListHealthScribeJobsProps, deleteHealthScribeJob } from '@/utils/Health
 
 import { TablePreferencesDef, collectionPreferencesProps } from './tablePrefs';
 
-//import { sendInsightsEmail } from '@/utils/EmailUtils';
-
 type DeleteModalProps = {
     selectedHealthScribeJob: MedicalScribeJobSummary[];
     deleteModalActive: boolean;
     setDeleteModalActive: React.Dispatch<React.SetStateAction<boolean>>;
     refreshTable: () => void;
+    filterBy: 'UserName' | 'ClinicName';
+    loginId: string;
+    clinicName: string | null;
 };
+
+// Define statusSelections here as a constant array
+const statusSelections = [
+    { label: 'All', value: 'ALL' },
+    { label: 'Completed', value: 'COMPLETED' },
+    { label: 'In Progress', value: 'IN_PROGRESS' },
+    { label: 'Queued', value: 'QUEUED' },
+    { label: 'Failed', value: 'FAILED' },
+];
+
 function DeleteModal({
     selectedHealthScribeJob,
     deleteModalActive,
     setDeleteModalActive,
     refreshTable,
+    filterBy,
+    loginId,
+    clinicName,
 }: DeleteModalProps) {
     const { addFlashMessage } = useNotificationsContext();
     const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
     async function doDelete(medicalScribeJobName: string) {
         if (!medicalScribeJobName) return;
+
         setIsDeleting(true);
         try {
             await deleteHealthScribeJob({ MedicalScribeJobName: medicalScribeJobName });
@@ -53,9 +65,10 @@ function DeleteModal({
                 content: err?.toString() || 'Error deleting HealthScribe job',
                 type: 'error',
             });
+        } finally {
+            setDeleteModalActive(false);
+            setIsDeleting(false);
         }
-        setDeleteModalActive(false);
-        setIsDeleting(false);
     }
 
     return (
@@ -71,7 +84,9 @@ function DeleteModal({
                         <Button
                             disabled={isDeleting}
                             variant="primary"
-                            onClick={() => doDelete(selectedHealthScribeJob?.[0]?.MedicalScribeJobName || '')}
+                            onClick={() =>
+                                doDelete(selectedHealthScribeJob?.[0]?.MedicalScribeJobName || '')
+                            }
                         >
                             {isDeleting ? <Spinner /> : 'Delete'}
                         </Button>
@@ -81,8 +96,9 @@ function DeleteModal({
             header="Delete AWS HealthScribe Conversation"
         >
             <p>
-                Permanently delete <strong>{selectedHealthScribeJob?.[0]?.MedicalScribeJobName || ''}</strong>. You
-                cannot undo this action.
+                Permanently delete{' '}
+                <strong>{selectedHealthScribeJob?.[0]?.MedicalScribeJobName || ''}</strong>. You cannot undo this
+                action.
             </p>
             <Alert statusIconAriaLabel="Info">
                 Proceeding with this action will delete the conversation but not the associated data (audio file,
@@ -99,7 +115,13 @@ type TableHeaderActionsProps = {
     refreshTable: () => void;
     showFiltered: boolean;
     setShowFiltered: React.Dispatch<React.SetStateAction<boolean>>;
+    filterBy: 'UserName' | 'ClinicName';
+    loginId: string;
+    clinicName: string | null;
+    includeClinicFilter: boolean;
+    setIncludeClinicFilter: React.Dispatch<React.SetStateAction<boolean>>;
 };
+
 function TableHeaderActions({
     setSearchParams,
     selectedHealthScribeJob,
@@ -107,6 +129,11 @@ function TableHeaderActions({
     refreshTable,
     showFiltered,
     setShowFiltered,
+    filterBy,
+    loginId,
+    clinicName,
+    includeClinicFilter,
+    setIncludeClinicFilter,
 }: TableHeaderActionsProps) {
     const DO_NOT_DELETE = ['Demo-Fatigue', 'Demo-Kidney', 'Demo-Knee'];
 
@@ -134,67 +161,52 @@ function TableHeaderActions({
             <Button onClick={() => setShowFiltered(!showFiltered)}>
                 {showFiltered ? 'Show All' : 'Show Filtered'}
             </Button>
+            <Button onClick={() => setIncludeClinicFilter((prev) => !prev)}>
+                {includeClinicFilter ? 'Hide Clinic Filter' : 'Show Clinic Filter'}
+            </Button>
         </SpaceBetween>
     );
 }
 
-const statusSelections = [
-    { label: 'All', value: 'ALL' },
-    { label: 'Completed', value: 'COMPLETED' },
-    { label: 'In Progress', value: 'IN_PROGRESS' },
-    { label: 'Queued', value: 'QUEUED' },
-    { label: 'Failed', value: 'FAILED' },
-];
-type TableHeaderProps = {
+interface TableHeaderProps {
     selectedHealthScribeJob: MedicalScribeJobSummary[];
     headerCounterText: string;
     listHealthScribeJobs: (searchFilter: ListHealthScribeJobsProps) => Promise<void>;
     showFiltered: boolean;
     setShowFiltered: React.Dispatch<React.SetStateAction<boolean>>;
-};
-function TableHeader({
+    includeClinicFilter: boolean;
+    setIncludeClinicFilter: React.Dispatch<React.SetStateAction<boolean>>;
+    filterBy: 'UserName' | 'ClinicName';
+    setFilterBy: React.Dispatch<React.SetStateAction<'UserName' | 'ClinicName'>>;
+}
+
+const TableHeader: React.FC<TableHeaderProps> = ({
     selectedHealthScribeJob,
     headerCounterText,
     listHealthScribeJobs,
     showFiltered,
     setShowFiltered,
-}: TableHeaderProps) {
+    includeClinicFilter,
+    setIncludeClinicFilter,
+    filterBy,
+    setFilterBy,
+}) => {
     const [deleteModalActive, setDeleteModalActive] = useState<boolean>(false);
     const [searchParams, setSearchParams] = useState<ListHealthScribeJobsProps>({});
     const [debouncedSearchParams] = useDebounce(searchParams, 500);
-    //const [email, setEmail] = useState('');
 
-    // Update list initially & deboucned search params
+    // Update list initially & debounced search params
     useEffect(() => {
         listHealthScribeJobs(debouncedSearchParams).catch(console.error);
     }, [debouncedSearchParams]);
 
     // Update searchParam to id: value
     function handleInputChange(id: string, value: string) {
-        setSearchParams((currentSearchParams) => {
-            return {
-                ...currentSearchParams,
-                [id]: value,
-            };
-        });
+        setSearchParams((currentSearchParams) => ({
+            ...currentSearchParams,
+            [id]: value,
+        }));
     }
-
-    /*function handleEmailChange(event) {
-        setEmail(event.target.value);
-    }
-
-    async function handleSendEmail() {
-        if (email) {
-            try {
-                await sendInsightsEmail(email, selectedHealthScribeJob);
-                alert('Insights sent successfully');
-            } catch (error) {
-                alert('Error sending insights');
-            }
-        } else {
-            alert('Please enter a valid email address');
-        }
-    }*/
 
     // Manual refresh function for the header actions
     function refreshTable() {
@@ -208,6 +220,9 @@ function TableHeader({
                 deleteModalActive={deleteModalActive}
                 setDeleteModalActive={setDeleteModalActive}
                 refreshTable={refreshTable}
+                filterBy={filterBy}
+                loginId={loginId}
+                clinicName={clinicName}
             />
             <Header
                 variant="awsui-h1-sticky"
@@ -220,6 +235,11 @@ function TableHeader({
                         refreshTable={refreshTable}
                         showFiltered={showFiltered}
                         setShowFiltered={setShowFiltered}
+                        filterBy={filterBy}
+                        loginId={loginId}
+                        clinicName={clinicName}
+                        includeClinicFilter={includeClinicFilter}
+                        setIncludeClinicFilter={setIncludeClinicFilter}
                     />
                 }
             >
@@ -228,13 +248,15 @@ function TableHeader({
             <Form>
                 <Grid gridDefinition={[{ colspan: 5 }, { colspan: 3 }]}>
                     <Input
-                        placeholder="HealthScribe Job Name"
+                        placeholder={filterBy === 'UserName' ? 'Username' : 'Clinic Name'}
                         value={searchParams?.JobNameContains || ''}
                         onChange={({ detail }) => handleInputChange('JobNameContains', detail.value)}
                     />
                     <Select
                         selectedOption={statusSelections.find((s) => s.value === searchParams?.Status) || null}
-                        onChange={({ detail }) => handleInputChange('Status', detail.selectedOption.value || 'ALL')}
+                        onChange={({ detail }) =>
+                            handleInputChange('Status', detail.selectedOption.value || 'ALL')
+                        }
                         options={statusSelections}
                         placeholder="Status"
                     />
@@ -248,6 +270,7 @@ type TablePreferencesProps = {
     preferences: TablePreferencesDef;
     setPreferences: (newValue: TablePreferencesDef) => void;
 };
+
 function TablePreferences({ preferences, setPreferences }: TablePreferencesProps) {
     return (
         <CollectionPreferences

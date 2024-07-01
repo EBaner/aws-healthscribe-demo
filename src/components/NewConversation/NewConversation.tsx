@@ -1,7 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-
 import { useNavigate } from 'react-router-dom';
-
 import Box from '@cloudscape-design/components/box';
 import Button from '@cloudscape-design/components/button';
 import Container from '@cloudscape-design/components/container';
@@ -15,23 +13,27 @@ import SpaceBetween from '@cloudscape-design/components/space-between';
 import Spinner from '@cloudscape-design/components/spinner';
 import StatusIndicator from '@cloudscape-design/components/status-indicator';
 import TokenGroup from '@cloudscape-design/components/token-group';
-
 import { AdminGetUserCommand, CognitoIdentityProviderClient } from '@aws-sdk/client-cognito-identity-provider';
-import { ListObjectsV2Command, CopyObjectCommand, DeleteObjectCommand, S3Client, ListObjectsV2Output, _Object } from '@aws-sdk/client-s3';
+import {
+    CopyObjectCommand,
+    DeleteObjectCommand,
+    ListObjectsV2Command,
+    ListObjectsV2Output,
+    S3Client,
+    _Object,
+} from '@aws-sdk/client-s3';
 import { Tag } from '@aws-sdk/client-s3/dist-types/models/models_0';
 import { MedicalScribeParticipantRole, StartMedicalScribeJobRequest } from '@aws-sdk/client-transcribe';
 import { Progress } from '@aws-sdk/lib-storage';
 import { Amplify } from 'aws-amplify';
 import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
 import dayjs from 'dayjs';
-
 import { useS3 } from '@/hooks/useS3';
 import { useAuthContext } from '@/store/auth';
 import { useNotificationsContext } from '@/store/notifications';
 import { startMedicalScribeJob } from '@/utils/HealthScribeApi';
 import { multipartUpload } from '@/utils/S3Api';
 import sleep from '@/utils/sleep';
-
 import amplifyCustom from '../../aws-custom.json';
 import AudioRecorder from './AudioRecorder';
 import { AudioDropzone } from './Dropzone';
@@ -54,6 +56,7 @@ async function getUserAttributes(username: string) {
         throw error;
     }
 }
+
 async function listObjects(bucketName: string): Promise<_Object[]> {
     const command = new ListObjectsV2Command({
         Bucket: bucketName,
@@ -62,7 +65,12 @@ async function listObjects(bucketName: string): Promise<_Object[]> {
     return response.Contents || [];
 }
 
-async function copyObject(sourceBucket: string, sourceKey: string, destinationBucket: string, destinationKey: string): Promise<void> {
+async function copyObject(
+    sourceBucket: string,
+    sourceKey: string,
+    destinationBucket: string,
+    destinationKey: string
+): Promise<void> {
     const command = new CopyObjectCommand({
         Bucket: destinationBucket,
         CopySource: `${sourceBucket}/${sourceKey}`,
@@ -79,7 +87,12 @@ async function deleteObject(bucketName: string, key: string): Promise<void> {
     await s3Client.send(command);
 }
 
-async function moveObject(sourceBucket: string, sourceKey: string, destinationBucket: string, destinationKey: string): Promise<void> {
+async function moveObject(
+    sourceBucket: string,
+    sourceKey: string,
+    destinationBucket: string,
+    destinationKey: string
+): Promise<void> {
     await copyObject(sourceBucket, sourceKey, destinationBucket, destinationKey);
     await deleteObject(sourceBucket, sourceKey);
 }
@@ -92,7 +105,7 @@ export default function NewConversation() {
     const [clinicName, setClinicName] = useState<string | null>(null);
 
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-    const [formError, setFormError] = useState<string | React.ReactElement[]>('');
+    const [formError, setFormError] = useState<string | React.ReactElement[]>( '');
     const [jobName, setJobName] = useState<string>('');
     const [audioSelection, setAudioSelection] = useState<AudioSelection>('speakerPartitioning');
     const [audioDetails, setAudioDetails] = useState<AudioDetails>({
@@ -129,6 +142,7 @@ export default function NewConversation() {
             description: `Uploaded part ${part}, ${loadedMb}MB / ${totalMb}MB`,
         });
     }
+
     async function handleUnorganizedFiles(bucketName: string, clinicFolder: string) {
         const objects = await listObjects(bucketName);
         for (const object of objects) {
@@ -176,7 +190,7 @@ export default function NewConversation() {
         const uploadLocation = getUploadMetadata();
         const s3Location = {
             Bucket: uploadLocation.bucket,
-            Key: `${clinicName}/${uploadLocation.key}/${(filePath as File).name}`,
+            Key: `${clinicName}/${uploadLocation.key}/${jobName}/${(filePath as File).name}`,
         };
 
         const userNameTag: Tag = {
@@ -184,16 +198,20 @@ export default function NewConversation() {
             Value: loginId,
         };
 
+        const clinicTag: Tag = {  // Additional tag for clinic
+            Key: 'ClinicName',
+            Value: clinicName!,
+        };
+
         const jobParams: StartMedicalScribeJobRequest = {
             MedicalScribeJobName: jobName,
             DataAccessRoleArn: amplifyCustom.healthScribeServiceRole,
             OutputBucketName: uploadLocation.bucket, // Use the same bucket as the input
-
             Media: {
                 MediaFileUri: `s3://${s3Location.Bucket}/${s3Location.Key}`,
             },
             ...audioParams,
-            Tags: [userNameTag],
+            Tags: [userNameTag, clinicTag],  // Include clinicTag in the Tags array
         };
 
         const verifyParamResults = verifyJobParams(jobParams);

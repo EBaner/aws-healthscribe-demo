@@ -1,22 +1,19 @@
-import React, { useCallback, useMemo, useState } from 'react';
-
-import { useCollection } from '@cloudscape-design/collection-hooks';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import Button from '@cloudscape-design/components/button';
 import Pagination from '@cloudscape-design/components/pagination';
 import Table from '@cloudscape-design/components/table';
-
-import { GetMedicalScribeJobCommand, MedicalScribeJobSummary, TranscribeClient } from '@aws-sdk/client-transcribe';
-
+import { TranscribeClient, GetMedicalScribeJobCommand, MedicalScribeJobSummary } from '@aws-sdk/client-transcribe';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useAuthContext } from '@/store/auth';
 import { useNotificationsContext } from '@/store/notifications';
-import { ListHealthScribeJobsProps, listHealthScribeJobs } from '@/utils/HealthScribeApi';
+import { listHealthScribeJobs, ListHealthScribeJobsProps } from '@/utils/HealthScribeApi';
 import { getConfigRegion, getCredentials } from '@/utils/Sdk';
-
 import { TableHeader, TablePreferences } from './ConversationsTableComponents';
 import TableEmptyState from './TableEmptyState';
 import { columnDefs } from './tableColumnDefs';
 import { DEFAULT_PREFERENCES, TablePreferencesDef } from './tablePrefs';
+import { fetchUserAttributes, getCurrentUser } from '@aws-amplify/auth';
+import { useCollection } from '@cloudscape-design/collection-hooks';
 
 async function getTranscribeClient() {
     const credentials = await getCredentials();
@@ -45,6 +42,18 @@ async function getHealthScribeJob(MedicalScribeJobName: string | undefined) {
     return response.MedicalScribeJob;
 }
 
+async function getUserAttributes(username: string) {
+    try {
+        const user = await getCurrentUser();
+        const attributes = await fetchUserAttributes();
+        const clinicAttribute = attributes['custom:Clinic'];
+        return clinicAttribute || null;
+    } catch (error) {
+        console.error('Error fetching user attributes: ', error);
+        throw error;
+    }
+}
+
 export default function Conversations() {
     const { user } = useAuthContext(); // Retrieve user info
     const loginId = user?.signInDetails?.loginId || 'No username found'; // Extract login ID
@@ -52,13 +61,30 @@ export default function Conversations() {
     const { addFlashMessage } = useNotificationsContext();
     const [healthScribeJobs, setHealthScribeJobs] = useState<MedicalScribeJobSummary[]>([]); // HealthScribe jobs from API
     const [moreHealthScribeJobs, setMoreHealthScribeJobs] = useState<MoreHealthScribeJobs>({}); // More HealthScribe jobs from API (NextToken returned)
-    const [selectedHealthScribeJob, setSelectedHealthScribeJob] = useState<MedicalScribeJobSummary[] | []>([]); // Selected HealthScribe job
+    const [selectedHealthScribeJob, setSelectedHealthScribeJob] = useState<MedicalScribeJobSummary[]>([]); // Selected HealthScribe job
     const [tableLoading, setTableLoading] = useState(false); // Loading state for table
     const [preferences, setPreferences] = useLocalStorage<TablePreferencesDef>(
         'Conversation-Table-Preferences',
         DEFAULT_PREFERENCES
     ); // Conversation table preferences
     const [showFiltered, setShowFiltered] = useState<boolean>(true);
+    const [filterBy, setFilterBy] = useState<'UserName' | 'ClinicName'>('UserName'); // State to toggle filter by UserName or ClinicName
+    const [clinicName, setClinicName] = useState<string | null>(null); // State for storing clinic name
+    const [includeClinicFilter, setIncludeClinicFilter] = useState<boolean>(false); // State for including clinic filter
+
+    useEffect(() => {
+        const fetchClinicName = async () => {
+            try {
+                const clinic = await getUserAttributes(user?.username || '');
+                setClinicName(clinic);
+            } catch (error) {
+                console.error('Error fetching clinic name: ', error);
+            }
+        };
+        if (user) {
+            fetchClinicName();
+        }
+    }, [user]);
 
     // Header counter for the number of HealthScribe jobs
     const headerCounterText = `(${healthScribeJobs.length}${Object.keys(moreHealthScribeJobs).length > 0 ? '+' : ''})`;
@@ -86,65 +112,55 @@ export default function Conversations() {
                 const listResults: MedicalScribeJobSummary[] = listHealthScribeJobsRsp.MedicalScribeJobSummaries;
                 console.log('List results from API:', listResults);
 
-                if (showFiltered) {
-                    // Fetch detailed job summaries and filter by user's login ID
-                    const detailedJobSummaries = await Promise.all(
-                        listResults.map(async (job) => {
-                            try {
-                                const jobDetails = await getHealthScribeJob(job.MedicalScribeJobName);
+                // Fetch detailed job summaries and filter by user's login ID or clinic name
+                const detailedJobSummaries = await Promise.all(
+                    listResults.map(async (job) => {
+                        try {
+                            const jobDetails = await getHealthScribeJob(job.MedicalScribeJobName);
+                            let isUserJob = false;
+
+                            if (filterBy === 'UserName') {
                                 const userTag = jobDetails?.Tags?.find((tag) => tag.Key === 'UserName');
-                                const isUserJob = userTag?.Value === loginId;
-                                console.log(
-                                    `Job: ${job.MedicalScribeJobName}, UserTag: ${userTag?.Value}, IsUserJob: ${isUserJob}`
-                                );
-                                return isUserJob ? job : null;
-                            } catch (error) {
-                                console.error(`Failed to fetch details for job ${job.MedicalScribeJobName}:`, error);
-                                return null;
+                                isUserJob = userTag?.Value === loginId;
+                            } else if (filterBy === 'ClinicName') {
+                                const clinicTag = jobDetails?.Tags?.find((tag) => tag.Key === 'ClinicName');
+                                isUserJob = clinicTag?.Value === clinicName;
                             }
-                        })
-                    );
 
-                    // Filter out null values
-                    const filteredResults = detailedJobSummaries.filter(
-                        (job): job is MedicalScribeJobSummary => job !== null
-                    );
+                            console.log(
+                                `Job: ${job.MedicalScribeJobName}, Filtered by: ${filterBy}, IsUserJob: ${isUserJob}`
+                            );
 
-                    console.log('Filtered results:', filteredResults);
+                            return isUserJob ? job : null;
+                        } catch (error) {
+                            console.error(`Failed to fetch details for job ${job.MedicalScribeJobName}:`, error);
+                            return null;
+                        }
+                    })
+                );
 
-                    // if NextToken is specified, append search results to existing results
-                    if (processedSearchFilter.NextToken) {
-                        setHealthScribeJobs((prevHealthScribeJobs) => prevHealthScribeJobs.concat(filteredResults));
-                    } else {
-                        setHealthScribeJobs(filteredResults);
-                    }
+                // Filter out null values
+                const filteredResults = detailedJobSummaries.filter(
+                    (job): job is MedicalScribeJobSummary => job !== null
+                );
 
-                    // If the research returned NextToken, there are additional jobs. Set moreHealthScribeJobs to enable pagination
-                    if (listHealthScribeJobsRsp?.NextToken) {
-                        setMoreHealthScribeJobs({
-                            searchFilter: searchFilter,
-                            NextToken: listHealthScribeJobsRsp?.NextToken,
-                        });
-                    } else {
-                        setMoreHealthScribeJobs({});
-                    }
+                console.log('Filtered results:', filteredResults);
+
+                // if NextToken is specified, append search results to existing results
+                if (listHealthScribeJobsRsp?.NextToken) {
+                    setHealthScribeJobs((prevHealthScribeJobs) => prevHealthScribeJobs.concat(filteredResults));
                 } else {
-                    // Show all jobs without filtering
-                    if (processedSearchFilter.NextToken) {
-                        setHealthScribeJobs((prevHealthScribeJobs) => prevHealthScribeJobs.concat(listResults));
-                    } else {
-                        setHealthScribeJobs(listResults);
-                    }
+                    setHealthScribeJobs(filteredResults);
+                }
 
-                    // If the research returned NextToken, there are additional jobs. Set moreHealthScribeJobs to enable pagination
-                    if (listHealthScribeJobsRsp?.NextToken) {
-                        setMoreHealthScribeJobs({
-                            searchFilter: searchFilter,
-                            NextToken: listHealthScribeJobsRsp?.NextToken,
-                        });
-                    } else {
-                        setMoreHealthScribeJobs({});
-                    }
+                // If the research returned NextToken, there are additional jobs. Set moreHealthScribeJobs to enable pagination
+                if (listHealthScribeJobsRsp?.NextToken) {
+                    setMoreHealthScribeJobs({
+                        searchFilter: searchFilter,
+                        NextToken: listHealthScribeJobsRsp?.NextToken,
+                    });
+                } else {
+                    setMoreHealthScribeJobs({});
                 }
             } catch (e: unknown) {
                 setTableLoading(false);
@@ -157,7 +173,7 @@ export default function Conversations() {
             }
             setTableLoading(false);
         },
-        [addFlashMessage, setTableLoading, setHealthScribeJobs, setMoreHealthScribeJobs, showFiltered, loginId]
+        [addFlashMessage, setTableLoading, setHealthScribeJobs, setMoreHealthScribeJobs, filterBy, clinicName, loginId]
     );
 
     // Property for <Pagination /> to enable ... on navigation if there are additional HealthScribe jobs
@@ -170,14 +186,14 @@ export default function Conversations() {
     }, [moreHealthScribeJobs]);
 
     // Table collection
-    const { items, actions, collectionProps, paginationProps } = useCollection(healthScribeJobs, {
+    const { collectionProps, paginationProps } = useCollection(healthScribeJobs, {
         filtering: {
             empty: <TableEmptyState title="No HealthScribe jobs" subtitle="Try clearing the search filter." />,
             noMatch: (
                 <TableEmptyState
                     title="No matches"
                     subtitle="We cannot find a match."
-                    action={<Button onClick={() => actions.setFiltering('')}>Clear filter</Button>}
+                    action={<Button onClick={() => setShowFiltered(false)}>Show All</Button>}
                 />
             ),
         },
@@ -198,6 +214,10 @@ export default function Conversations() {
                         listHealthScribeJobs={listHealthScribeJobsWrapper}
                         showFiltered={showFiltered}
                         setShowFiltered={setShowFiltered}
+                        includeClinicFilter={includeClinicFilter}
+                        setIncludeClinicFilter={setIncludeClinicFilter}
+                        filterBy={filterBy}
+                        setFilterBy={setFilterBy}
                     />
                 }
                 items={healthScribeJobs}
