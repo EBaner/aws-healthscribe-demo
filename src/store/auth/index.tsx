@@ -6,10 +6,7 @@ import { AuthUser } from 'aws-amplify/auth';
 
 import config from '@/amplifyconfiguration.json';
 
-
-
 Amplify.configure(config);
-
 
 type ExtendedAuthUser = AuthUser & {
     attributes?: {
