@@ -1,19 +1,23 @@
-import React, { useCallback, useMemo, useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+
+import { useCollection } from '@cloudscape-design/collection-hooks';
 import Button from '@cloudscape-design/components/button';
 import Pagination from '@cloudscape-design/components/pagination';
 import Table from '@cloudscape-design/components/table';
-import { TranscribeClient, GetMedicalScribeJobCommand, MedicalScribeJobSummary } from '@aws-sdk/client-transcribe';
+
+import { fetchUserAttributes, getCurrentUser } from '@aws-amplify/auth';
+import { GetMedicalScribeJobCommand, MedicalScribeJobSummary, TranscribeClient } from '@aws-sdk/client-transcribe';
+
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useAuthContext } from '@/store/auth';
 import { useNotificationsContext } from '@/store/notifications';
-import { listHealthScribeJobs, ListHealthScribeJobsProps } from '@/utils/HealthScribeApi';
+import { ListHealthScribeJobsProps, listHealthScribeJobs } from '@/utils/HealthScribeApi';
 import { getConfigRegion, getCredentials } from '@/utils/Sdk';
+
 import { TableHeader, TablePreferences } from './ConversationsTableComponents';
 import TableEmptyState from './TableEmptyState';
 import { columnDefs } from './tableColumnDefs';
 import { DEFAULT_PREFERENCES, TablePreferencesDef } from './tablePrefs';
-import { fetchUserAttributes, getCurrentUser } from '@aws-amplify/auth';
-import { useCollection } from '@cloudscape-design/collection-hooks';
 
 async function getTranscribeClient() {
     const credentials = await getCredentials();

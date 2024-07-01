@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
+
 import { useNavigate } from 'react-router-dom';
+
 import Box from '@cloudscape-design/components/box';
 import Button from '@cloudscape-design/components/button';
 import Container from '@cloudscape-design/components/container';
@@ -13,6 +15,7 @@ import SpaceBetween from '@cloudscape-design/components/space-between';
 import Spinner from '@cloudscape-design/components/spinner';
 import StatusIndicator from '@cloudscape-design/components/status-indicator';
 import TokenGroup from '@cloudscape-design/components/token-group';
+
 import { AdminGetUserCommand, CognitoIdentityProviderClient } from '@aws-sdk/client-cognito-identity-provider';
 import {
     CopyObjectCommand,
@@ -28,12 +31,14 @@ import { Progress } from '@aws-sdk/lib-storage';
 import { Amplify } from 'aws-amplify';
 import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
 import dayjs from 'dayjs';
+
 import { useS3 } from '@/hooks/useS3';
 import { useAuthContext } from '@/store/auth';
 import { useNotificationsContext } from '@/store/notifications';
 import { startMedicalScribeJob } from '@/utils/HealthScribeApi';
 import { multipartUpload } from '@/utils/S3Api';
 import sleep from '@/utils/sleep';
+
 import amplifyCustom from '../../aws-custom.json';
 import AudioRecorder from './AudioRecorder';
 import { AudioDropzone } from './Dropzone';
@@ -105,7 +110,7 @@ export default function NewConversation() {
     const [clinicName, setClinicName] = useState<string | null>(null);
 
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-    const [formError, setFormError] = useState<string | React.ReactElement[]>( '');
+    const [formError, setFormError] = useState<string | React.ReactElement[]>('');
     const [jobName, setJobName] = useState<string>('');
     const [audioSelection, setAudioSelection] = useState<AudioSelection>('speakerPartitioning');
     const [audioDetails, setAudioDetails] = useState<AudioDetails>({
@@ -198,7 +203,8 @@ export default function NewConversation() {
             Value: loginId,
         };
 
-        const clinicTag: Tag = {  // Additional tag for clinic
+        const clinicTag: Tag = {
+            // Additional tag for clinic
             Key: 'ClinicName',
             Value: clinicName!,
         };
@@ -211,7 +217,7 @@ export default function NewConversation() {
                 MediaFileUri: `s3://${s3Location.Bucket}/${s3Location.Key}`,
             },
             ...audioParams,
-            Tags: [userNameTag, clinicTag],  // Include clinicTag in the Tags array
+            Tags: [userNameTag, clinicTag], // Include clinicTag in the Tags array
         };
 
         const verifyParamResults = verifyJobParams(jobParams);

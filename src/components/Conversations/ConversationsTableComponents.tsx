@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+
 import Alert from '@cloudscape-design/components/alert';
 import Box from '@cloudscape-design/components/box';
 import Button from '@cloudscape-design/components/button';
@@ -19,6 +20,8 @@ import { useNotificationsContext } from '@/store/notifications';
 import { ListHealthScribeJobsProps, deleteHealthScribeJob } from '@/utils/HealthScribeApi';
 
 import { TablePreferencesDef, collectionPreferencesProps } from './tablePrefs';
+import { useAuthContext } from '@/store/auth';
+import { fetchUserAttributes, getCurrentUser } from '@aws-amplify/auth';
 
 type DeleteModalProps = {
     selectedHealthScribeJob: MedicalScribeJobSummary[];
@@ -30,7 +33,6 @@ type DeleteModalProps = {
     clinicName: string | null;
 };
 
-// Define statusSelections here as a constant array
 const statusSelections = [
     { label: 'All', value: 'ALL' },
     { label: 'Completed', value: 'COMPLETED' },
@@ -84,9 +86,7 @@ function DeleteModal({
                         <Button
                             disabled={isDeleting}
                             variant="primary"
-                            onClick={() =>
-                                doDelete(selectedHealthScribeJob?.[0]?.MedicalScribeJobName || '')
-                            }
+                            onClick={() => doDelete(selectedHealthScribeJob?.[0]?.MedicalScribeJobName || '')}
                         >
                             {isDeleting ? <Spinner /> : 'Delete'}
                         </Button>
@@ -96,9 +96,8 @@ function DeleteModal({
             header="Delete AWS HealthScribe Conversation"
         >
             <p>
-                Permanently delete{' '}
-                <strong>{selectedHealthScribeJob?.[0]?.MedicalScribeJobName || ''}</strong>. You cannot undo this
-                action.
+                Permanently delete <strong>{selectedHealthScribeJob?.[0]?.MedicalScribeJobName || ''}</strong>. You
+                cannot undo this action.
             </p>
             <Alert statusIconAriaLabel="Info">
                 Proceeding with this action will delete the conversation but not the associated data (audio file,
@@ -118,7 +117,7 @@ type TableHeaderActionsProps = {
     filterBy: 'UserName' | 'ClinicName';
     loginId: string;
     clinicName: string | null;
-    includeClinicFilter: boolean;
+    includeClinicFilter: boolean; // Add includeClinicFilter to the type definition
     setIncludeClinicFilter: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
@@ -132,8 +131,6 @@ function TableHeaderActions({
     filterBy,
     loginId,
     clinicName,
-    includeClinicFilter,
-    setIncludeClinicFilter,
 }: TableHeaderActionsProps) {
     const DO_NOT_DELETE = ['Demo-Fatigue', 'Demo-Kidney', 'Demo-Knee'];
 
@@ -160,9 +157,6 @@ function TableHeaderActions({
             </Button>
             <Button onClick={() => setShowFiltered(!showFiltered)}>
                 {showFiltered ? 'Show All' : 'Show Filtered'}
-            </Button>
-            <Button onClick={() => setIncludeClinicFilter((prev) => !prev)}>
-                {includeClinicFilter ? 'Hide Clinic Filter' : 'Show Clinic Filter'}
             </Button>
         </SpaceBetween>
     );
@@ -191,6 +185,41 @@ const TableHeader: React.FC<TableHeaderProps> = ({
     filterBy,
     setFilterBy,
 }) => {
+    const { user } = useAuthContext();
+    const loginId = user?.signInDetails?.loginId || 'No username found';
+
+    const [clinicName, setClinicName] = useState<string | null>(null);
+
+
+    async function getUserAttributes(username: string) {
+        try {
+            const user = await getCurrentUser();
+            const attributes = await fetchUserAttributes();
+            const clinicAttribute = attributes['custom:Clinic'];
+            return clinicAttribute || null;
+        } catch (error) {
+            console.error('Error fetching user attributes: ', error);
+            throw error;
+        }
+    }
+    useEffect(() => {
+        async function fetchClinicName() {
+            try {
+                const clinicName = await getUserAttributes(loginId);
+                if (!clinicName) {
+                    setClinicName('No clinic name found');
+                    return;
+                }
+                setClinicName(clinicName);
+            } catch (error) {
+                console.error('Failed to fetch clinic name', error);
+                // Handle the error appropriately
+            }
+        }
+
+        fetchClinicName();
+    }, [loginId]);
+
     const [deleteModalActive, setDeleteModalActive] = useState<boolean>(false);
     const [searchParams, setSearchParams] = useState<ListHealthScribeJobsProps>({});
     const [debouncedSearchParams] = useDebounce(searchParams, 500);
@@ -236,8 +265,8 @@ const TableHeader: React.FC<TableHeaderProps> = ({
                         showFiltered={showFiltered}
                         setShowFiltered={setShowFiltered}
                         filterBy={filterBy}
-                        loginId={loginId}
-                        clinicName={clinicName}
+                        loginId={loginId} // Pass loginId here
+                        clinicName={clinicName} // Pass clinicName here
                         includeClinicFilter={includeClinicFilter}
                         setIncludeClinicFilter={setIncludeClinicFilter}
                     />
@@ -254,9 +283,7 @@ const TableHeader: React.FC<TableHeaderProps> = ({
                     />
                     <Select
                         selectedOption={statusSelections.find((s) => s.value === searchParams?.Status) || null}
-                        onChange={({ detail }) =>
-                            handleInputChange('Status', detail.selectedOption.value || 'ALL')
-                        }
+                        onChange={({ detail }) => handleInputChange('Status', detail.selectedOption.value || 'ALL')}
                         options={statusSelections}
                         placeholder="Status"
                     />
@@ -264,7 +291,7 @@ const TableHeader: React.FC<TableHeaderProps> = ({
             </Form>
         </SpaceBetween>
     );
-}
+};
 
 type TablePreferencesProps = {
     preferences: TablePreferencesDef;
