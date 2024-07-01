@@ -16,13 +16,13 @@ import Spinner from '@cloudscape-design/components/spinner';
 import StatusIndicator from '@cloudscape-design/components/status-indicator';
 import TokenGroup from '@cloudscape-design/components/token-group';
 
-import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
-
 import { AdminGetUserCommand, CognitoIdentityProviderClient } from '@aws-sdk/client-cognito-identity-provider';
+import { ListObjectsV2Command, CopyObjectCommand, DeleteObjectCommand, S3Client, ListObjectsV2Output, _Object } from '@aws-sdk/client-s3';
 import { Tag } from '@aws-sdk/client-s3/dist-types/models/models_0';
 import { MedicalScribeParticipantRole, StartMedicalScribeJobRequest } from '@aws-sdk/client-transcribe';
 import { Progress } from '@aws-sdk/lib-storage';
 import { Amplify } from 'aws-amplify';
+import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
 import dayjs from 'dayjs';
 
 import { useS3 } from '@/hooks/useS3';
@@ -41,6 +41,7 @@ import { verifyJobParams } from './formUtils';
 import { AudioDetails, AudioSelection } from './types';
 
 const client = new CognitoIdentityProviderClient({ region: 'us-east-1' });
+const s3Client = new S3Client({ region: 'us-east-1' });
 
 async function getUserAttributes(username: string) {
     try {
@@ -52,6 +53,35 @@ async function getUserAttributes(username: string) {
         console.error('Error fetching user attributes: ', error);
         throw error;
     }
+}
+async function listObjects(bucketName: string): Promise<_Object[]> {
+    const command = new ListObjectsV2Command({
+        Bucket: bucketName,
+    });
+    const response: ListObjectsV2Output = await s3Client.send(command);
+    return response.Contents || [];
+}
+
+async function copyObject(sourceBucket: string, sourceKey: string, destinationBucket: string, destinationKey: string): Promise<void> {
+    const command = new CopyObjectCommand({
+        Bucket: destinationBucket,
+        CopySource: `${sourceBucket}/${sourceKey}`,
+        Key: destinationKey,
+    });
+    await s3Client.send(command);
+}
+
+async function deleteObject(bucketName: string, key: string): Promise<void> {
+    const command = new DeleteObjectCommand({
+        Bucket: bucketName,
+        Key: key,
+    });
+    await s3Client.send(command);
+}
+
+async function moveObject(sourceBucket: string, sourceKey: string, destinationBucket: string, destinationKey: string): Promise<void> {
+    await copyObject(sourceBucket, sourceKey, destinationBucket, destinationKey);
+    await deleteObject(sourceBucket, sourceKey);
 }
 
 export default function NewConversation() {
@@ -98,6 +128,16 @@ export default function NewConversation() {
             value: value,
             description: `Uploaded part ${part}, ${loadedMb}MB / ${totalMb}MB`,
         });
+    }
+    async function handleUnorganizedFiles(bucketName: string, clinicFolder: string) {
+        const objects = await listObjects(bucketName);
+        for (const object of objects) {
+            const objectKey = object.Key!;
+            if (!objectKey.startsWith(clinicFolder)) {
+                const destinationKey = `${clinicFolder}/${objectKey}`;
+                await moveObject(bucketName, objectKey, bucketName, destinationKey);
+            }
+        }
     }
 
     async function submitJob(e: React.FormEvent<HTMLFormElement>) {
@@ -148,6 +188,7 @@ export default function NewConversation() {
             MedicalScribeJobName: jobName,
             DataAccessRoleArn: amplifyCustom.healthScribeServiceRole,
             OutputBucketName: uploadLocation.bucket, // Use the same bucket as the input
+
             Media: {
                 MediaFileUri: `s3://${s3Location.Bucket}/${s3Location.Key}`,
             },
@@ -248,6 +289,23 @@ export default function NewConversation() {
 
         fetchClinicName();
     }, [loginId]);
+
+    useEffect(() => {
+        const fetchClinicName = async () => {
+            try {
+                const clinic = await getUserAttributes(user?.username || '');
+                setClinicName(clinic);
+                if (clinic) {
+                    await handleUnorganizedFiles(outputBucket, clinic);
+                }
+            } catch (error) {
+                console.error('Error fetching clinic name: ', error);
+            }
+        };
+        if (user) {
+            fetchClinicName();
+        }
+    }, [user, outputBucket]);
 
     if (clinicName === null) {
         return <Spinner />;
