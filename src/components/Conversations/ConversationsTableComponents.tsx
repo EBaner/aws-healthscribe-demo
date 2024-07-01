@@ -23,23 +23,19 @@ import { ListHealthScribeJobsProps, deleteHealthScribeJob } from '@/utils/Health
 
 import { TablePreferencesDef, collectionPreferencesProps } from './tablePrefs';
 
+//import { sendInsightsEmail } from '@/utils/EmailUtils';
+
 type DeleteModalProps = {
     selectedHealthScribeJob: MedicalScribeJobSummary[];
     deleteModalActive: boolean;
     setDeleteModalActive: React.Dispatch<React.SetStateAction<boolean>>;
     refreshTable: () => void;
-    filterBy: 'UserName' | 'ClinicName';
-    loginId: string;
-    clinicName: string | null;
 };
 function DeleteModal({
     selectedHealthScribeJob,
     deleteModalActive,
     setDeleteModalActive,
     refreshTable,
-    filterBy,
-    loginId,
-    clinicName,
 }: DeleteModalProps) {
     const { addFlashMessage } = useNotificationsContext();
     const [isDeleting, setIsDeleting] = useState<boolean>(false);
@@ -103,9 +99,6 @@ type TableHeaderActionsProps = {
     refreshTable: () => void;
     showFiltered: boolean;
     setShowFiltered: React.Dispatch<React.SetStateAction<boolean>>;
-    filterBy: 'UserName' | 'ClinicName';
-    loginId: string;
-    clinicName: string | null;
 };
 function TableHeaderActions({
     setSearchParams,
@@ -114,9 +107,6 @@ function TableHeaderActions({
     refreshTable,
     showFiltered,
     setShowFiltered,
-    filterBy,
-    loginId,
-    clinicName,
 }: TableHeaderActionsProps) {
     const DO_NOT_DELETE = ['Demo-Fatigue', 'Demo-Kidney', 'Demo-Knee'];
 
@@ -161,9 +151,6 @@ type TableHeaderProps = {
     listHealthScribeJobs: (searchFilter: ListHealthScribeJobsProps) => Promise<void>;
     showFiltered: boolean;
     setShowFiltered: React.Dispatch<React.SetStateAction<boolean>>;
-    filterBy: 'UserName' | 'ClinicName';
-    loginId: string;
-    clinicName: string | null;
 };
 function TableHeader({
     selectedHealthScribeJob,
@@ -171,15 +158,13 @@ function TableHeader({
     listHealthScribeJobs,
     showFiltered,
     setShowFiltered,
-    filterBy,
-    loginId,
-    clinicName,
 }: TableHeaderProps) {
     const [deleteModalActive, setDeleteModalActive] = useState<boolean>(false);
     const [searchParams, setSearchParams] = useState<ListHealthScribeJobsProps>({});
     const [debouncedSearchParams] = useDebounce(searchParams, 500);
+    //const [email, setEmail] = useState('');
 
-    // Update list initially & debounced search params
+    // Update list initially & deboucned search params
     useEffect(() => {
         listHealthScribeJobs(debouncedSearchParams).catch(console.error);
     }, [debouncedSearchParams]);
@@ -194,6 +179,23 @@ function TableHeader({
         });
     }
 
+    /*function handleEmailChange(event) {
+        setEmail(event.target.value);
+    }
+
+    async function handleSendEmail() {
+        if (email) {
+            try {
+                await sendInsightsEmail(email, selectedHealthScribeJob);
+                alert('Insights sent successfully');
+            } catch (error) {
+                alert('Error sending insights');
+            }
+        } else {
+            alert('Please enter a valid email address');
+        }
+    }*/
+
     // Manual refresh function for the header actions
     function refreshTable() {
         listHealthScribeJobs(debouncedSearchParams).catch(console.error);
@@ -206,9 +208,6 @@ function TableHeader({
                 deleteModalActive={deleteModalActive}
                 setDeleteModalActive={setDeleteModalActive}
                 refreshTable={refreshTable}
-                filterBy={filterBy}
-                loginId={loginId}
-                clinicName={clinicName}
             />
             <Header
                 variant="awsui-h1-sticky"
@@ -221,9 +220,6 @@ function TableHeader({
                         refreshTable={refreshTable}
                         showFiltered={showFiltered}
                         setShowFiltered={setShowFiltered}
-                        filterBy={filterBy}
-                        loginId={loginId}
-                        clinicName={clinicName}
                     />
                 }
             >
@@ -232,7 +228,7 @@ function TableHeader({
             <Form>
                 <Grid gridDefinition={[{ colspan: 5 }, { colspan: 3 }]}>
                     <Input
-                        placeholder={filterBy === 'UserName' ? 'Username' : 'Clinic Name'}
+                        placeholder="HealthScribe Job Name"
                         value={searchParams?.JobNameContains || ''}
                         onChange={({ detail }) => handleInputChange('JobNameContains', detail.value)}
                     />
