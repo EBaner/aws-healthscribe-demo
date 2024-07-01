@@ -16,10 +16,13 @@ import Spinner from '@cloudscape-design/components/spinner';
 import StatusIndicator from '@cloudscape-design/components/status-indicator';
 import TokenGroup from '@cloudscape-design/components/token-group';
 
+import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
+
 import { AdminGetUserCommand, CognitoIdentityProviderClient } from '@aws-sdk/client-cognito-identity-provider';
 import { Tag } from '@aws-sdk/client-s3/dist-types/models/models_0';
 import { MedicalScribeParticipantRole, StartMedicalScribeJobRequest } from '@aws-sdk/client-transcribe';
 import { Progress } from '@aws-sdk/lib-storage';
+import { Amplify } from 'aws-amplify';
 import dayjs from 'dayjs';
 
 import { useS3 } from '@/hooks/useS3';
@@ -36,21 +39,20 @@ import { AudioDetailSettings, AudioIdentificationType, InputName } from './FormC
 import styles from './NewConversation.module.css';
 import { verifyJobParams } from './formUtils';
 import { AudioDetails, AudioSelection } from './types';
-import { Amplify } from 'aws-amplify';
-import { Auth } from '@aws-amplify/auth';
+
 const client = new CognitoIdentityProviderClient({ region: 'us-east-1' });
 
 async function getUserAttributes(username: string) {
     try {
-      const user = await Auth.currentAuthenticatedUser();
-      const attributes = await Auth.userAttributes(user);
-      const clinicAttribute = attributes.find((attr: { Name: string; }) => attr.Name === 'custom:Clinic');
-      return clinicAttribute ? clinicAttribute.Value : null;
+        const user = await getCurrentUser();
+        const attributes = await fetchUserAttributes();
+        const clinicAttribute = attributes['custom:Clinic'];
+        return clinicAttribute || null;
     } catch (error) {
-      console.error('Error fetching user attributes: ', error);
-      throw error;
+        console.error('Error fetching user attributes: ', error);
+        throw error;
     }
-  }
+}
 
 export default function NewConversation() {
     const { updateProgressBar } = useNotificationsContext();
@@ -231,21 +233,21 @@ export default function NewConversation() {
 
     useEffect(() => {
         const fetchClinicName = async () => {
-          try {
-            const clinicName = await getUserAttributes(loginId);
-            if (!clinicName) {
-              setClinicName('No clinic name found');
-              return;
+            try {
+                const clinicName = await getUserAttributes(loginId);
+                if (!clinicName) {
+                    setClinicName('No clinic name found');
+                    return;
+                }
+                setClinicName(clinicName);
+            } catch (error) {
+                console.error('Failed to fetch clinic name', error);
+                // Handle the error appropriately
             }
-            setClinicName(clinicName);
-          } catch (error) {
-            console.error('Failed to fetch clinic name', error);
-            // Handle the error appropriately
-          }
         };
-      
+
         fetchClinicName();
-      }, [loginId]);
+    }, [loginId]);
 
     if (clinicName === null) {
         return <Spinner />;
