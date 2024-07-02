@@ -12,7 +12,6 @@
     },
     "dependencies": {
         "@aws-amplify/ui-react": "^6.1.8",
-        "@aws-sdk/client-cognito-identity-provider": "^3.609.0",
         "@aws-sdk/client-comprehendmedical": "^3.556.0",
         "@aws-sdk/client-polly": "^3.556.0",
         "@aws-sdk/client-s3": "^3.556.0",
@@ -29,7 +28,6 @@
         "dayjs": "^1.11.10",
         "framer-motion": "^11.1.7",
         "lodash": "^4.17.21",
-        "next": "^14.2.4",
         "react": "^18.2.0",
         "react-ace": "^11.0.1",
         "react-dom": "^18.2.0",
