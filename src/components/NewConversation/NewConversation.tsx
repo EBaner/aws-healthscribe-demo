@@ -33,7 +33,7 @@ import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
 import dayjs from 'dayjs';
 
 import { useS3 } from '@/hooks/useS3';
-import { useAuthContext } from '@/store/auth';
+import { AuthContext, useAuthContext } from '@/store/auth';
 import { useNotificationsContext } from '@/store/notifications';
 import { startMedicalScribeJob } from '@/utils/HealthScribeApi';
 import { multipartUpload } from '@/utils/S3Api';
@@ -49,6 +49,7 @@ import { AudioDetails, AudioSelection } from './types';
 
 const client = new CognitoIdentityProviderClient({ region: 'us-east-1' });
 const s3Client = new S3Client({ region: 'us-east-1' });
+//check this
 
 async function getUserAttributes(username: string) {
     try {
