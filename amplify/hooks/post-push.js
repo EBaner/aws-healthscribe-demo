@@ -4,8 +4,8 @@
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const fs = require('fs');
 
-const AMPLIFY_META_PATH = './amplify/backend/amplify-meta.json';
-const AWS_CUSTOM_PATH = './src/aws-custom.json';
+const amplifyMetaFilePath = path.resolve(__dirname, '..', '..', 'amplify', 'backend', 'amplify-meta.json');
+const amplifyMeta = JSON.parse(fs.readFileSync(amplifyMetaFilePath, 'utf-8'));
 // const AWS_EXPORTS_PATH = './src/aws-exports.js';
 // const TEAM_PROVIDER_INFO_PATH = './amplify/team-provider-info.json';
 
