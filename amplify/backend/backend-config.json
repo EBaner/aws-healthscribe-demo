@@ -1,72 +1,54 @@
 {
-  "auth": {
-    "healthScribeDemoAuth": {
-      "customAuth": false,
-      "dependsOn": [],
-      "frontendAuthConfig": {
-        "mfaConfiguration": "OFF",
-        "mfaTypes": [
-          "SMS"
-        ],
-        "passwordProtectionSettings": {
-          "passwordPolicyCharacters": [],
-          "passwordPolicyMinLength": 8
-        },
-        "signupAttributes": [
-          "EMAIL"
-        ],
-        "socialProviders": [],
-        "usernameAttributes": [
-          "EMAIL"
-        ],
-        "verificationMechanisms": [
-          "EMAIL"
-        ]
-      },
-      "providerPlugin": "awscloudformation",
-      "service": "Cognito"
-    }
-  },
-  "custom": {
-    "addBucketLogging": {
-      "dependsOn": [
-        {
-          "attributes": [
-            "BucketName",
-            "Region",
-            "HealthScribeServiceRoleArn"
-          ],
-          "category": "storage",
-          "resourceName": "healthScribeDemoStorage"
-        },
-        {
-          "attributes": [
-            "Name",
-            "Arn",
-            "Region",
-            "LambdaExecutionRole",
-            "LambdaExecutionRoleArn"
-          ],
-          "category": "function",
-          "resourceName": "addBucketLogging"
+    "auth": {
+        "healthScribeDemoAuth": {
+            "customAuth": false,
+            "dependsOn": [],
+            "frontendAuthConfig": {
+                "mfaConfiguration": "OFF",
+                "mfaTypes": ["SMS"],
+                "passwordProtectionSettings": {
+                    "passwordPolicyCharacters": [],
+                    "passwordPolicyMinLength": 8
+                },
+                "signupAttributes": ["EMAIL"],
+                "socialProviders": [],
+                "usernameAttributes": ["EMAIL"],
+                "verificationMechanisms": ["EMAIL"]
+            },
+            "providerPlugin": "awscloudformation",
+            "service": "Cognito"
         }
-      ],
-      "providerPlugin": "awscloudformation",
-      "service": "customCDK"
+    },
+    "custom": {
+        "addBucketLogging": {
+            "dependsOn": [
+                {
+                    "attributes": ["BucketName", "Region", "HealthScribeServiceRoleArn"],
+                    "category": "storage",
+                    "resourceName": "healthScribeDemoStorage"
+                },
+                {
+                    "attributes": ["Name", "Arn", "Region", "LambdaExecutionRole", "LambdaExecutionRoleArn"],
+                    "category": "function",
+                    "resourceName": "addBucketLogging"
+                }
+            ],
+            "providerPlugin": "awscloudformation",
+            "service": "customCDK"
+        }
+    },
+    "function": {
+        "addBucketLogging": {
+            "build": true,
+            "providerPlugin": "awscloudformation",
+            "service": "Lambda"
+        }
+    },
+    "storage": {
+        "healthScribeDemoStorage": {
+            "dependsOn": [],
+            "providerPlugin": "awscloudformation",
+            "service": "S3"
+        }
     }
-  },
-  "function": {
-    "addBucketLogging": {
-      "build": true,
-      "providerPlugin": "awscloudformation",
-      "service": "Lambda"
-    }
-  },
-  "storage": {
-    "healthScribeDemoStorage": {
-      "dependsOn": [],
-      "providerPlugin": "awscloudformation",
-      "service": "S3"
-    }
-  }
 }
