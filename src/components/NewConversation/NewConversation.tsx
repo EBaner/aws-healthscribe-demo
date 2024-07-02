@@ -16,7 +16,7 @@ import Spinner from '@cloudscape-design/components/spinner';
 import StatusIndicator from '@cloudscape-design/components/status-indicator';
 import TokenGroup from '@cloudscape-design/components/token-group';
 
-import { AdminGetUserCommand, CognitoIdentityProviderClient } from '@aws-sdk/client-cognito-identity-provider';
+//import { AdminGetUserCommand, CognitoIdentityProviderClient } from '@aws-sdk/client-cognito-identity-provider';
 import {
     CopyObjectCommand,
     DeleteObjectCommand,
@@ -47,7 +47,7 @@ import styles from './NewConversation.module.css';
 import { verifyJobParams } from './formUtils';
 import { AudioDetails, AudioSelection } from './types';
 
-const client = new CognitoIdentityProviderClient({ region: 'us-east-1' });
+//const client = new CognitoIdentityProviderClient({ region: 'us-east-1' });
 const s3Client = new S3Client({ region: 'us-east-1' });
 //check this
 
