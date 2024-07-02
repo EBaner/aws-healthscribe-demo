@@ -1755,9 +1755,9 @@
   integrity sha512-0fjwvUQqFPXvxKJeQ90OwW7WR09Ls9Lkdm6sjRJAqyHV+MHybfKbiVh1W04iyYq+g5JSNb8h1mNTXJ1B4vdAcA==
 
 "@cloudscape-design/component-toolkit@^1.0.0-beta":
-  version "1.0.0-beta.48"
-  resolved "https://registry.npmjs.org/@cloudscape-design/component-toolkit/-/component-toolkit-1.0.0-beta.48.tgz"
-  integrity sha512-Ph8XuqjGEdlLiebqcj+ccs6cAVSdMLDHIwnY6P9qq3Wi6ewqtNpisgOC2sJ/TI+wXEjwqKRw9Cuta/8QEtdGtA==
+  version "1.0.0-beta.51"
+  resolved "https://registry.npmjs.org/@cloudscape-design/component-toolkit/-/component-toolkit-1.0.0-beta.51.tgz"
+  integrity sha512-6i5ipiGzhMhTfVLx0BufoxNmQbz66E5Wv4UEWnYoJr0Yk0f7Wa9GnXVplUP3EQP5Pz/9XwjH2tYKLnj6hQVFLg==
   dependencies:
     "@juggle/resize-observer" "^3.3.1"
     tslib "^2.3.1"
