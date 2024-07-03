@@ -31,24 +31,28 @@ const authUiComponents = {
         },
         FormFields() {
             const { validationErrors } = useAuthenticator();
-            const customAttributeError = validationErrors['custom:clinicName'];
+            const customClinicError = validationErrors['custom:Clinic'];
+
             return (
                 <>
                     <Authenticator.SignUp.FormFields />
-                    <div>
-                        <label htmlFor="clinicName">Clinic Name</label>
+                    <div style={{ marginBottom: '15px' }}>
+                        <label htmlFor="clinic" style={{ display: 'block', marginBottom: '5px' }}>
+                            Clinic Name
+                        </label>
                         <input
-                            name="custom:clinicName"
-                            id="clinicName"
+                            name="custom:Clinic"
+                            id="clinic"
                             placeholder="Enter the name of your clinic"
+                            style={{ width: '100%', padding: '8px', fontSize: '14px' }}
                         />
-                        {customAttributeError && typeof customAttributeError === 'string' && (
-                            <span>{customAttributeError}</span>
-                        )}
-                        {customAttributeError && Array.isArray(customAttributeError) && (
-                            <span>{customAttributeError.join(', ')}</span>
-                        )}
-                    </div>
+                            {customClinicError && typeof customClinicError === 'string' && (
+                                <span style={{ color: 'red' }}>{customClinicError}</span>
+                            )}
+                            {customClinicError && Array.isArray(customClinicError) && (
+                                <span style={{ color: 'red' }}>{customClinicError[0]}</span>
+                            )}
+            </div>
                 </>
             );
         },
