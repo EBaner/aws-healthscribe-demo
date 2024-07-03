@@ -45,19 +45,21 @@ async function getUserAttributes(username: string): Promise<string | null> {
         const user = await getCurrentUser();
         const attributes = await fetchUserAttributes();
         const clinicAttribute = attributes['custom:Clinic'];
-        return clinicAttribute || 'No Clinic Found';
+        return clinicAttribute || 'NoClinicFound';
     } catch (error) {
         console.error('Error fetching user attributes: ', error);
         throw error;
     }
 }
 
-export default function NewConversation() {
+export default async function NewConversation() {
     const { updateProgressBar } = useNotificationsContext();
     const navigate = useNavigate();
 
     const { user } = useAuthContext(); // Retrieve user info
     const loginId = user?.signInDetails?.loginId || 'No username found'; // Extract login ID
+    const clinicName = await getUserAttributes(loginId) || "No Clinic found";
+
 
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false); // is job submitting
     const [formError, setFormError] = useState<string | React.ReactElement[]>('');
@@ -118,12 +120,7 @@ export default function NewConversation() {
         setFormError('');
 
         try {
-            const clinicName = await getUserAttributes(loginId).toString(); // Extract Clinic attribute
 
-            if (!clinicName || clinicName === 'No Clinic Found') {
-                throw new Error('Invalid clinic name. Please check user attributes.');
-            }
-    
             // Build job params with StartMedicalScribeJob request syntax
             const audioParams =
                 audioSelection === 'speakerPartitioning'
