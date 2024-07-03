@@ -120,6 +120,10 @@ export default function NewConversation() {
         try {
             const clinicName = await getUserAttributes(loginId).toString(); // Extract Clinic attribute
 
+            if (!clinicName || clinicName === 'No Clinic Found') {
+                throw new Error('Invalid clinic name. Please check user attributes.');
+            }
+    
             // Build job params with StartMedicalScribeJob request syntax
             const audioParams =
                 audioSelection === 'speakerPartitioning'
