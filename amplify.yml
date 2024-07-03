@@ -1,9 +1,4 @@
 version: 1
-backend:
-  phases:
-    build:
-      commands:
-        - amplifyPush --simple
 frontend:
   phases:
     preBuild:
@@ -13,7 +8,6 @@ frontend:
     build:
       commands:
         - yarn run build
-        - cp deploy-manifest.json build/
   artifacts:
     baseDirectory: build
     files:

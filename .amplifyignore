@@ -34,7 +34,6 @@ amplify.backup
 .gitlab-ci.yml
 
 # Local Amplify deployment
-amplify/team-provider-info.json
 src/aws-custom.json
 
 #amplify-do-not-edit-begin
