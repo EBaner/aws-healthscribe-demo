@@ -27,6 +27,8 @@ import { SmallTalkList } from '../types';
 import styles from './TopPanel.module.css';
 import { extractRegions } from './extractRegions';
 
+//see if switch worked
+
 type TopPanelProps = {
     jobLoading: boolean;
     jobDetails: MedicalScribeJob | null;
