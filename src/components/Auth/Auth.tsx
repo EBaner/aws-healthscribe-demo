@@ -9,7 +9,7 @@ import Button from '@cloudscape-design/components/button';
 import Modal from '@cloudscape-design/components/modal';
 import SpaceBetween from '@cloudscape-design/components/space-between';
 
-import { Authenticator, Theme, ThemeProvider, defaultDarkModeOverride } from '@aws-amplify/ui-react';
+import { Authenticator, Theme, ThemeProvider, defaultDarkModeOverride, useAuthenticator } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
 
 import { useAppThemeContext } from '@/store/appTheme';
@@ -27,6 +27,29 @@ const authUiComponents = {
                 >
                     A verification code will be sent to your email address to validate the account.
                 </div>
+            );
+        },
+        FormFields() {
+            const { validationErrors } = useAuthenticator();
+            const customAttributeError = validationErrors['custom:clinicName'];
+            return (
+                <>
+                    <Authenticator.SignUp.FormFields />
+                    <div>
+                        <label htmlFor="clinicName">Clinic Name</label>
+                        <input
+                            name="custom:clinicName"
+                            id="clinicName"
+                            placeholder="Enter the name of your clinic"
+                        />
+                        {customAttributeError && typeof customAttributeError === 'string' && (
+                            <span>{customAttributeError}</span>
+                        )}
+                        {customAttributeError && Array.isArray(customAttributeError) && (
+                            <span>{customAttributeError.join(', ')}</span>
+                        )}
+                    </div>
+                </>
             );
         },
     },
