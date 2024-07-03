@@ -8,7 +8,23 @@ frontend:
     build:
       commands:
         - yarn run build
-        - echo '{"version":1,"artifacts":{"baseDirectory":"build","files":["**/*"]}}' > build/deploy-manifest.json
+        - |
+      cat <<EOF > build/deploy-manifest.json
+      {
+        "version": "1.0",
+        "artifacts": {
+          "baseDirectory": "build",
+          "files": [
+            "**/*"
+          ]
+        },
+        "environment": {
+          "variables": {
+            "AMPLIFY_MONOREPO_APP_ROOT": "/"
+          }
+        }
+      }
+      EOF
   artifacts:
     baseDirectory: build
     files:
