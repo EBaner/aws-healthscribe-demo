@@ -6,6 +6,7 @@ import Pagination from '@cloudscape-design/components/pagination';
 import Table from '@cloudscape-design/components/table';
 
 import { GetMedicalScribeJobCommand, MedicalScribeJobSummary, TranscribeClient } from '@aws-sdk/client-transcribe';
+import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
 
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useAuthContext } from '@/store/auth';
@@ -17,7 +18,6 @@ import { TableHeader, TablePreferences } from './ConversationsTableComponents';
 import TableEmptyState from './TableEmptyState';
 import { columnDefs } from './tableColumnDefs';
 import { DEFAULT_PREFERENCES, TablePreferencesDef } from './tablePrefs';
-import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
 
 async function getTranscribeClient() {
     const credentials = await getCredentials();
@@ -38,7 +38,6 @@ async function getUserAttributes(username: string): Promise<string | null> {
         throw error;
     }
 }
-
 
 const transcribeClient = getTranscribeClient();
 

@@ -21,6 +21,7 @@ import TokenGroup from '@cloudscape-design/components/token-group';
 import { Tag } from '@aws-sdk/client-s3/dist-types/models/models_0';
 import { MedicalScribeParticipantRole, StartMedicalScribeJobRequest } from '@aws-sdk/client-transcribe';
 import { Progress } from '@aws-sdk/lib-storage';
+import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
 import dayjs from 'dayjs';
 
 import { useS3 } from '@/hooks/useS3';
@@ -31,15 +32,13 @@ import { multipartUpload } from '@/utils/S3Api';
 import sleep from '@/utils/sleep';
 
 import amplifyCustom from '../../aws-custom.json';
+import Auth from '../Auth';
 import AudioRecorder from './AudioRecorder';
 import { AudioDropzone } from './Dropzone';
 import { AudioDetailSettings, AudioIdentificationType, InputName } from './FormComponents';
 import styles from './NewConversation.module.css';
 import { verifyJobParams } from './formUtils';
 import { AudioDetails, AudioSelection } from './types';
-import Auth from '../Auth';
-import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
-
 
 async function getUserAttributes(username: string): Promise<string | null> {
     try {
@@ -59,7 +58,6 @@ export default function NewConversation() {
 
     const { user } = useAuthContext(); // Retrieve user info
     const loginId = user?.signInDetails?.loginId || 'No username found'; // Extract login ID
-    
 
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false); // is job submitting
     const [formError, setFormError] = useState<string | React.ReactElement[]>('');
@@ -120,7 +118,7 @@ export default function NewConversation() {
         setFormError('');
 
         try {
-            const clinicName = await getUserAttributes(loginId).toString();// Extract Clinic attribute
+            const clinicName = await getUserAttributes(loginId).toString(); // Extract Clinic attribute
 
             // Build job params with StartMedicalScribeJob request syntax
             const audioParams =
