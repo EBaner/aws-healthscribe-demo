@@ -9,7 +9,7 @@ import tk from 'timekeeper';
 import { getAmplifyRegion, getCredentials } from '@/utils/Sdk';
 
 /**
- * Get an S3 client object. Use the Amplify region since that's where the uploaded files are stored
+ * To get an S3 client object. Use the Amplify region since that's where the uploaded files are stored
  */
 async function getS3Client() {
     return new S3Client({
