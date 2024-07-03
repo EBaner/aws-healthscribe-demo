@@ -325,7 +325,7 @@ export default function TopPanel({
                     />
                 </div>
             </Container>
-            <ExportModal exportModalActive={exportModalActive} setExportModalActive={setExportModalActive} />
+            
         </>
     );
 }
