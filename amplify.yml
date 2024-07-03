@@ -14,7 +14,7 @@ frontend:
       commands:
         - yarn run build
   artifacts:
-    baseDirectory: build
+    baseDirectory: out
     files:
       - '**/*'
   cache:

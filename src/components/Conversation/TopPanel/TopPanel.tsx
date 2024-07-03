@@ -325,7 +325,6 @@ export default function TopPanel({
                     />
                 </div>
             </Container>
-            
         </>
     );
 }
