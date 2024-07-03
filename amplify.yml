@@ -5,16 +5,17 @@ backend:
       commands:
         - amplifyPush --simple
 frontend:
-  frontend: javascript
   phases:
     preBuild:
       commands:
         - nvm use 18
         - yarn install
+        - npm install -g @aws-amplify/cli
+        
     build:
       commands:
         - yarn run build
-        - amplify-frontend-javascript generate-deploy-manifest
+        - echo '{"artifacts":{"baseDirectory":"build","files":["**/*"]}}' > build/deploy-manifest.json
   artifacts:
     baseDirectory: build
     files:
