@@ -30,46 +30,7 @@ import { SmallTalkList } from '../types';
 import styles from './TopPanel.module.css';
 import { extractRegions } from './extractRegions';
 
-type ExportModalProps = {
-    exportModalActive: boolean;
-    setExportModalActive: React.Dispatch<React.SetStateAction<boolean>>;
-};
-
-function ExportModal({ exportModalActive, setExportModalActive }: ExportModalProps) {
-    const [patientEmail, setPatientEmail] = useState<string>('');
-
-    async function doExport() {
-        console.log('Exporting to ' + patientEmail);
-
-        //Todo export logic
-
-        setExportModalActive(false);
-    }
-
-    return (
-        <Modal
-            onDismiss={() => setExportModalActive(false)}
-            visible={exportModalActive}
-            footer={
-                <Box float="right">
-                    <SpaceBetween direction="horizontal" size="xs">
-                        <Button variant="link" onClick={() => setExportModalActive(false)}>
-                            Cancel
-                        </Button>
-                        <Button variant="primary" onClick={doExport}>
-                            Export
-                        </Button>
-                    </SpaceBetween>
-                </Box>
-            }
-            header="Export Summary"
-        >
-            <FormField label="Export patient summary" description="Please enter the patient's email here:">
-                <Input value={patientEmail} onChange={({ detail }) => setPatientEmail(detail.value)} />
-            </FormField>
-        </Modal>
-    );
-}
+//see if switch worked
 
 type TopPanelProps = {
     jobLoading: boolean;
