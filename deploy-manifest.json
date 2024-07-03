@@ -1,15 +1,9 @@
 {
     "version": 1,
-    "generator": "amplify-frontend-javascript",
     "artifacts": {
       "baseDirectory": "build",
       "files": [
         "**/*"
       ]
-    },
-    "hosting": {
-      "redirects": [],
-      "rewrites": [],
-      "customRules": []
     }
   }
