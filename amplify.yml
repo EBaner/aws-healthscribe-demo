@@ -7,26 +7,9 @@ applications:
             - npm install
         build:
           commands:
-            - npm run build
-            - |
-              echo '{
-                "version": "1.0",
-                "artifacts": {
-                  "baseDirectory": "build",
-                  "files": [
-                    "**/*"
-                  ]
-                },
-                "environment": {
-                  "variables": {
-                    "AMPLIFY_MONOREPO_APP_ROOT": "/"
-                  }
-                }
-              }' > build/deploy-manifest.json
-            - ls -la build
-            - cat build/deploy-manifest.json
+              - npm run build
       artifacts:
-        baseDirectory: build
+        baseDirectory: .amplify-hosting
         files:
           - '**/*'
       cache:
