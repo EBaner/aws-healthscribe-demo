@@ -10,27 +10,10 @@ frontend:
       commands:
         - nvm use 18
         - yarn install
-        - npm install -g @aws-amplify/cli
     build:
       commands:
         - yarn run build
-        - |
-          cat <<EOF > build/deploy-manifest.json
-          {
-            "version": 1,
-            "artifacts": {
-              "baseDirectory": "build",
-              "files": [
-                "**/*"
-              ]
-            },
-            "environment": {
-              "variables": {
-                "AMPLIFY_MONOREPO_APP_ROOT": "/"
-              }
-            }
-          }
-          EOF
+        - cp deploy-manifest.json build/
   artifacts:
     baseDirectory: build
     files:
