@@ -17,6 +17,7 @@ import { TableHeader, TablePreferences } from './ConversationsTableComponents';
 import TableEmptyState from './TableEmptyState';
 import { columnDefs } from './tableColumnDefs';
 import { DEFAULT_PREFERENCES, TablePreferencesDef } from './tablePrefs';
+import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
 
 async function getTranscribeClient() {
     const credentials = await getCredentials();
@@ -25,6 +26,19 @@ async function getTranscribeClient() {
         credentials,
     });
 }
+
+async function getUserAttributes(username: string): Promise<string | null> {
+    try {
+        const user = await getCurrentUser();
+        const attributes = await fetchUserAttributes();
+        const clinicAttribute = attributes['custom:Clinic'];
+        return clinicAttribute || null;
+    } catch (error) {
+        console.error('Error fetching user attributes: ', error);
+        throw error;
+    }
+}
+
 
 const transcribeClient = getTranscribeClient();
 

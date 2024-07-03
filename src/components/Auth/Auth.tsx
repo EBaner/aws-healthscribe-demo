@@ -46,13 +46,13 @@ const authUiComponents = {
                             placeholder="Enter the name of your clinic"
                             style={{ width: '100%', padding: '8px', fontSize: '14px' }}
                         />
-                            {customClinicError && typeof customClinicError === 'string' && (
-                                <span style={{ color: 'red' }}>{customClinicError}</span>
-                            )}
-                            {customClinicError && Array.isArray(customClinicError) && (
-                                <span style={{ color: 'red' }}>{customClinicError[0]}</span>
-                            )}
-            </div>
+                        {customClinicError && typeof customClinicError === 'string' && (
+                            <span style={{ color: 'red' }}>{customClinicError}</span>
+                        )}
+                        {customClinicError && Array.isArray(customClinicError) && (
+                            <span style={{ color: 'red' }}>{customClinicError[0]}</span>
+                        )}
+                    </div>
                 </>
             );
         },

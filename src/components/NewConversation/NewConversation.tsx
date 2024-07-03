@@ -37,6 +37,21 @@ import { AudioDetailSettings, AudioIdentificationType, InputName } from './FormC
 import styles from './NewConversation.module.css';
 import { verifyJobParams } from './formUtils';
 import { AudioDetails, AudioSelection } from './types';
+import Auth from '../Auth';
+import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
+
+
+async function getUserAttributes(username: string): Promise<string | null> {
+    try {
+        const user = await getCurrentUser();
+        const attributes = await fetchUserAttributes();
+        const clinicAttribute = attributes['custom:Clinic'];
+        return clinicAttribute || 'No Clinic Found';
+    } catch (error) {
+        console.error('Error fetching user attributes: ', error);
+        throw error;
+    }
+}
 
 export default function NewConversation() {
     const { updateProgressBar } = useNotificationsContext();
@@ -44,6 +59,7 @@ export default function NewConversation() {
 
     const { user } = useAuthContext(); // Retrieve user info
     const loginId = user?.signInDetails?.loginId || 'No username found'; // Extract login ID
+    
 
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false); // is job submitting
     const [formError, setFormError] = useState<string | React.ReactElement[]>('');
@@ -103,129 +119,139 @@ export default function NewConversation() {
         setIsSubmitting(true);
         setFormError('');
 
-        // build job params with StartMedicalScribeJob request syntax
-        const audioParams =
-            audioSelection === 'speakerPartitioning'
-                ? {
-                      Settings: {
-                          MaxSpeakerLabels: audioDetails.speakerPartitioning.maxSpeakers,
-                          ShowSpeakerLabels: true,
-                      },
-                  }
-                : {
-                      ChannelDefinitions: [
-                          {
-                              ChannelId: 0,
-                              ParticipantRole: audioDetails.channelIdentification
-                                  .channel1 as MedicalScribeParticipantRole,
-                          },
-                          {
-                              ChannelId: 1,
-                              ParticipantRole:
-                                  audioDetails.channelIdentification.channel1 === 'CLINICIAN'
-                                      ? 'PATIENT'
-                                      : ('CLINICIAN' as MedicalScribeParticipantRole),
-                          },
-                      ],
-                      Settings: {
-                          ChannelIdentification: true,
-                      },
-                  };
-
-        const uploadLocation = getUploadMetadata();
-        const s3Location = {
-            Bucket: uploadLocation.bucket,
-            Key: `${uploadLocation.key}/${(filePath as File).name}`,
-        };
-
-        const userNameTag: Tag = {
-            Key: 'UserName',
-            Value: loginId,
-        };
-
-        const jobParams: StartMedicalScribeJobRequest = {
-            MedicalScribeJobName: jobName,
-            DataAccessRoleArn: amplifyCustom.healthScribeServiceRole,
-            OutputBucketName: outputBucket,
-            Media: {
-                MediaFileUri: `s3://${s3Location.Bucket}/${s3Location.Key}`,
-            },
-            ...audioParams,
-            Tags: [userNameTag],
-        };
-
-        const verifyParamResults = verifyJobParams(jobParams);
-        if (!verifyParamResults.verified) {
-            setFormError(verifyParamResults.message);
-            setIsSubmitting(false);
-            return;
-        }
-
-        // Scroll to top
-        window.scrollTo(0, 0);
-
-        // Add initial progress flash message
-        updateProgressBar({
-            id: `New HealthScribe Job: ${jobName}`,
-            value: 0,
-            description: 'Upload to S3 in progress...',
-        });
-
         try {
-            await multipartUpload({
-                ...s3Location,
-                Body: filePath as File,
-                ContentType: filePath?.type,
-                callbackFn: s3UploadCallback,
-            });
-        } catch (e) {
+            const clinicName = await getUserAttributes(loginId).toString();// Extract Clinic attribute
+
+            // Build job params with StartMedicalScribeJob request syntax
+            const audioParams =
+                audioSelection === 'speakerPartitioning'
+                    ? {
+                          Settings: {
+                              MaxSpeakerLabels: audioDetails.speakerPartitioning.maxSpeakers,
+                              ShowSpeakerLabels: true,
+                          },
+                      }
+                    : {
+                          ChannelDefinitions: [
+                              {
+                                  ChannelId: 0,
+                                  ParticipantRole: audioDetails.channelIdentification
+                                      .channel1 as MedicalScribeParticipantRole,
+                              },
+                              {
+                                  ChannelId: 1,
+                                  ParticipantRole:
+                                      audioDetails.channelIdentification.channel1 === 'CLINICIAN'
+                                          ? 'PATIENT'
+                                          : ('CLINICIAN' as MedicalScribeParticipantRole),
+                              },
+                          ],
+                          Settings: {
+                              ChannelIdentification: true,
+                          },
+                      };
+
+            const uploadLocation = getUploadMetadata();
+            const s3Location = {
+                Bucket: uploadLocation.bucket,
+                Key: `${uploadLocation.key}/${(filePath as File).name}`,
+            };
+
+            const userNameTag: Tag = {
+                Key: 'UserName',
+                Value: loginId,
+            };
+
+            const clinicTag: Tag = {
+                Key: 'Clinic',
+                Value: clinicName,
+            };
+
+            const jobParams: StartMedicalScribeJobRequest = {
+                MedicalScribeJobName: jobName,
+                DataAccessRoleArn: amplifyCustom.healthScribeServiceRole,
+                OutputBucketName: outputBucket,
+                Media: {
+                    MediaFileUri: `s3://${s3Location.Bucket}/${s3Location.Key}`,
+                },
+                ...audioParams,
+                Tags: [userNameTag, clinicTag], // Include Clinic tag here
+            };
+
+            const verifyParamResults = verifyJobParams(jobParams);
+            if (!verifyParamResults.verified) {
+                setFormError(verifyParamResults.message);
+                setIsSubmitting(false);
+                return;
+            }
+
+            // Scroll to top
+            window.scrollTo(0, 0);
+
+            // Add initial progress flash message
             updateProgressBar({
                 id: `New HealthScribe Job: ${jobName}`,
-                type: 'error',
                 value: 0,
-                description: 'Uploading files to S3 failed',
-                additionalInfo: `Error uploading ${filePath!.name}: ${(e as Error).message}`,
+                description: 'Upload to S3 in progress...',
             });
-            setIsSubmitting(false);
-            throw e;
-        }
 
-        try {
-            const startJob = await startMedicalScribeJob(jobParams);
-            if (startJob?.MedicalScribeJob?.MedicalScribeJobStatus) {
-                updateProgressBar({
-                    id: `New HealthScribe Job: ${jobName}`,
-                    type: 'success',
-                    value: 100,
-                    description: 'HealthScribe job submitted',
-                    additionalInfo: `Audio file successfully uploaded to S3 and submitted to HealthScribe at ${dayjs(
-                        startJob.MedicalScribeJob.StartTime
-                    ).format('MM/DD/YYYY hh:mm A')}. Redirecting to conversation list in 5 seconds.`,
+            try {
+                await multipartUpload({
+                    ...s3Location,
+                    Body: filePath as File,
+                    ContentType: filePath?.type,
+                    callbackFn: s3UploadCallback,
                 });
-                await sleep(5000);
-                navigate('/conversations');
-            } else {
+            } catch (e) {
                 updateProgressBar({
                     id: `New HealthScribe Job: ${jobName}`,
-                    type: 'info',
-                    value: 100,
-                    description: 'Unable to confirm HealthScribe job submission',
-                    additionalInfo: `Response from HealthScribe: ${JSON.stringify(startJob)}`,
+                    type: 'error',
+                    value: 0,
+                    description: 'Uploading files to S3 failed',
+                    additionalInfo: `Error uploading ${filePath!.name}: ${(e as Error).message}`,
+                });
+                setIsSubmitting(false);
+                throw e;
+            }
+
+            try {
+                const startJob = await startMedicalScribeJob(jobParams);
+                if (startJob?.MedicalScribeJob?.MedicalScribeJobStatus) {
+                    updateProgressBar({
+                        id: `New HealthScribe Job: ${jobName}`,
+                        type: 'success',
+                        value: 100,
+                        description: 'HealthScribe job submitted',
+                        additionalInfo: `Audio file successfully uploaded to S3 and submitted to HealthScribe at ${dayjs(
+                            startJob.MedicalScribeJob.StartTime
+                        ).format('MM/DD/YYYY hh:mm A')}. Redirecting to conversation list in 5 seconds.`,
+                    });
+                    await sleep(5000);
+                    navigate('/conversations');
+                } else {
+                    updateProgressBar({
+                        id: `New HealthScribe Job: ${jobName}`,
+                        type: 'info',
+                        value: 100,
+                        description: 'Unable to confirm HealthScribe job submission',
+                        additionalInfo: `Response from HealthScribe: ${JSON.stringify(startJob)}`,
+                    });
+                }
+            } catch (e) {
+                updateProgressBar({
+                    id: `New HealthScribe Job: ${jobName}`,
+                    type: 'error',
+                    value: 0,
+                    description: 'Submitting job to HealthScribe failed',
+                    additionalInfo: (e as Error).message,
                 });
             }
-        } catch (e) {
-            updateProgressBar({
-                id: `New HealthScribe Job: ${jobName}`,
-                type: 'error',
-                value: 0,
-                description: 'Submitting job to HealthScribe failed',
-                additionalInfo: `Error submitting job to HealthScribe: ${(e as Error).message}`,
-            });
+        } catch (error) {
+            console.error('Error fetching user attributes:', error);
+            setFormError('Error fetching user attributes. Please try again later.');
+        } finally {
             setIsSubmitting(false);
-            throw e;
         }
-
-        setIsSubmitting(false);
     }
 
     useEffect(() => {
