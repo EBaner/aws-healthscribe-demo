@@ -1,9 +1,5 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-// SPDX-License-Identifier: MIT-0
 import React, { useEffect, useMemo, useState } from 'react';
-
 import { useNavigate } from 'react-router-dom';
-
 import Box from '@cloudscape-design/components/box';
 import Button from '@cloudscape-design/components/button';
 import Container from '@cloudscape-design/components/container';
@@ -17,20 +13,16 @@ import SpaceBetween from '@cloudscape-design/components/space-between';
 import Spinner from '@cloudscape-design/components/spinner';
 import StatusIndicator from '@cloudscape-design/components/status-indicator';
 import TokenGroup from '@cloudscape-design/components/token-group';
-
 import { Tag } from '@aws-sdk/client-s3/dist-types/models/models_0';
 import { MedicalScribeParticipantRole, StartMedicalScribeJobRequest } from '@aws-sdk/client-transcribe';
 import { Progress } from '@aws-sdk/lib-storage';
-import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
 import dayjs from 'dayjs';
-
 import { useS3 } from '@/hooks/useS3';
 import { useAuthContext } from '@/store/auth';
 import { useNotificationsContext } from '@/store/notifications';
 import { startMedicalScribeJob } from '@/utils/HealthScribeApi';
 import { multipartUpload } from '@/utils/S3Api';
 import sleep from '@/utils/sleep';
-
 import amplifyCustom from '../../aws-custom.json';
 import Auth from '../Auth';
 import AudioRecorder from './AudioRecorder';
@@ -39,27 +31,39 @@ import { AudioDetailSettings, AudioIdentificationType, InputName } from './FormC
 import styles from './NewConversation.module.css';
 import { verifyJobParams } from './formUtils';
 import { AudioDetails, AudioSelection } from './types';
+import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
 
 async function getUserAttributes(username: string): Promise<string | null> {
     try {
         const user = await getCurrentUser();
         const attributes = await fetchUserAttributes();
         const clinicAttribute = attributes['custom:Clinic'];
-        return clinicAttribute || 'NoClinicFound';
+        return clinicAttribute || 'No Clinic Found';
     } catch (error) {
         console.error('Error fetching user attributes: ', error);
         throw error;
     }
 }
 
-export default async function NewConversation() {
+export default function NewConversation() {
     const { updateProgressBar } = useNotificationsContext();
     const navigate = useNavigate();
 
     const { user } = useAuthContext(); // Retrieve user info
     const loginId = user?.signInDetails?.loginId || 'No username found'; // Extract login ID
-    const clinicName = await getUserAttributes(loginId) || "No Clinic found";
+    const [clinicName, setClinicName] = useState<string>('No Clinic found');
 
+    useEffect(() => {
+        async function fetchClinicName() {
+            const name = await getUserAttributes(loginId);
+            if (typeof name === 'string') {
+                setClinicName(name);
+            } else {
+                setClinicName('No Clinic found');
+            }
+        }
+        fetchClinicName();
+    }, [loginId]);
 
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false); // is job submitting
     const [formError, setFormError] = useState<string | React.ReactElement[]>('');
@@ -74,7 +78,7 @@ export default async function NewConversation() {
             channel1: 'CLINICIAN',
         },
     });
-    const [filePath, setFilePath] = useState<File>(); // only one file is allowd from react-dropzone. NOT an array
+    const [filePath, setFilePath] = useState<File>(); // only one file is allowed from react-dropzone. NOT an array
     const [outputBucket, getUploadMetadata] = useS3(); // outputBucket is the Amplify bucket, and uploadMetadata contains uuid4
 
     const [submissionMode, setSubmissionMode] = useState<string>('uploadRecording'); // to hide or show the live recorder
@@ -120,7 +124,6 @@ export default async function NewConversation() {
         setFormError('');
 
         try {
-
             // Build job params with StartMedicalScribeJob request syntax
             const audioParams =
                 audioSelection === 'speakerPartitioning'
