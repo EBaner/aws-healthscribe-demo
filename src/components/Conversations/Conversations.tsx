@@ -1,15 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { useCollection } from '@cloudscape-design/collection-hooks';
 import Button from '@cloudscape-design/components/button';
 import Pagination from '@cloudscape-design/components/pagination';
 import Table from '@cloudscape-design/components/table';
+
 import { GetMedicalScribeJobCommand, MedicalScribeJobSummary, TranscribeClient } from '@aws-sdk/client-transcribe';
 import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
+
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useAuthContext } from '@/store/auth';
 import { useNotificationsContext } from '@/store/notifications';
 import { ListHealthScribeJobsProps, listHealthScribeJobs } from '@/utils/HealthScribeApi';
 import { getConfigRegion, getCredentials } from '@/utils/Sdk';
+
 import { TableHeader, TablePreferences } from './ConversationsTableComponents';
 import TableEmptyState from './TableEmptyState';
 import { columnDefs } from './tableColumnDefs';
@@ -114,11 +118,11 @@ export default function Conversations() {
                                 const userTag = jobDetails?.Tags?.find((tag) => tag.Key === 'UserName');
                                 const clinicTag = jobDetails?.Tags?.find((tag) => tag.Key === 'Clinic');
                                 const isUserJob = userTag?.Value === loginId;
-                                const isClinicJob = clinicTag?.Value === clinicName;
+                                //const isClinicJob = clinicTag?.Value === clinicName;
                                 console.log(
-                                    `Job: ${job.MedicalScribeJobName}, UserTag: ${userTag?.Value}, ClinicTag: ${clinicTag?.Value}, IsUserJob: ${isUserJob}, IsClinicJob: ${isClinicJob}`
+                                    `Job: ${job.MedicalScribeJobName}, UserTag: ${userTag?.Value}, ClinicTag: ${clinicTag?.Value}, IsUserJob: ${isUserJob}`
                                 );
-                                return isUserJob || isClinicJob ? job : null;
+                                return isUserJob ? job : null;
                             } catch (error) {
                                 console.error(`Failed to fetch details for job ${job.MedicalScribeJobName}:`, error);
                                 return null;
@@ -150,11 +154,37 @@ export default function Conversations() {
                         setMoreHealthScribeJobs({});
                     }
                 } else {
-                    // Show all jobs without filtering
+                    const detailedJobSummaries = await Promise.all(
+                        listResults.map(async (job) => {
+                            try {
+                                const jobDetails = await getHealthScribeJob(job.MedicalScribeJobName);
+                                const userTag = jobDetails?.Tags?.find((tag) => tag.Key === 'UserName');
+                                const clinicTag = jobDetails?.Tags?.find((tag) => tag.Key === 'Clinic');
+                                
+                                const isClinicJob = clinicTag?.Value === clinicName;
+                                console.log(
+                                    `Job: ${job.MedicalScribeJobName}, UserTag: ${userTag?.Value}, ClinicTag: ${clinicTag?.Value}, IsClinicJob: ${isClinicJob}`
+                                );
+                                return isClinicJob ? job : null;
+                            } catch (error) {
+                                console.error(`Failed to fetch details for job ${job.MedicalScribeJobName}:`, error);
+                                return null;
+                            }
+                        })
+                    );
+
+                    // Filter out null values
+                    const filteredResults = detailedJobSummaries.filter(
+                        (job): job is MedicalScribeJobSummary => job !== null
+                    );
+
+                    console.log('Filtered results:', filteredResults);
+
+                    // if NextToken is specified, append search results to existing results
                     if (processedSearchFilter.NextToken) {
-                        setHealthScribeJobs((prevHealthScribeJobs) => prevHealthScribeJobs.concat(listResults));
+                        setHealthScribeJobs((prevHealthScribeJobs) => prevHealthScribeJobs.concat(filteredResults));
                     } else {
-                        setHealthScribeJobs(listResults);
+                        setHealthScribeJobs(filteredResults);
                     }
 
                     // If the research returned NextToken, there are additional jobs. Set moreHealthScribeJobs to enable pagination
@@ -165,8 +195,7 @@ export default function Conversations() {
                         });
                     } else {
                         setMoreHealthScribeJobs({});
-                    }
-                }
+                    }}
             } catch (e: unknown) {
                 setTableLoading(false);
                 addFlashMessage({
@@ -178,7 +207,15 @@ export default function Conversations() {
             }
             setTableLoading(false);
         },
-        [addFlashMessage, setTableLoading, setHealthScribeJobs, setMoreHealthScribeJobs, showFiltered, loginId, clinicName]
+        [
+            addFlashMessage,
+            setTableLoading,
+            setHealthScribeJobs,
+            setMoreHealthScribeJobs,
+            showFiltered,
+            loginId,
+            clinicName,
+        ]
     );
 
     // Property for <Pagination /> to enable ... on navigation if there are additional HealthScribe jobs
@@ -251,9 +288,7 @@ export default function Conversations() {
                 visibleColumns={preferences.visibleContent}
                 wrapLines={preferences.wrapLines}
             />
-            <Button onClick={() => setShowFiltered(!showFiltered)}>
-                {showFiltered ? 'Show All Jobs' : 'Show My Jobs'}
-            </Button>
+    
         </>
     );
 }
