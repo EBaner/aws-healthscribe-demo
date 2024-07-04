@@ -1,19 +1,15 @@
-import React, { useCallback, useMemo, useState } from 'react';
-
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useCollection } from '@cloudscape-design/collection-hooks';
 import Button from '@cloudscape-design/components/button';
 import Pagination from '@cloudscape-design/components/pagination';
 import Table from '@cloudscape-design/components/table';
-
 import { GetMedicalScribeJobCommand, MedicalScribeJobSummary, TranscribeClient } from '@aws-sdk/client-transcribe';
 import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
-
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useAuthContext } from '@/store/auth';
 import { useNotificationsContext } from '@/store/notifications';
 import { ListHealthScribeJobsProps, listHealthScribeJobs } from '@/utils/HealthScribeApi';
 import { getConfigRegion, getCredentials } from '@/utils/Sdk';
-
 import { TableHeader, TablePreferences } from './ConversationsTableComponents';
 import TableEmptyState from './TableEmptyState';
 import { columnDefs } from './tableColumnDefs';
@@ -72,9 +68,19 @@ export default function Conversations() {
         DEFAULT_PREFERENCES
     ); // Conversation table preferences
     const [showFiltered, setShowFiltered] = useState<boolean>(true);
+    const [clinicName, setClinicName] = useState<string | null>(null); // Store clinic name
 
     // Header counter for the number of HealthScribe jobs
     const headerCounterText = `(${healthScribeJobs.length}${Object.keys(moreHealthScribeJobs).length > 0 ? '+' : ''})`;
+
+    // Fetch user attributes to get clinic name
+    useEffect(() => {
+        async function fetchClinic() {
+            const clinic = await getUserAttributes(loginId);
+            setClinicName(clinic);
+        }
+        fetchClinic();
+    }, [loginId]);
 
     // Call Transcribe API to list HealthScribe jobs - optional search filter
     const listHealthScribeJobsWrapper = useCallback(
@@ -100,17 +106,19 @@ export default function Conversations() {
                 console.log('List results from API:', listResults);
 
                 if (showFiltered) {
-                    // Fetch detailed job summaries and filter by user's login ID
+                    // Fetch detailed job summaries and filter by user's login ID or clinic name
                     const detailedJobSummaries = await Promise.all(
                         listResults.map(async (job) => {
                             try {
                                 const jobDetails = await getHealthScribeJob(job.MedicalScribeJobName);
                                 const userTag = jobDetails?.Tags?.find((tag) => tag.Key === 'UserName');
+                                const clinicTag = jobDetails?.Tags?.find((tag) => tag.Key === 'Clinic');
                                 const isUserJob = userTag?.Value === loginId;
+                                const isClinicJob = clinicTag?.Value === clinicName;
                                 console.log(
-                                    `Job: ${job.MedicalScribeJobName}, UserTag: ${userTag?.Value}, IsUserJob: ${isUserJob}`
+                                    `Job: ${job.MedicalScribeJobName}, UserTag: ${userTag?.Value}, ClinicTag: ${clinicTag?.Value}, IsUserJob: ${isUserJob}, IsClinicJob: ${isClinicJob}`
                                 );
-                                return isUserJob ? job : null;
+                                return isUserJob || isClinicJob ? job : null;
                             } catch (error) {
                                 console.error(`Failed to fetch details for job ${job.MedicalScribeJobName}:`, error);
                                 return null;
@@ -170,7 +178,7 @@ export default function Conversations() {
             }
             setTableLoading(false);
         },
-        [addFlashMessage, setTableLoading, setHealthScribeJobs, setMoreHealthScribeJobs, showFiltered, loginId]
+        [addFlashMessage, setTableLoading, setHealthScribeJobs, setMoreHealthScribeJobs, showFiltered, loginId, clinicName]
     );
 
     // Property for <Pagination /> to enable ... on navigation if there are additional HealthScribe jobs
@@ -243,6 +251,9 @@ export default function Conversations() {
                 visibleColumns={preferences.visibleContent}
                 wrapLines={preferences.wrapLines}
             />
+            <Button onClick={() => setShowFiltered(!showFiltered)}>
+                {showFiltered ? 'Show All Jobs' : 'Show My Jobs'}
+            </Button>
         </>
     );
 }
