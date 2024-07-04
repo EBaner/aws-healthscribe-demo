@@ -132,7 +132,7 @@ function TableHeaderActions({
                 Delete
             </Button>
             <Button onClick={() => setShowFiltered(!showFiltered)}>
-                {showFiltered ? 'Show All' : 'Show Filtered'}
+                {showFiltered ? 'Display All of Your Clinics Jobs' : 'Show Your Jobs'}
             </Button>
         </SpaceBetween>
     );

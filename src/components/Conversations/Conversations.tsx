@@ -1,19 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-
 import { useCollection } from '@cloudscape-design/collection-hooks';
 import Button from '@cloudscape-design/components/button';
 import Pagination from '@cloudscape-design/components/pagination';
 import Table from '@cloudscape-design/components/table';
-
 import { GetMedicalScribeJobCommand, MedicalScribeJobSummary, TranscribeClient } from '@aws-sdk/client-transcribe';
 import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
-
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useAuthContext } from '@/store/auth';
 import { useNotificationsContext } from '@/store/notifications';
 import { ListHealthScribeJobsProps, listHealthScribeJobs } from '@/utils/HealthScribeApi';
 import { getConfigRegion, getCredentials } from '@/utils/Sdk';
-
 import { TableHeader, TablePreferences } from './ConversationsTableComponents';
 import TableEmptyState from './TableEmptyState';
 import { columnDefs } from './tableColumnDefs';
@@ -160,7 +156,7 @@ export default function Conversations() {
                                 const jobDetails = await getHealthScribeJob(job.MedicalScribeJobName);
                                 const userTag = jobDetails?.Tags?.find((tag) => tag.Key === 'UserName');
                                 const clinicTag = jobDetails?.Tags?.find((tag) => tag.Key === 'Clinic');
-                                
+
                                 const isClinicJob = clinicTag?.Value === clinicName;
                                 console.log(
                                     `Job: ${job.MedicalScribeJobName}, UserTag: ${userTag?.Value}, ClinicTag: ${clinicTag?.Value}, IsClinicJob: ${isClinicJob}`
@@ -195,7 +191,8 @@ export default function Conversations() {
                         });
                     } else {
                         setMoreHealthScribeJobs({});
-                    }}
+                    }
+                }
             } catch (e: unknown) {
                 setTableLoading(false);
                 addFlashMessage({
@@ -217,6 +214,11 @@ export default function Conversations() {
             clinicName,
         ]
     );
+
+    // Automatically refresh the table when the filter is changed
+    useEffect(() => {
+        listHealthScribeJobsWrapper({}); // Fetch all jobs on component mount and when filter changes
+    }, [showFiltered]);
 
     // Property for <Pagination /> to enable ... on navigation if there are additional HealthScribe jobs
     const openEndPaginationProp = useMemo(() => {
@@ -288,7 +290,7 @@ export default function Conversations() {
                 visibleColumns={preferences.visibleContent}
                 wrapLines={preferences.wrapLines}
             />
-    
         </>
     );
 }
+
