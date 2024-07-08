@@ -38,13 +38,6 @@ export function RightPanelActions({
     return (
         <SpaceBetween size={'xs'} alignItems="center" direction={'horizontal'}>
             <Button iconName="settings" variant="icon" onClick={() => setRightPanelSettingsOpen(true)} />
-            <Button
-                disabled={!extractHealthDataEnabled || dataExtracted}
-                loading={extractingData}
-                onClick={() => handleExtractHealthData()}
-            >
-                Extract Health Data
-            </Button>
             <EnableComprehendMedicalPopover />
             <ComprehendMedicalNereCost clinicalDocumentNereUnits={clinicalDocumentNereUnits} />
         </SpaceBetween>

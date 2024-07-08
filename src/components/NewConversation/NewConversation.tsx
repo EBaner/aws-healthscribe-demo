@@ -18,10 +18,10 @@ import TokenGroup from '@cloudscape-design/components/token-group';
 
 import { Tag } from '@aws-sdk/client-s3/dist-types/models/models_0';
 import { MedicalScribeParticipantRole, StartMedicalScribeJobRequest } from '@aws-sdk/client-transcribe';
+import { VocabularyFilterMethod } from '@aws-sdk/client-transcribe';
 import { Progress } from '@aws-sdk/lib-storage';
 import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
 import dayjs from 'dayjs';
-import { VocabularyFilterMethod } from "@aws-sdk/client-transcribe";
 
 import { useS3 } from '@/hooks/useS3';
 import { useAuthContext } from '@/store/auth';
@@ -156,8 +156,7 @@ export default function NewConversation() {
                           ],
                           Settings: {
                               ChannelIdentification: true,
-                              VocabularyName: "CustomVetVocab",
-
+                              VocabularyName: 'CustomVetVocab',
                           },
                       };
 
@@ -185,7 +184,7 @@ export default function NewConversation() {
                     MediaFileUri: `s3://${s3Location.Bucket}/${s3Location.Key}`,
                 },
                 ...audioParams,
-                
+
                 Tags: [userNameTag, clinicTag], // Include Clinic tag here
             };
 
