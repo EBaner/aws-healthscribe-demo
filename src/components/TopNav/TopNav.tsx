@@ -147,7 +147,7 @@ export default function TopNav() {
                     href: '/',
                     title: 'Auribus Technologies',
                     logo: {
-                        src: '/AURIBUSICON.png',
+                        src: '/AURIBUSICON2.png',
                         alt: 'Auribus Technologies',
                     },
                     //title: 'Auribus Technologies',
