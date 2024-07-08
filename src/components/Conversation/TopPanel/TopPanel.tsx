@@ -15,6 +15,7 @@ import Input from '@cloudscape-design/components/input';
 import Modal from '@cloudscape-design/components/modal';
 import SpaceBetween from '@cloudscape-design/components/space-between';
 import Spinner from '@cloudscape-design/components/spinner';
+import Textarea from '@cloudscape-design/components/textarea';
 
 import { MedicalScribeJob } from '@aws-sdk/client-transcribe';
 import emailjs from 'emailjs-com';
@@ -373,14 +374,6 @@ export default function TopPanel({
                     </Box>
                 }
             >
-                <FormField label="Message">
-                    <Input
-                        type="text"
-                        value={message}
-                        placeholder="Enter a message to the client (Optional)"
-                        onChange={({ detail }) => setMessage(detail.value)}
-                    />
-                </FormField>
                 <FormField label="Email address">
                     <Input
                         type="email"
@@ -389,6 +382,14 @@ export default function TopPanel({
                         onChange={({ detail }) => setEmail(detail.value)}
                     />
                 </FormField>
+                <FormField label="Message">
+                    <Textarea
+                        value={message}
+                        placeholder="Enter a message to the client (Optional)"
+                        onChange={({ detail }) => setMessage(detail.value)}
+                    />
+                </FormField>
+                
             </Modal>
         </>
     );
