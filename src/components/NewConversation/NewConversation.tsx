@@ -176,7 +176,6 @@ export default function NewConversation() {
                 Value: clinicName,
             };
 
-
             const jobParams: StartMedicalScribeJobRequest = {
                 MedicalScribeJobName: jobName,
                 DataAccessRoleArn: amplifyCustom.healthScribeServiceRole,

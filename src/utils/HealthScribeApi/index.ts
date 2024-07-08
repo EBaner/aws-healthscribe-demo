@@ -1,5 +1,6 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
+import { DefaultIdentityIdStore } from '@aws-amplify/auth/cognito';
 import { DeleteObjectCommand, ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3';
 import {
     DeleteMedicalScribeJobCommand,
@@ -15,7 +16,6 @@ import { useS3 } from '@/hooks/useS3';
 import { getConfigRegion, getCredentials, printTiming } from '@/utils/Sdk';
 
 import { getS3Object } from '../S3Api';
-import { DefaultIdentityIdStore } from '@aws-amplify/auth/cognito';
 
 async function getTranscribeClient() {
     return new TranscribeClient({
@@ -78,7 +78,7 @@ export type DeleteHealthScribeJobProps = {
 async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScribeJobProps) {
     const start = performance.now();
     const [outputBucket, getUploadMetadata] = useS3();
-    const uploadLocation = getUploadMetadata();
+    const uploadLocation = getUploadMetadata(MedicalScribeJobName);
     try {
         // Delete the MedicalScribe job
         const transcribeClient = new TranscribeClient({
@@ -156,7 +156,6 @@ async function deleteS3Folder(s3Client: S3Client, bucket: string, folderKey: str
     const deleteFolderCommand = new DeleteObjectCommand(deleteFolderParams);
     await s3Client.send(deleteFolderCommand);
     console.log(`Successfully deleted S3 folder: ${folderKey}`);
-    
 }
 
 export { listHealthScribeJobs, getHealthScribeJob, deleteHealthScribeJob, startMedicalScribeJob };
