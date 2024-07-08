@@ -15,44 +15,45 @@ type NoEntitiesProps = {
     editableContent: string;
 };
 
-const NoEntities = React.forwardRef<HTMLDivElement, NoEntitiesProps>(({ handleInput, editableContent }, forwardedRef) => {
-    const [editing, setEditing] = useState(false);
-    const ref = useRef<HTMLDivElement>(null);
+const NoEntities = React.forwardRef<HTMLDivElement, NoEntitiesProps>(
+    ({ handleInput, editableContent }, forwardedRef) => {
+        const [editing, setEditing] = useState(false);
+        const ref = useRef<HTMLDivElement>(null);
 
-    const handleFocus = () => {
-        if (!editing && editableContent === 'No Clinical Entities') {
-            setEditing(true);
-            // Clear the content when editing starts
-            if (ref.current) {
-                ref.current.innerText = '';
+        const handleFocus = () => {
+            if (editing && editableContent === 'No Clinical Entities') {
+                // Clear the content when editing starts
+                if (ref.current) {
+                    ref.current.innerText = '';
+                }
             }
-        }
-    };
+        };
 
-    const handleBlur = () => {
-        setEditing(false);
-        // Restore the placeholder text if content is empty on blur
-        if (ref.current?.innerText === '') {
-            ref.current.innerText = 'No Clinical Entities';
-        }
-        // Call handleInput to update the parent component's state
-        handleInput();
-    };
+        const handleBlur = () => {
+            setEditing(false);
+            // Restore the placeholder text if content is empty on blur
+            if (ref.current?.innerText === '') {
+                ref.current.innerText = 'No Clinical Entities';
+            }
+            // Call handleInput to update the parent component's state
+            handleInput();
+        };
 
-    return (
-        <div
-            contentEditable
-            suppressContentEditableWarning
-            ref={ref as React.MutableRefObject<HTMLDivElement>}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            className={styles.noEntities}
-            style={{ paddingLeft: '5px' }}
-        >
-            <Box variant="small">{editableContent}</Box>
-        </div>
-    );
-});
+        return (
+            <div
+                contentEditable
+                suppressContentEditableWarning
+                ref={ref as React.MutableRefObject<HTMLDivElement>}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                className={styles.noEntities}
+                style={{ paddingLeft: '5px' }}
+            >
+                <Box variant="small">{editableContent}</Box>
+            </div>
+        );
+    }
+);
 
 NoEntities.displayName = 'NoEntities';
 
