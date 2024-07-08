@@ -21,7 +21,8 @@ const NoEntities = React.forwardRef<HTMLDivElement, NoEntitiesProps>(
         const ref = useRef<HTMLDivElement>(null);
 
         const handleFocus = () => {
-            if (editing && editableContent === 'No Clinical Entities') {
+            if (!editing && editableContent === 'No Clinical Entities') {
+                setEditing(true);
                 // Clear the content when editing starts
                 if (ref.current) {
                     ref.current.innerText = '';
@@ -46,7 +47,6 @@ const NoEntities = React.forwardRef<HTMLDivElement, NoEntitiesProps>(
                 ref={ref as React.MutableRefObject<HTMLDivElement>}
                 onFocus={handleFocus}
                 onBlur={handleBlur}
-                className={styles.noEntities}
                 style={{ paddingLeft: '5px' }}
             >
                 <Box variant="small">{editableContent}</Box>
