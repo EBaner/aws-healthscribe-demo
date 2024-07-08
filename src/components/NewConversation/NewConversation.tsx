@@ -160,7 +160,7 @@ export default function NewConversation() {
                           },
                       };
 
-            const uploadLocation = getUploadMetadata();
+            const uploadLocation = getUploadMetadata(jobName);
             const s3Location = {
                 Bucket: uploadLocation.bucket,
                 Key: `${uploadLocation.key}/${(filePath as File).name}`,
@@ -175,6 +175,7 @@ export default function NewConversation() {
                 Key: 'Clinic',
                 Value: clinicName,
             };
+
 
             const jobParams: StartMedicalScribeJobRequest = {
                 MedicalScribeJobName: jobName,

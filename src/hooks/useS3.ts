@@ -8,10 +8,10 @@ export function useS3() {
     const uploadKeyPrefix = 'uploads/HealthScribeDemo/';
 
     const bucketName = config.aws_user_files_s3_bucket;
-    function getUploadMetadata() {
+    function getUploadMetadata(jobName : String) {
         return {
             bucket: bucketName,
-            key: uploadKeyPrefix + uuid4(),
+            key: uploadKeyPrefix + jobName,
         };
     }
 

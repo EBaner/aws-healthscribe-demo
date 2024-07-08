@@ -15,6 +15,7 @@ import { useS3 } from '@/hooks/useS3';
 import { getConfigRegion, getCredentials, printTiming } from '@/utils/Sdk';
 
 import { getS3Object } from '../S3Api';
+import { DefaultIdentityIdStore } from '@aws-amplify/auth/cognito';
 
 async function getTranscribeClient() {
     return new TranscribeClient({
@@ -76,7 +77,6 @@ export type DeleteHealthScribeJobProps = {
 
 async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScribeJobProps) {
     const start = performance.now();
-    const accessPointArn = 'arn:aws:s3:us-east-1:211125307481:accesspoint/fordelete';
     const [outputBucket, getUploadMetadata] = useS3();
     const uploadLocation = getUploadMetadata();
     try {
@@ -97,47 +97,13 @@ async function deleteHealthScribeJob({ MedicalScribeJobName }: DeleteHealthScrib
             credentials: await getCredentials(),
         });
 
-        // Function to delete all objects in a given S3 bucket and folder
-        async function deleteS3Folder(s3Client: S3Client, bucket: string, folderKey: string) {
-            // List all objects in the folder
-            const listParams = {
-                Bucket: bucket,
-                Prefix: folderKey,
-            };
-            const listCommand = new ListObjectsV2Command(listParams);
-            const listResult = await s3Client.send(listCommand);
-
-            // Delete each object in the folder
-            for (const item of listResult.Contents || []) {
-                if (item.Key) {
-                    const deleteParams = {
-                        Bucket: bucket,
-                        Key: item.Key,
-                    };
-                    const deleteCommand = new DeleteObjectCommand(deleteParams);
-                    await s3Client.send(deleteCommand);
-                    console.log(`Deleted object: ${item.Key}`);
-                }
-            }
-
-            // Delete the folder itself (if necessary)
-            const deleteFolderParams = {
-                Bucket: bucket,
-                Key: folderKey,
-            };
-            const deleteFolderCommand = new DeleteObjectCommand(deleteFolderParams);
-            await s3Client.send(deleteFolderCommand);
-            console.log(`Successfully deleted S3 folder: ${folderKey}`);
-        }
-
         // Delete files in the upload location
-        const uploadFolderKey = `${MedicalScribeJobName}/`;
+        const uploadFolderKey = `uploads/HealthScribeDemo/${MedicalScribeJobName}/`;
         await deleteS3Folder(s3Client, uploadLocation.bucket, uploadFolderKey);
 
         // Delete files in the output bucket
         const outputFolderKey = `${MedicalScribeJobName}/`;
         await deleteS3Folder(s3Client, outputBucket, outputFolderKey);
-
     } catch (error) {
         console.error('Error in deleteHealthScribeJob:', error);
         throw error; // Re-throw the error for the caller to handle
@@ -157,6 +123,40 @@ async function startMedicalScribeJob(startMedicalScribeJobParams: StartMedicalSc
     printTiming(end - start, 'StartMedicalScribeJobCommand');
 
     return startMedicalScribeJobRsp;
+}
+
+// Move the deleteS3Folder function outside of deleteHealthScribeJob
+async function deleteS3Folder(s3Client: S3Client, bucket: string, folderKey: string) {
+    // List all objects in the folder
+    const listParams = {
+        Bucket: bucket,
+        Prefix: folderKey,
+    };
+    const listCommand = new ListObjectsV2Command(listParams);
+    const listResult = await s3Client.send(listCommand);
+
+    // Delete each object in the folder
+    for (const item of listResult.Contents || []) {
+        if (item.Key) {
+            const deleteParams = {
+                Bucket: bucket,
+                Key: item.Key,
+            };
+            const deleteCommand = new DeleteObjectCommand(deleteParams);
+            await s3Client.send(deleteCommand);
+            console.log(`Deleted object: ${item.Key}`);
+        }
+    }
+
+    // Delete the folder itself (if necessary)
+    const deleteFolderParams = {
+        Bucket: bucket,
+        Key: folderKey,
+    };
+    const deleteFolderCommand = new DeleteObjectCommand(deleteFolderParams);
+    await s3Client.send(deleteFolderCommand);
+    console.log(`Successfully deleted S3 folder: ${folderKey}`);
+    
 }
 
 export { listHealthScribeJobs, getHealthScribeJob, deleteHealthScribeJob, startMedicalScribeJob };
