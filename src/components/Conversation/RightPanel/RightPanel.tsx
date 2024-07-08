@@ -23,6 +23,21 @@ import SummarizedConcepts from './SummarizedConcepts';
 import { calculateNereUnits } from './rightPanelUtils';
 import { processSummarizedSegment } from './summarizedConceptsUtils';
 
+export function getPlainTextSummary(clinicalDocument: IAuraClinicalDocOutput | null) {
+    if (!Array.isArray(clinicalDocument?.ClinicalDocumentation?.Sections)) return '';
+    let plainTextSummary = '';
+
+    for (const section of clinicalDocument.ClinicalDocumentation.Sections) {
+        plainTextSummary += `${section.SectionName}\n`;
+        for (const summary of section.Summary) {
+            plainTextSummary += `${summary.SummarizedSegment}\n`;
+        }
+        plainTextSummary += '\n';
+    }
+
+    return plainTextSummary;
+}
+
 type RightPanelProps = {
     jobLoading: boolean;
     clinicalDocument: IAuraClinicalDocOutput | null;

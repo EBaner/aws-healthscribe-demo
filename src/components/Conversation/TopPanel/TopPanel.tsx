@@ -15,6 +15,7 @@ import Input from '@cloudscape-design/components/input';
 import Modal from '@cloudscape-design/components/modal';
 import SpaceBetween from '@cloudscape-design/components/space-between';
 import Spinner from '@cloudscape-design/components/spinner';
+import { IAuraClinicalDocOutput } from '@/types/HealthScribe';
 
 import { MedicalScribeJob } from '@aws-sdk/client-transcribe';
 import emailjs from 'emailjs-com';
@@ -31,6 +32,8 @@ import { SmallTalkList } from '../types';
 import styles from './TopPanel.module.css';
 import { extractRegions } from './extractRegions';
 
+import { getPlainTextSummary } from '../RightPanel/RightPanel'
+
 type TopPanelProps = {
     jobLoading: boolean;
     jobDetails: MedicalScribeJob | null;
@@ -41,6 +44,7 @@ type TopPanelProps = {
     setAudioTime: React.Dispatch<React.SetStateAction<number>>;
     setAudioReady: React.Dispatch<React.SetStateAction<boolean>>;
     setShowOutputModal: React.Dispatch<React.SetStateAction<boolean>>;
+    clinicalDocument: IAuraClinicalDocOutput | null;
 };
 
 export default function TopPanel({
@@ -53,6 +57,7 @@ export default function TopPanel({
     setAudioTime,
     setAudioReady,
     setShowOutputModal,
+    clinicalDocument,
 }: TopPanelProps) {
     const navigate = useNavigate();
     const { addFlashMessage } = useNotificationsContext();
@@ -207,13 +212,16 @@ export default function TopPanel({
     const handleExport = async () => {
         const serviceID = 'service_9etj8ql';
         const templateID = 'template_0pioplk';
-        const publicKey = 'NvIq5YbJtjD84cF_U'
+        const publicKey = 'NvIq5YbJtjD84cF_U';
+        const summaryText = getPlainTextSummary(clinicalDocument);
 
         const templateParams = {
             to_email: email,
-            subject: 'Veterinary Visit Transcription',
-            message: 'Here is where the sumamry will go',
+            subject: 'VetScribe Visit Transcription',
+            message: summaryText,
         };
+
+        
 
         try {
             await emailjs.send(serviceID, templateID, templateParams, publicKey);
