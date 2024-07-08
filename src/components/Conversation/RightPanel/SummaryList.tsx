@@ -49,6 +49,7 @@ const NoEntities = React.forwardRef<HTMLDivElement, NoEntitiesProps>(
                 onBlur={handleBlur}
                 style={{ paddingLeft: '5px' }}
             >
+                {"No Clinical entries"}
                 <Box variant="small">{editableContent}</Box>
             </div>
         );
