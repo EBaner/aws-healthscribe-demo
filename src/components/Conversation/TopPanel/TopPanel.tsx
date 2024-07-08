@@ -30,8 +30,6 @@ import { SmallTalkList } from '../types';
 import styles from './TopPanel.module.css';
 import { extractRegions } from './extractRegions';
 
-//see if switch worked
-
 type TopPanelProps = {
     jobLoading: boolean;
     jobDetails: MedicalScribeJob | null;
@@ -43,6 +41,7 @@ type TopPanelProps = {
     setAudioReady: React.Dispatch<React.SetStateAction<boolean>>;
     setShowOutputModal: React.Dispatch<React.SetStateAction<boolean>>;
 };
+
 export default function TopPanel({
     jobLoading,
     jobDetails,
@@ -57,26 +56,18 @@ export default function TopPanel({
     const navigate = useNavigate();
     const { addFlashMessage } = useNotificationsContext();
     const [wavesurferRegions, setWavesurferRegions] = useState<RegionsPlugin>();
-    const [audioLoading, setAudioLoading] = useState<boolean>(true); // is audio file loading
-    const [showControls, setShowControls] = useState<boolean>(false); // show/hide audio controls
-    const [playingAudio, setPlayingAudio] = useState<boolean>(false); // is audio playing
-    const [playBackSpeed, setPlayBackSpeed] = useState<number>(1); // playback speed
-    const [silenceChecked, setSilenceChecked] = useState<boolean>(false); // show/hide silence
-    const [silencePeaks, setSilencePeaks] = useState<number[]>([]); // silence peaks
-    const [silencePercent, setSilencePercent] = useState<number>(0); // silence percentage
-    const [smallTalkPercent, setSmallTalkPercent] = useState<number>(0); // small talk percentage
+    const [audioLoading, setAudioLoading] = useState<boolean>(true);
+    const [showControls, setShowControls] = useState<boolean>(false);
+    const [playingAudio, setPlayingAudio] = useState<boolean>(false);
+    const [playBackSpeed, setPlayBackSpeed] = useState<number>(1);
+    const [silenceChecked, setSilenceChecked] = useState<boolean>(false);
+    const [silencePeaks, setSilencePeaks] = useState<number[]>([]);
+    const [silencePercent, setSilencePercent] = useState<number>(0);
+    const [smallTalkPercent, setSmallTalkPercent] = useState<number>(0);
     const [email, setEmail] = useState('');
-    const [exportModalActive, setExportModalActive] = useState<boolean>(false);
+    const [exportModalVisible, setExportModalVisible] = useState<boolean>(false);
 
-    const waveformElement = document.getElementById('waveform'); // wavesurfer.js wrapper element
-
-    interface ModalProps {
-        visible: boolean;
-        onDismiss: () => void;
-        children: React.ReactNode;
-        footer?: React.ReactNode;
-        header?: React.ReactNode;
-    }
+    const waveformElement = document.getElementById('waveform');
 
     // Get small talk from HealthScribe transcript
     const smallTalkList: SmallTalkList = useMemo(() => {
@@ -212,6 +203,20 @@ export default function TopPanel({
         });
     }, [wavesurfer, smallTalkCheck, smallTalkList, silenceChecked, silencePeaks]);
 
+    const handleExport = () => {
+        // Here you would implement the logic to send the transcript file to the email address
+        console.log(`Sending transcript to ${email}`);
+        // You might want to call an API or use a service to actually send the email
+        addFlashMessage({
+            id: 'export-success',
+            header: 'Export Successful',
+            content: `Transcript sent to ${email}`,
+            type: 'success',
+        });
+        setExportModalVisible(false);
+        setEmail('');
+    };
+
     function AudioHeader() {
         async function openUrl(detail: { id: string }) {
             let jobUrl: string = '';
@@ -243,7 +248,7 @@ export default function TopPanel({
                         >
                             Download
                         </ButtonDropdown>
-                        <Button onClick={() => setExportModalActive(true)}>Export</Button>
+                        <Button onClick={() => setExportModalVisible(true)}>Export</Button>
                         <Button onClick={() => setShowOutputModal(true)}>View HealthScribe Output</Button>
                         <Button variant="primary" onClick={() => navigate('/conversations')}>
                             Exit Conversation
@@ -325,6 +330,31 @@ export default function TopPanel({
                     />
                 </div>
             </Container>
+            <Modal
+                visible={exportModalVisible}
+                onDismiss={() => setExportModalVisible(false)}
+                header="Export Transcript"
+                footer={
+                    <Box float="right">
+                        <SpaceBetween direction="horizontal" size="xs">
+                            <Button variant="link" onClick={() => setExportModalVisible(false)}>
+                                Cancel
+                            </Button>
+                            <Button variant="primary" onClick={handleExport}>
+                                Send
+                            </Button>
+                        </SpaceBetween>
+                    </Box>
+                }
+            >
+                <FormField label="Email address">
+                    <Input
+                        type="email"
+                        value={email}
+                        onChange={({ detail }) => setEmail(detail.value)}
+                    />
+                </FormField>
+            </Modal>
         </>
     );
 }
