@@ -17,8 +17,8 @@ import SpaceBetween from '@cloudscape-design/components/space-between';
 import Spinner from '@cloudscape-design/components/spinner';
 
 import { MedicalScribeJob } from '@aws-sdk/client-transcribe';
-import reduce from 'lodash/reduce';
 import emailjs from 'emailjs-com';
+import reduce from 'lodash/reduce';
 import WaveSurfer from 'wavesurfer.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions';
 
@@ -205,8 +205,9 @@ export default function TopPanel({
     }, [wavesurfer, smallTalkCheck, smallTalkList, silenceChecked, silencePeaks]);
 
     const handleExport = async () => {
-        const serviceID = 'service_9etj8ql'
-        const templateID = 'template_0pioplk'
+        const serviceID = 'service_9etj8ql';
+        const templateID = 'template_0pioplk';
+        const publicKey = 'NvIq5YbJtjD84cF_U'
 
         const templateParams = {
             to_email: email,
@@ -215,7 +216,7 @@ export default function TopPanel({
         };
 
         try {
-            await emailjs.send(serviceID, templateID, templateParams);
+            await emailjs.send(serviceID, templateID, templateParams, publicKey);
             addFlashMessage({
                 id: 'export-success',
                 header: 'Export Successful',
@@ -226,7 +227,7 @@ export default function TopPanel({
             addFlashMessage({
                 id: 'export-failure',
                 header: 'Export Failed',
-                content: `Transcript did not send to ${email}`,
+                content: `Transcript did not send to ${email}. Message: ${error}`,
                 type: 'error',
             });
         }
