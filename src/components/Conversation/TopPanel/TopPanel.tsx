@@ -348,11 +348,7 @@ export default function TopPanel({
                 }
             >
                 <FormField label="Email address">
-                    <Input
-                        type="email"
-                        value={email}
-                        onChange={({ detail }) => setEmail(detail.value)}
-                    />
+                    <Input type="email" value={email} onChange={({ detail }) => setEmail(detail.value)} />
                 </FormField>
             </Modal>
         </>

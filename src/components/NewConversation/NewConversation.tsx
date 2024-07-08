@@ -21,6 +21,7 @@ import { MedicalScribeParticipantRole, StartMedicalScribeJobRequest } from '@aws
 import { Progress } from '@aws-sdk/lib-storage';
 import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
 import dayjs from 'dayjs';
+import { VocabularyFilterMethod } from "@aws-sdk/client-transcribe";
 
 import { useS3 } from '@/hooks/useS3';
 import { useAuthContext } from '@/store/auth';
@@ -155,6 +156,8 @@ export default function NewConversation() {
                           ],
                           Settings: {
                               ChannelIdentification: true,
+                              VocabularyName: "CustomVetVocab",
+
                           },
                       };
 
@@ -182,6 +185,7 @@ export default function NewConversation() {
                     MediaFileUri: `s3://${s3Location.Bucket}/${s3Location.Key}`,
                 },
                 ...audioParams,
+                
                 Tags: [userNameTag, clinicTag], // Include Clinic tag here
             };
 
