@@ -115,6 +115,7 @@ export default function Conversation() {
                     setAudioTime={setAudioTime}
                     setAudioReady={setAudioReady}
                     setShowOutputModal={setShowOutputModal}
+                    clinicalDocument={clinicalDocument}
                 />
                 <LeftPanel
                     jobLoading={jobLoading}

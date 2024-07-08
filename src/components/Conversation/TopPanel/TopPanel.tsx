@@ -15,7 +15,6 @@ import Input from '@cloudscape-design/components/input';
 import Modal from '@cloudscape-design/components/modal';
 import SpaceBetween from '@cloudscape-design/components/space-between';
 import Spinner from '@cloudscape-design/components/spinner';
-import { IAuraClinicalDocOutput } from '@/types/HealthScribe';
 
 import { MedicalScribeJob } from '@aws-sdk/client-transcribe';
 import emailjs from 'emailjs-com';
@@ -24,15 +23,15 @@ import WaveSurfer from 'wavesurfer.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions';
 
 import { useNotificationsContext } from '@/store/notifications';
+import { IAuraClinicalDocOutput } from '@/types/HealthScribe';
 import { IAuraTranscriptOutput } from '@/types/HealthScribe';
 import { getPresignedUrl, getS3Object } from '@/utils/S3Api';
 
 import AudioControls from '../../Common/AudioControls';
+import { getPlainTextSummary } from '../RightPanel/RightPanel';
 import { SmallTalkList } from '../types';
 import styles from './TopPanel.module.css';
 import { extractRegions } from './extractRegions';
-
-import { getPlainTextSummary } from '../RightPanel/RightPanel'
 
 type TopPanelProps = {
     jobLoading: boolean;
@@ -220,8 +219,6 @@ export default function TopPanel({
             subject: 'VetScribe Visit Transcription',
             message: summaryText,
         };
-
-        
 
         try {
             await emailjs.send(serviceID, templateID, templateParams, publicKey);
