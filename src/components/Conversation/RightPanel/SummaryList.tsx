@@ -1,11 +1,8 @@
-import React from 'react';
-
+import React, { useState, useEffect } from 'react';
 import * as awsui from '@cloudscape-design/design-tokens';
 import Box from '@cloudscape-design/components/box';
-
 import { SegmentExtractedData } from '@/types/ComprehendMedical';
 import { IEvidence } from '@/types/HealthScribe';
-
 import styles from './SummarizedConcepts.module.css';
 import { ExtractedHealthDataWord } from './SummaryListComponents';
 import { processSummarizedSegment } from './summarizedConceptsUtils';
@@ -26,6 +23,7 @@ type SummaryListDefaultProps = {
     currentSegment: string;
     handleSegmentClick: (SummarizedSegment: string, EvidenceLinks: { SegmentId: string }[]) => void;
 };
+
 export function SummaryListDefault({
     sectionName,
     summary,
@@ -34,6 +32,18 @@ export function SummaryListDefault({
     currentSegment = '',
     handleSegmentClick,
 }: SummaryListDefaultProps) {
+    const [editableSummary, setEditableSummary] = useState(summary.map(({ SummarizedSegment }) => SummarizedSegment));
+
+    useEffect(() => {
+        setEditableSummary(summary.map(({ SummarizedSegment }) => SummarizedSegment));
+    }, [summary]);
+
+    const handleChange = (index: number, event: React.FormEvent<HTMLDivElement>) => {
+        const newSummary = [...editableSummary];
+        newSummary[index] = (event.target as HTMLDivElement).innerText;
+        setEditableSummary(newSummary);
+    };
+
     if (summary.length) {
         return (
             <ul className={styles.summaryList}>
@@ -44,9 +54,9 @@ export function SummaryListDefault({
                     let sectionHeader = '';
                     let indent = false;
                     if (SummarizedSegment.endsWith('\n')) {
-                        const splitSegement = SummarizedSegment.split('\n');
-                        if (SummarizedSegment.split('\n').length === 3) {
-                            sectionHeader = splitSegement[0];
+                        const splitSegment = SummarizedSegment.split('\n');
+                        if (splitSegment.length === 3) {
+                            sectionHeader = splitSegment[0];
                             SummarizedSegment = SummarizedSegment.substring(SummarizedSegment.indexOf('\n') + 1);
                         }
                         indent = true;
@@ -80,6 +90,9 @@ export function SummaryListDefault({
                                 )}
                                 <li className={`${styles.summaryListItem} ${indent && styles.summaryListItemIndent}`}>
                                     <div
+                                        contentEditable
+                                        suppressContentEditableWarning
+                                        onInput={(event) => handleChange(sectionIndex, event)}
                                         onClick={() => handleSegmentClick(SummarizedSegment, EvidenceLinks)}
                                         className={styles.summarizedSegment}
                                         style={summaryItemDivStyle}
@@ -111,11 +124,14 @@ export function SummaryListDefault({
                                 )}
                                 <li className={`${styles.summaryListItem} ${indent && styles.summaryListItemIndent}`}>
                                     <div
+                                        contentEditable
+                                        suppressContentEditableWarning
+                                        onInput={(event) => handleChange(sectionIndex, event)}
                                         onClick={() => handleSegmentClick(SummarizedSegment, EvidenceLinks)}
                                         className={styles.summarizedSegment}
                                         style={summaryItemDivStyle}
                                     >
-                                        {processSummarizedSegment(SummarizedSegment)}
+                                        {processSummarizedSegment(editableSummary[sectionIndex])}
                                     </div>
                                 </li>
                             </div>
