@@ -26,8 +26,7 @@
     align-items: center;
 }
 .topNavWrapper :global(.awsui-top-navigation-header-logo) {
-    height: 40px; /* Adjust as needed */
-    width: auto !important;
+    width: 200px;
     max-width: none !important;
     object-fit: contain;
 }

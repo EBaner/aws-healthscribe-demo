@@ -147,7 +147,7 @@ export default function TopNav() {
                     identity={{
                         href: '/',
                         logo: {
-                            src: '/AURIBUSICON.png',
+                            src: '/AURIBUS.png',
                             alt: 'Auribus Technologies',
                         },
                     }}
