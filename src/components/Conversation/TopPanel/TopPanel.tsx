@@ -2,8 +2,6 @@
 // SPDX-License-Identifier: MIT-0
 import React, { useEffect, useMemo, useState } from 'react';
 
-import { Email, send } from 'react-email';
- 
 import { useNavigate } from 'react-router-dom';
 
 import Box from '@cloudscape-design/components/box';
@@ -20,6 +18,7 @@ import Spinner from '@cloudscape-design/components/spinner';
 
 import { MedicalScribeJob } from '@aws-sdk/client-transcribe';
 import reduce from 'lodash/reduce';
+import emailjs from 'emailjs-com';
 import WaveSurfer from 'wavesurfer.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions';
 
@@ -206,18 +205,22 @@ export default function TopPanel({
     }, [wavesurfer, smallTalkCheck, smallTalkList, silenceChecked, silencePeaks]);
 
     const handleExport = async () => {
-        // Here you would implement the logic to send the transcript file to the email address
+        const serviceID = 'service_9etj8ql'
+        const templateID = 'template_0pioplk'
+
+        const templateParams = {
+            to_email: email,
+            subject: 'Veterinary Visit Transcription',
+            message: 'Here is where the sumamry will go',
+        };
+
         try {
-            await send({
-                to: email,
-                subject: 'Veterinary Visit Transcription',
-                body: 'Here is where the sumamry will go',
-            });
+            await emailjs.send(serviceID, templateID, templateParams);
             addFlashMessage({
-            id: 'export-success',
-            header: 'Export Successful',
-            content: `Transcript sent to ${email}`,
-            type: 'success',
+                id: 'export-success',
+                header: 'Export Successful',
+                content: `Transcript sent to ${email}`,
+                type: 'success',
             });
         } catch (error) {
             addFlashMessage({
@@ -363,7 +366,12 @@ export default function TopPanel({
                 }
             >
                 <FormField label="Email address">
-                    <Input type="email" value={email} placeholder="example@email.com" onChange={({ detail }) => setEmail(detail.value)} />
+                    <Input
+                        type="email"
+                        value={email}
+                        placeholder="example@email.com"
+                        onChange={({ detail }) => setEmail(detail.value)}
+                    />
                 </FormField>
             </Modal>
         </>
