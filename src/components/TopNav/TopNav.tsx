@@ -142,16 +142,18 @@ export default function TopNav() {
                     <Auth setVisible={setAuthVisible} />
                 </Suspense>
             )}
-            <TopNavigation
-                identity={{
-                    href: '/',
-                    logo: {
-                        src: '/AURIBUS.png',
-                        alt: 'Auribus Technologies',
-                    },
-                }}
-                utilities={navUtils}
-            />
+            <div className={styles.topNavWrapper}>
+                <TopNavigation
+                    identity={{
+                        href: '/',
+                        logo: {
+                            src: '/AURIBUSICON.png',
+                            alt: 'Auribus Technologies',
+                        },
+                    }}
+                    utilities={navUtils}
+                />
+            </div>
         </>
     );
 }
