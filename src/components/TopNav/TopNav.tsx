@@ -27,7 +27,7 @@ export default function TopNav() {
 
     const [authVisible, setAuthVisible] = useState(false); // authentication modal visibility
 
-    // Set app appTheme
+    // Set app theme
     useEffect(() => {
         if (appTheme.color === 'appTheme.light') {
             applyMode(Mode.Light);
@@ -47,7 +47,7 @@ export default function TopNav() {
         if (isUserAuthenticated) {
             setAuthVisible(false);
         }
-        // no else because we want the appAuth window to only pop up by clicking sign in, not automatically
+        // no else because we want the auth window to only pop up by clicking sign in, not automatically
     }, [isUserAuthenticated]);
 
     // Change visualization
@@ -70,7 +70,7 @@ export default function TopNav() {
         }
     }
 
-    // App appTheme dropdown
+    // App theme dropdown
     const utilVisual: TopNavigationProps.MenuDropdownUtility = {
         type: 'menu-dropdown',
         iconName: 'settings',
@@ -117,7 +117,7 @@ export default function TopNav() {
         onItemClick: (e) => handleUtilVisualClick(e),
     };
 
-    // User appAuth dropdown (if appAuth) else sign-in
+    // User auth dropdown (if authenticated) else sign-in
     const utilUser: TopNavigationProps.ButtonUtility | TopNavigationProps.MenuDropdownUtility = isUserAuthenticated
         ? {
               type: 'menu-dropdown',
@@ -143,12 +143,17 @@ export default function TopNav() {
                 </Suspense>
             )}
             <div className={styles.topNavWrapper}>
+                <div className={styles.logoWrapper}>
+                    <a href="/">
+                        <img src="/AURIBUS.png" alt="Auribus Technologies" className={styles.logo} />
+                    </a>
+                </div>
                 <TopNavigation
                     identity={{
                         href: '/',
                         logo: {
-                            src: '/AURIBUS.png',
-                            alt: 'Auribus Technologies',
+                            src: '', // Provide an empty or minimal logo to satisfy the prop requirement
+                            alt: '',
                         },
                     }}
                     utilities={navUtils}

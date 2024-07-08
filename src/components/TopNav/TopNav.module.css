@@ -20,26 +20,38 @@
     width: 100px; /* Adjust the width as needed */
     height: 100px; /* Adjust the height as needed */
 }
+.topNavWrapper {
+    display: flex;
+    align-items: center;
+}
+
+.logoWrapper {
+    margin-right: auto;
+}
+
+.logo {
+    height: 40px; /* Adjust based on your needs */
+    margin-right: 20px; /* Adjust based on your needs */
+}
+
 
 .utilities {
     display: flex;
     align-items: center;
 }
 :global(.awsui_logo_k5dlb_1q1vg_214) {
-    height: 320px !important; /* 10 times the original 32px height */
+    height: 500px !important; /* 10 times the original 32px height */
     width: auto !important;
     max-width: none !important;
-    object-fit: contain;
 }
 
 .topNavWrapper :global(.awsui-top-navigation-header-logo) {
-    width: 200px;
+    width: 1000px;
     max-width: none !important;
-    object-fit: contain;
 }
 :global(.awsui-top-navigation-header) {
     height: auto !important;
-    min-height: 320px !important; /* Adjust this to match the logo height */
+    min-height: 500px !important; /* Adjust this to match the logo height */
     display: flex;
     align-items: center;
 }
