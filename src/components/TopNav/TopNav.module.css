@@ -25,10 +25,23 @@
     display: flex;
     align-items: center;
 }
+:global(.awsui_logo_k5dlb_1q1vg_214) {
+    height: 320px !important; /* 10 times the original 32px height */
+    width: auto !important;
+    max-width: none !important;
+    object-fit: contain;
+}
+
 .topNavWrapper :global(.awsui-top-navigation-header-logo) {
     width: 200px;
     max-width: none !important;
     object-fit: contain;
+}
+:global(.awsui-top-navigation-header) {
+    height: auto !important;
+    min-height: 320px !important; /* Adjust this to match the logo height */
+    display: flex;
+    align-items: center;
 }
 
 .topNavWrapper :global(.awsui-top-navigation-header) {
