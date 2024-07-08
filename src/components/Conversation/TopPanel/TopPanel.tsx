@@ -70,6 +70,7 @@ export default function TopPanel({
     const [silencePercent, setSilencePercent] = useState<number>(0);
     const [smallTalkPercent, setSmallTalkPercent] = useState<number>(0);
     const [email, setEmail] = useState('');
+    const [message, setMessage] = useState('');
     const [exportModalVisible, setExportModalVisible] = useState<boolean>(false);
 
     const waveformElement = document.getElementById('waveform');
@@ -217,7 +218,8 @@ export default function TopPanel({
         const templateParams = {
             to_email: email,
             subject: 'VetScribe Visit Transcription',
-            message: summaryText,
+            summary: summaryText,
+            message: message,
         };
 
         try {
@@ -371,6 +373,14 @@ export default function TopPanel({
                     </Box>
                 }
             >
+                <FormField label="Message">
+                    <Input
+                        type="text"
+                        value={message}
+                        placeholder="Enter a message to the client (Optional)"
+                        onChange={({ detail }) => setMessage(detail.value)}
+                    />
+                </FormField>
                 <FormField label="Email address">
                     <Input
                         type="email"
