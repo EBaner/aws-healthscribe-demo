@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import * as awsui from '@cloudscape-design/design-tokens';
 import Box from '@cloudscape-design/components/box';
 import { SegmentExtractedData } from '@/types/ComprehendMedical';
@@ -32,15 +32,16 @@ export function SummaryListDefault({
     currentSegment = '',
     handleSegmentClick,
 }: SummaryListDefaultProps) {
-    const [editableSummary, setEditableSummary] = useState(summary.map(({ SummarizedSegment }) => SummarizedSegment));
+    const editableRefs = useRef<(HTMLDivElement | null)[]>([]);
+    const [editableSummary, setEditableSummary] = useState<string[]>([]);
 
     useEffect(() => {
-        setEditableSummary(summary.map(({ SummarizedSegment }) => SummarizedSegment));
-    }, [summary]);
+        editableRefs.current = editableRefs.current.slice(0, summary.length);
+    }, [summary.length]);
 
-    const handleChange = (index: number, event: React.FormEvent<HTMLDivElement>) => {
-        const newSummary = [...editableSummary];
-        newSummary[index] = (event.target as HTMLDivElement).innerText;
+
+    const handleInput = (index: number) => {
+        const newSummary = editableRefs.current.map(ref => ref?.innerText || '');
         setEditableSummary(newSummary);
     };
 
@@ -92,7 +93,8 @@ export function SummaryListDefault({
                                     <div
                                         contentEditable
                                         suppressContentEditableWarning
-                                        onInput={(event) => handleChange(sectionIndex, event)}
+                                        ref={el => editableRefs.current[sectionIndex] = el}
+                                        onInput={() => handleInput(sectionIndex)}
                                         onClick={() => handleSegmentClick(SummarizedSegment, EvidenceLinks)}
                                         className={styles.summarizedSegment}
                                         style={summaryItemDivStyle}
@@ -126,12 +128,13 @@ export function SummaryListDefault({
                                     <div
                                         contentEditable
                                         suppressContentEditableWarning
-                                        onInput={(event) => handleChange(sectionIndex, event)}
+                                        ref={el => editableRefs.current[sectionIndex] = el}
+                                        onInput={() => handleInput(sectionIndex)}
                                         onClick={() => handleSegmentClick(SummarizedSegment, EvidenceLinks)}
                                         className={styles.summarizedSegment}
                                         style={summaryItemDivStyle}
                                     >
-                                        {processSummarizedSegment(editableSummary[sectionIndex])}
+                                        {processSummarizedSegment(SummarizedSegment)}
                                     </div>
                                 </li>
                             </div>
