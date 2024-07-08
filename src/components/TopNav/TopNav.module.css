@@ -25,3 +25,9 @@
     display: flex;
     align-items: center;
 }
+.topNavWrapper :global(.awsui-top-navigation-header-logo) {
+    width: 200px !important;
+    height: 200px !important;
+    object-fit: contain;
+  }
+  

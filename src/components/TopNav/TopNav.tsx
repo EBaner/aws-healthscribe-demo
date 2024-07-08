@@ -138,13 +138,13 @@ export default function TopNav() {
     const identity = {
         title: 'Auribus Technologies',
         logo: {
-          src: '/AURIBUSICON2.png', // Replace with your logo file path
-          alt: 'Auribus',
-          width: '200px', // Set the desired width
-          height: '200px', // Set the desired height
+            src: '/AURIBUSICON2.png', // Replace with your logo file path
+            alt: 'Auribus',
+            width: '200px', // Set the desired width
+            height: '200px', // Set the desired height
         },
         href: '/',
-      };
+    };
 
     return (
         <>
@@ -153,10 +153,7 @@ export default function TopNav() {
                     <Auth setVisible={setAuthVisible} />
                 </Suspense>
             )}
-            <TopNavigation
-                identity={identity}
-                utilities={navUtils}
-            />
+            <TopNavigation identity={identity} utilities={navUtils} />
         </>
     );
 }
