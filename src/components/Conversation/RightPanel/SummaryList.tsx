@@ -1,8 +1,11 @@
-import React, { useState, useEffect, useRef, MutableRefObject } from 'react';
+import React, { MutableRefObject, useEffect, useRef, useState } from 'react';
+
 import * as awsui from '@cloudscape-design/design-tokens';
 import Box from '@cloudscape-design/components/box';
+
 import { SegmentExtractedData } from '@/types/ComprehendMedical';
 import { IEvidence } from '@/types/HealthScribe';
+
 import styles from './SummarizedConcepts.module.css';
 import { ExtractedHealthDataWord } from './SummaryListComponents';
 import { processSummarizedSegment } from './summarizedConceptsUtils';
@@ -12,20 +15,45 @@ type NoEntitiesProps = {
     editableContent: string;
 };
 
-const NoEntities = React.forwardRef<HTMLDivElement, NoEntitiesProps>(({ handleInput, editableContent }, ref) => {
+const NoEntities = React.forwardRef<HTMLDivElement, NoEntitiesProps>(({ handleInput, editableContent }, forwardedRef) => {
+    const [editing, setEditing] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+
+    const handleFocus = () => {
+        if (!editing && editableContent === 'No Clinical Entities') {
+            setEditing(true);
+            // Clear the content when editing starts
+            if (ref.current) {
+                ref.current.innerText = '';
+            }
+        }
+    };
+
+    const handleBlur = () => {
+        setEditing(false);
+        // Restore the placeholder text if content is empty on blur
+        if (ref.current?.innerText === '') {
+            ref.current.innerText = 'No Clinical Entities';
+        }
+    };
+
     return (
         <div
             contentEditable
             suppressContentEditableWarning
-            ref={ref}
+            ref={ref as React.MutableRefObject<HTMLDivElement>}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
             onInput={handleInput}
             className={styles.noEntities}
             style={{ paddingLeft: '5px' }}
         >
-            <Box variant="small">{editableContent || 'No Clinical Entities'}</Box>
+            <Box variant="small">{editableContent}</Box>
         </div>
     );
 });
+
+NoEntities.displayName = 'NoEntities';
 
 type SummaryListDefaultProps = {
     sectionName: string;
@@ -55,12 +83,12 @@ export function SummaryListDefault({
     }, [summary]);
 
     const handleInput = (index: number) => {
-        const newSummary = editableRefs.current.map(ref => ref?.innerText || '');
+        const newSummary = editableRefs.current.map((ref) => ref?.innerText || '');
         setEditableSummary(newSummary);
     };
 
     const handleEmptySectionInput = (index: number) => {
-        const newEmptySectionsContent = editableRefs.current.map(ref => ref?.innerText || 'No Clinical Entities');
+        const newEmptySectionsContent = editableRefs.current.map((ref) => ref?.innerText || 'No Clinical Entities');
         setEmptySectionsContent(newEmptySectionsContent);
     };
 
