@@ -35,6 +35,8 @@ const NoEntities = React.forwardRef<HTMLDivElement, NoEntitiesProps>(({ handleIn
         if (ref.current?.innerText === '') {
             ref.current.innerText = 'No Clinical Entities';
         }
+        // Call handleInput to update the parent component's state
+        handleInput();
     };
 
     return (
@@ -44,7 +46,6 @@ const NoEntities = React.forwardRef<HTMLDivElement, NoEntitiesProps>(({ handleIn
             ref={ref as React.MutableRefObject<HTMLDivElement>}
             onFocus={handleFocus}
             onBlur={handleBlur}
-            onInput={handleInput}
             className={styles.noEntities}
             style={{ paddingLeft: '5px' }}
         >
