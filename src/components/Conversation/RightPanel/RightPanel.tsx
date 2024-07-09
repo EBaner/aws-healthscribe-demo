@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+
 import { DetectEntitiesV2Response } from '@aws-sdk/client-comprehendmedical';
 import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { MedicalScribeOutput } from '@aws-sdk/client-transcribe';
@@ -15,6 +16,7 @@ import {
     ITranscriptSegments,
 } from '@/types/HealthScribe';
 import { detectEntitiesFromComprehendMedical } from '@/utils/ComprehendMedicalApi';
+import { getCredentials } from '@/utils/Sdk';
 
 import LoadingContainer from '../Common/LoadingContainer';
 import ScrollingContainer from '../Common/ScrollingContainer';
@@ -23,7 +25,6 @@ import { RightPanelActions, RightPanelSettings } from './RightPanelComponents';
 import SummarizedConcepts from './SummarizedConcepts';
 import { calculateNereUnits } from './rightPanelUtils';
 import { processSummarizedSegment } from './summarizedConceptsUtils';
-import { getCredentials } from '@/utils/Sdk';
 
 type RightPanelProps = {
     jobLoading: boolean;
@@ -60,8 +61,6 @@ export default function RightPanel({
     const [summaryChanges, setSummaryChanges] = useState<Record<string, Record<number, string>>>({});
     const [isSaving, setIsSaving] = useState(false);
 
-    
-
     const handleSaveChanges = async () => {
         setIsSaving(true);
         try {
@@ -69,14 +68,14 @@ export default function RightPanel({
                 region: 'us-east-1', // Hardcoded to match the access point region
                 credentials: await getCredentials(),
             });
-            
+
             const [outputBucket, getUploadMetadata] = useS3();
             if (!outputBucket) {
                 throw new Error('Output bucket information is missing');
             }
 
             const savePromises = Object.entries(summaryChanges).map(async ([sectionName, sectionChanges]) => {
-                const originalKey = `${jobName}/`; // Adjust this path as needed
+                const originalKey = `${jobName}/summary.json`; // Adjust this path as needed
 
                 // Get the original content
                 const getParams = {
