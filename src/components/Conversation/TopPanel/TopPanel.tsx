@@ -218,7 +218,7 @@ export default function TopPanel({
 
         const templateParams = {
             to_email: email,
-            subject: 'VetScribe Visit Transcription',
+            subject: 'VetScribe Visit Summary',
             summary: summaryText,
             message: message,
         };
