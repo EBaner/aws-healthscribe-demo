@@ -129,7 +129,8 @@ export default function AudioRecorder({ setRecordedAudio }: AudioRecorderProps) 
                         <span className={styles.audioRecorderSpeakerText}>
                             {recordingStatus === 'inactive' ? 'Click "Start" when you are ready to record' : null}
                             {recordingStatus === 'recorded' ? 'Click "Restart" to record a new session' : null}
-                            {recordingStatus === 'recording' ? 'Click "Stop" to stop the recording' : null}
+                            {recordingStatus === 'recording' ? 'Click "Pause" to pause recording' : null}
+                            {recordingStatus === 'pauseRecording' ? 'Click "Resume" to continue recording' : null}
                         </span>
                         <div
                             id="wavesurfermic"
@@ -167,6 +168,13 @@ export default function AudioRecorder({ setRecordedAudio }: AudioRecorderProps) 
                                     </span>
                                 )}
                             </Button>
+                            {(recordingStatus === 'recording' || recordingStatus === 'pauseRecording') && (
+                                <Button onClick={stopRecording}>
+                                    <span className={styles.audioRecorderIcon}>
+                                        <Icon name="close"></Icon> Stop
+                                    </span>
+                                </Button>
+                            )}
                             {recordingStatus === 'recording' ? (
                                 <div className={styles.audioRecorderStopWatch}>
                                     <span>
