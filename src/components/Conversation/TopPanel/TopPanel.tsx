@@ -211,9 +211,9 @@ export default function TopPanel({
     }, [wavesurfer, smallTalkCheck, smallTalkList, silenceChecked, silencePeaks]);
 
     const handleExport = async () => {
-        const serviceID = 'service_9etj8ql';
-        const templateID = 'template_0pioplk';
-        const publicKey = 'NvIq5YbJtjD84cF_U';
+        const serviceID = 'service_krsa45w';
+        const templateID = 'template_jdnk1sp';
+        const publicKey = 'XTCBlgLBoDDdJiBe7';
         const summaryText = getPlainTextSummary(clinicalDocument);
 
         const templateParams = {
