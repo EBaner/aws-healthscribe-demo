@@ -68,16 +68,16 @@ export default function RightPanel({
                 region: 'us-east-1',
                 credentials: await getCredentials(),
             });
-    
+
             const [outputBucket, getUploadMetadata] = useS3();
             if (!outputBucket) {
                 throw new Error('Output bucket information is missing');
             }
-    
+
             const originalKey = `${jobName}/summary.json`;
-    
+
             console.log(`Fetching from S3 with key: ${originalKey} in bucket: ${outputBucket}`);
-    
+
             // Get the original content
             const getParams = {
                 Bucket: outputBucket,
@@ -85,7 +85,7 @@ export default function RightPanel({
             };
             const getCommand = new GetObjectCommand(getParams);
             const originalObject = await s3Client.send(getCommand);
-    
+
             let originalContent = '';
             if (originalObject.Body) {
                 const stream = originalObject.Body as ReadableStream;
@@ -93,7 +93,7 @@ export default function RightPanel({
                 const decoder = new TextDecoder('utf-8');
                 let result = '';
                 let done = false;
-    
+
                 while (!done) {
                     const { value, done: doneReading } = await reader.read();
                     done = doneReading;
@@ -103,17 +103,17 @@ export default function RightPanel({
                 }
                 originalContent = result;
             }
-    
+
             if (!originalContent) {
                 throw new Error('Original content is empty');
             }
-    
+
             const originalData = JSON.parse(originalContent);
             console.log('Original Data:', originalData);
-    
+
             // Merge changes with original content
             const updatedData = { ...originalData };
-    
+
             for (const [sectionName, sectionChanges] of Object.entries(summaryChanges)) {
                 if (!updatedData[sectionName]) {
                     updatedData[sectionName] = {};
@@ -122,13 +122,13 @@ export default function RightPanel({
                     updatedData[sectionName][index] = newContent;
                 }
             }
-    
+
             updatedData.lastModified = new Date().toISOString();
             updatedData.modifiedBy = loginId;
             updatedData.clinicName = clinicName;
-    
+
             console.log('Updated Content:', updatedData);
-    
+
             // Save the updated content back to S3
             const putParams = {
                 Bucket: outputBucket,
@@ -138,7 +138,7 @@ export default function RightPanel({
             };
             const putCommand = new PutObjectCommand(putParams);
             await s3Client.send(putCommand);
-    
+
             toast.success('Changes saved successfully');
             setSummaryChanges({});
         } catch (error) {
@@ -148,7 +148,6 @@ export default function RightPanel({
             setIsSaving(false);
         }
     };
-    
 
     const hasSummaryChanges = Object.keys(summaryChanges).length > 0;
 
@@ -165,6 +164,7 @@ export default function RightPanel({
     }, [clinicalDocument]);
 
     async function handleExtractHealthData() {
+
         if (!Array.isArray(clinicalDocument?.ClinicalDocumentation?.Sections)) return;
         setExtractingData(true);
 

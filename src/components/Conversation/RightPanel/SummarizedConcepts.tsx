@@ -82,7 +82,6 @@ export default function SummarizedConcepts({
                 setCurrentId(0);
             }
 
-            toast.success(`Jump Successful. Sentence ${toastId} of ${EvidenceLinks.length}`);
         } else if (!current) {
             if (currentIdLocal < EvidenceLinks.length - 1) {
                 setCurrentId(currentIdLocal + 1);

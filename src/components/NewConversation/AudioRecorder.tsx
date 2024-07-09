@@ -1,5 +1,3 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-// SPDX-License-Identifier: MIT-0
 import React, { useEffect, useRef, useState } from 'react';
 
 import Button from '@cloudscape-design/components/button';
@@ -22,7 +20,6 @@ interface Recording {
 }
 
 export default function AudioRecorder({ setRecordedAudio }: AudioRecorderProps) {
-    const wavesurfer = useRef<WaveSurfer | undefined>(undefined);
     const wavesurfermic = useRef<WaveSurfer | undefined>(undefined);
     const wavesurferRecordPlugin = useRef<RecordPlugin | undefined>(undefined);
     const [recordingStatus, setRecordingStatus] = useState('inactive');
@@ -31,14 +28,10 @@ export default function AudioRecorder({ setRecordedAudio }: AudioRecorderProps) 
     const [showControls, setShowControls] = useState<boolean>(false); // show/hide audio controls
     const [playingAudio, setPlayingAudio] = useState<boolean>(false); // is audio playing
     const [playBackSpeed, setPlayBackSpeed] = useState<number>(1); // playback speed
-    const waveformElement = document.getElementById('waveformForRecording'); // wavesurfer.js wrapper element
     const [audioLoading, setAudioLoading] = useState<boolean>(true); // is audio file loading
     const [stopWatchTime, setStopWatchTime] = useState(0);
-    const stopWatchHours: number = Math.floor(stopWatchTime / 360000);
-    const stopWatchMinutes = Math.floor((stopWatchTime % 360000) / 6000);
-    const stopWatchSeconds = Math.floor((stopWatchTime % 6000) / 100);
+    const [paused, setPaused] = useState(false); // is recording paused
     const [lastRecordingDetails, setLastRecordingDetails] = useState<Recording | null>(null);
-    // const showDownloadButton = true;
 
     useEffect(() => {
         if (!wavesurfermic || !wavesurfermic.current) {
@@ -54,23 +47,23 @@ export default function AudioRecorder({ setRecordedAudio }: AudioRecorderProps) 
 
     useEffect(() => {
         let intervalId: NodeJS.Timeout | string | number | undefined;
-        if (recordingStatus == 'recording') {
+        if (recordingStatus === 'recording' && !paused) {
             intervalId = setInterval(() => setStopWatchTime(stopWatchTime + 1), 10);
-        } else if (recordingStatus == 'recorded') {
-            setStopWatchTime(0);
+        } else if (recordingStatus === 'recorded' || paused) {
+            clearInterval(intervalId as NodeJS.Timeout);
         }
-        return () => clearInterval(intervalId);
-    }, [recordingStatus, stopWatchTime]);
+        return () => clearInterval(intervalId as NodeJS.Timeout);
+    }, [recordingStatus, stopWatchTime, paused]);
 
     const startRecording = () => {
         setRecordingStatus('recording');
+        setPaused(false); // Reset pause status when starting recording
         wavesurferRecordPlugin.current?.startRecording();
         setShowControls(false);
     };
 
     const stopRecording = () => {
         setRecordingStatus('recorded');
-
         wavesurferRecordPlugin.current?.stopRecording();
         wavesurferRecordPlugin.current?.on('record-end', (blob) => {
             const audioUrl = URL.createObjectURL(blob);
@@ -80,14 +73,14 @@ export default function AudioRecorder({ setRecordedAudio }: AudioRecorderProps) 
             loadWaveSurfer(audioUrl);
             setLastRecordingDetails({
                 index: lastRecordingDetails === null ? 1 : lastRecordingDetails.index + 1,
-                duration:
-                    stopWatchHours.toString().padStart(2, '0') +
-                    ':' +
-                    stopWatchMinutes.toString().padStart(2, '0') +
-                    ':' +
-                    stopWatchSeconds.toString().padStart(2, '0'),
+                duration: formatStopWatchTime(),
             });
         });
+    };
+
+    const pauseRecording = () => {
+        setPaused(true);
+        wavesurferRecordPlugin.current?.pauseRecording();
     };
 
     const restartRecording = () => {
@@ -100,26 +93,22 @@ export default function AudioRecorder({ setRecordedAudio }: AudioRecorderProps) 
     };
 
     const loadWaveSurfer = (audioUrl: string, reset: boolean = false) => {
-        if (reset || !wavesurfer || !wavesurfer.current) {
-            wavesurfer.current = WaveSurfer.create({
-                container: waveformElement || '#waveformForRecording',
-                height: 40,
-                normalize: false,
-                waveColor: 'rgba(35, 47, 62, 0.8)',
-                progressColor: '#2074d5',
-                url: audioUrl,
-            });
-        } else {
-            wavesurfer.current.load(audioUrl);
-        }
-        wavesurfer.current.on('ready', () => {
+        wavesurfermic.current?.load(audioUrl);
+        wavesurfermic.current?.on('ready', () => {
             setAudioLoading(false);
             setShowControls(true);
         });
 
-        wavesurfer.current?.on('finish', () => {
-            setPlayingAudio(!!wavesurfer.current?.isPlaying());
+        wavesurfermic.current?.on('finish', () => {
+            setPlayingAudio(!!wavesurfermic.current?.isPlaying());
         });
+    };
+
+    const formatStopWatchTime = () => {
+        const hours = Math.floor(stopWatchTime / 360000);
+        const minutes = Math.floor((stopWatchTime % 360000) / 6000);
+        const seconds = Math.floor((stopWatchTime % 6000) / 100);
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     };
 
     return (
@@ -148,8 +137,9 @@ export default function AudioRecorder({ setRecordedAudio }: AudioRecorderProps) 
                                 onClick={(e) => {
                                     e.preventDefault();
                                     if (recordingStatus === 'inactive') startRecording();
+                                    else if (recordingStatus === 'recording' && !paused) pauseRecording();
+                                    else if (recordingStatus === 'pauseRecording') startRecording();
                                     else if (recordingStatus === 'recording') stopRecording();
-                                    else if (recordingStatus === 'pauseRecording') stopRecording();
                                     else if (recordingStatus === 'recorded') restartRecording();
                                 }}
                             >
@@ -157,27 +147,25 @@ export default function AudioRecorder({ setRecordedAudio }: AudioRecorderProps) 
                                     <span>
                                         <Icon name="caret-right-filled"></Icon> Start
                                     </span>
-                                ) : recordingStatus === 'recording' ? (
+                                ) : recordingStatus === 'recording' && !paused ? (
                                     <span className={styles.audioRecorderIcon}>
-                                        <Icon name="close"></Icon> Stop
+                                        <Icon name="caret-right-filled"></Icon> Pause
+                                    </span>
+                                ) : recordingStatus === 'recording' && paused ? (
+                                    <span className={styles.audioRecorderIcon}>
+                                        <Icon name="caret-right-filled"></Icon> Resume
                                     </span>
                                 ) : (
                                     <span className={styles.audioRecorderIcon}>
-                                        <Icon name="redo"></Icon> Restart
+                                        <Icon name="close"></Icon> Stop
                                     </span>
                                 )}
                             </Button>
-                            {recordingStatus === 'recording' ? (
+                            {recordingStatus === 'recording' && !paused ? (
                                 <div className={styles.audioRecorderStopWatch}>
-                                    <span>
-                                        {stopWatchHours.toString().padStart(2, '0')}:
-                                        {stopWatchMinutes.toString().padStart(2, '0')}:
-                                        {stopWatchSeconds.toString().padStart(2, '0')}
-                                    </span>
+                                    <span>{formatStopWatchTime()}</span>
                                 </div>
-                            ) : (
-                                ''
-                            )}
+                            ) : null}
                         </div>
                     </div>
                 </Grid>
@@ -198,7 +186,7 @@ export default function AudioRecorder({ setRecordedAudio }: AudioRecorderProps) 
                     }}
                 />
                 <AudioControls
-                    wavesurfer={wavesurfer}
+                    wavesurfer={wavesurfermic}
                     audioLoading={audioLoading}
                     showControls={showControls}
                     setShowControls={setShowControls}
