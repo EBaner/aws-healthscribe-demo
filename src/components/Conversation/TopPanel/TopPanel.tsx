@@ -212,7 +212,7 @@ export default function TopPanel({
 
     const handleExport = async () => {
         const serviceID = 'service_krsa45w';
-        const templateID = 'template_j9sffks';
+        const templateID = 'template_jdnk1sp';
         const publicKey = 'XTCBlgLBoDDdJiBe7';
         const summaryText = getPlainTextSummary(clinicalDocument);
 
@@ -223,10 +223,8 @@ export default function TopPanel({
             message: message,
         };
 
-        emailjs.init(publicKey);
-
         try {
-            await emailjs.send(serviceID, templateID, templateParams);
+            await emailjs.send(serviceID, templateID, templateParams, publicKey);
             addFlashMessage({
                 id: 'export-success',
                 header: 'Export Successful',
