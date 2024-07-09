@@ -212,7 +212,7 @@ export default function TopPanel({
 
     const handleExport = async () => {
         const serviceID = 'service_krsa45w';
-        const templateID = 'template_jdnk1sp';
+        const templateID = 'template_j9sffks';
         const publicKey = 'XTCBlgLBoDDdJiBe7';
         const summaryText = getPlainTextSummary(clinicalDocument);
 
