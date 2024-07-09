@@ -1,12 +1,8 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-// SPDX-License-Identifier: MIT-0
-import React, { useMemo, useState, useEffect } from 'react';
-
+import React, { useMemo, useState } from 'react';
 import { DetectEntitiesV2Response } from '@aws-sdk/client-comprehendmedical';
 import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { MedicalScribeOutput } from '@aws-sdk/client-transcribe';
 import toast from 'react-hot-toast';
-import { Readable } from 'stream';
 import WaveSurfer from 'wavesurfer.js';
 
 import { useLocalStorage } from '@/hooks/useLocalStorage';
@@ -63,31 +59,21 @@ export default function RightPanel({
     );
     const [summaryChanges, setSummaryChanges] = useState<Record<string, Record<number, string>>>({});
     const [isSaving, setIsSaving] = useState(false);
-    const [s3Client, setS3Client] = useState<S3Client | null>(null);
 
-    useEffect(() => {
-        const initializeS3Client = async () => {
-            const credentials = await getCredentials();
-            const client = new S3Client({
-                region: 'us-east-1', // Hardcoded to match the access point region
-                credentials,
-            });
-            setS3Client(client);
-        };
-        initializeS3Client();
-    }, []);
+    
 
     const handleSaveChanges = async () => {
-        if (!s3Client) return;
-
         setIsSaving(true);
         try {
+            const s3Client = new S3Client({
+                region: 'us-east-1', // Hardcoded to match the access point region
+                credentials: await getCredentials(),
+            });
+            
             const [outputBucket, getUploadMetadata] = useS3();
             if (!outputBucket) {
                 throw new Error('Output bucket information is missing');
             }
-
-            // Make sure bucketName is a string
 
             const savePromises = Object.entries(summaryChanges).map(async ([sectionName, sectionChanges]) => {
                 const originalKey = `${jobName}/`; // Adjust this path as needed
@@ -100,19 +86,29 @@ export default function RightPanel({
                 const getCommand = new GetObjectCommand(getParams);
                 const originalObject = await s3Client.send(getCommand);
 
-                let originalContent = {};
-                if (originalObject.Body instanceof Readable) {
-                    const chunks: Uint8Array[] = [];
-                    for await (const chunk of originalObject.Body) {
-                        chunks.push(chunk);
+                let originalContent = '';
+                if (originalObject.Body) {
+                    const stream = originalObject.Body as ReadableStream;
+                    const reader = stream.getReader();
+                    const decoder = new TextDecoder('utf-8');
+                    let result = '';
+                    let done = false;
+
+                    while (!done) {
+                        const { value, done: doneReading } = await reader.read();
+                        done = doneReading;
+                        if (value) {
+                            result += decoder.decode(value, { stream: !done });
+                        }
                     }
-                    const buffer = Buffer.concat(chunks);
-                    originalContent = JSON.parse(buffer.toString('utf-8'));
+                    originalContent = result;
                 }
+
+                const originalData = JSON.parse(originalContent);
 
                 // Merge changes with original content
                 const updatedContent = {
-                    ...originalContent,
+                    ...originalData,
                     ...sectionChanges,
                     lastModified: new Date().toISOString(),
                     modifiedBy: loginId,
