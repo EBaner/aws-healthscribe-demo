@@ -139,7 +139,7 @@ export default function Conversation() {
                     jobName={jobDetails?.MedicalScribeJobName || ''}
                     loginId={user?.username || ''}
                     outputBucket={jobDetails?.MedicalScribeOutput || null}
-                    clinicName={jobDetails?.Tags?.find(tag => tag.Key === 'Clinic')?.Value || ''}
+                    clinicName={jobDetails?.Tags?.find((tag) => tag.Key === 'Clinic')?.Value || ''}
                 />
             </Grid>
         </ContentLayout>
