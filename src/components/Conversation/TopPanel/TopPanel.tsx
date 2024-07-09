@@ -16,6 +16,8 @@ import Modal from '@cloudscape-design/components/modal';
 import SpaceBetween from '@cloudscape-design/components/space-between';
 import Spinner from '@cloudscape-design/components/spinner';
 import Textarea from '@cloudscape-design/components/textarea';
+import Multiselect from '@cloudscape-design/components/multiselect';
+import { MultiselectProps } from '@cloudscape-design/components';
 
 import { MedicalScribeJob } from '@aws-sdk/client-transcribe';
 import emailjs from 'emailjs-com';
@@ -33,6 +35,20 @@ import { getPlainTextSummary } from '../RightPanel/RightPanel';
 import { SmallTalkList } from '../types';
 import styles from './TopPanel.module.css';
 import { extractRegions } from './extractRegions';
+
+
+const options: MultiselectProps.Option[] = [
+    { value: 'chief complaint', label: 'Chief Complaint' },
+    { value: 'past family history', label: 'Past Family History' },
+    { value: 'past social history', label: 'Past Social History' },
+    { value: 'diagnostic testing', label: 'Diagnostic Testing' },
+    { value: 'history of present illness', label: 'History of Present Illness' },
+    { value: 'review of systems', label: 'Review of Systems' },
+    { value: 'past medical history', label: 'Past Medical History' },
+    { value: 'physical examination', label: 'Physical Examination' },
+    { value: 'assessment', label: 'Assessment' },
+    { value: 'plan', label: 'Plan' },
+];
 
 type TopPanelProps = {
     jobLoading: boolean;
@@ -73,6 +89,8 @@ export default function TopPanel({
     const [email, setEmail] = useState('');
     const [message, setMessage] = useState('');
     const [exportModalVisible, setExportModalVisible] = useState<boolean>(false);
+    const [selectedOptions, setSelectedOptions] = useState<MultiselectProps.Option[]>([]);    
+    //TO:DO handle selected options
 
     const waveformElement = document.getElementById('waveform');
 
@@ -389,6 +407,13 @@ export default function TopPanel({
                         onChange={({ detail }) => setMessage(detail.value)}
                     />
                 </FormField>
+                <Multiselect
+                    selectedOptions={selectedOptions}
+                    onChange={({ detail }) => setSelectedOptions([...detail.selectedOptions])}
+                    options={options}
+                    keepOpen={false}
+                    placeholder="Please deselect any insights you do not want to include"
+                />
             </Modal>
         </>
     );
