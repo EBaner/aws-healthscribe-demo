@@ -19,6 +19,9 @@ type RightPanelActionsProps = {
     clinicalDocumentNereUnits: 0 | { [key: string]: number };
     setRightPanelSettingsOpen: React.Dispatch<React.SetStateAction<boolean>>;
     handleExtractHealthData: () => void;
+    handleSaveChanges: () => Promise<void>;
+    isSaving: boolean;
+    hasSummaryChanges: boolean;  
 };
 export function RightPanelActions({
     hasInsightSections,
@@ -27,6 +30,8 @@ export function RightPanelActions({
     clinicalDocumentNereUnits,
     setRightPanelSettingsOpen,
     handleExtractHealthData,
+    handleSaveChanges,
+    isSaving,
 }: RightPanelActionsProps) {
     const { comprehendMedicalEnabled } = useAppSettingsContext();
 
@@ -40,6 +45,13 @@ export function RightPanelActions({
             <Button iconName="settings" variant="icon" onClick={() => setRightPanelSettingsOpen(true)} />
             <EnableComprehendMedicalPopover />
             <ComprehendMedicalNereCost clinicalDocumentNereUnits={clinicalDocumentNereUnits} />
+            <Button
+                onClick={handleSaveChanges}
+                disabled={isSaving}
+                loading={isSaving}
+            >
+                Save Changes
+            </Button>
         </SpaceBetween>
     );
 }

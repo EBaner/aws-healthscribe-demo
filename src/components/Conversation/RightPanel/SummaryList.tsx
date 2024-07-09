@@ -49,7 +49,7 @@ const NoEntities = React.forwardRef<HTMLDivElement, NoEntitiesProps>(
                 onBlur={handleBlur}
                 style={{ paddingLeft: '5px' }}
             >
-                {"No Clinical entries"}
+                {'No Clinical entries'}
                 <Box variant="small">{editableContent}</Box>
             </div>
         );
@@ -65,6 +65,7 @@ type SummaryListDefaultProps = {
     acceptableConfidence: number;
     currentSegment: string;
     handleSegmentClick: (SummarizedSegment: string, EvidenceLinks: { SegmentId: string }[]) => void;
+    onSummaryChange: (index: number, newContent: string) => void; // Add this line
 };
 
 export function SummaryListDefault({
@@ -74,6 +75,7 @@ export function SummaryListDefault({
     acceptableConfidence,
     currentSegment = '',
     handleSegmentClick,
+    onSummaryChange,
 }: SummaryListDefaultProps) {
     const editableRefs = useRef<(HTMLDivElement | null)[]>([]);
     const [editableSummary, setEditableSummary] = useState<string[]>([]);
@@ -86,8 +88,13 @@ export function SummaryListDefault({
     }, [summary]);
 
     const handleInput = (index: number) => {
-        const newSummary = editableRefs.current.map((ref) => ref?.innerText || '');
-        setEditableSummary(newSummary);
+        const newSummary = editableRefs.current[index]?.innerText || '';
+        setEditableSummary((prev) => {
+            const updated = [...prev];
+            updated[index] = newSummary;
+            return updated;
+        });
+        onSummaryChange(index, newSummary);
     };
 
     const handleEmptySectionInput = (index: number) => {

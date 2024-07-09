@@ -26,6 +26,7 @@ type SummarizedConceptsProps = {
         [key: string]: ITranscriptSegments;
     };
     wavesurfer: React.MutableRefObject<WaveSurfer | undefined>;
+    onSummaryChange: (sectionName: string, index: number, newContent: string) => void; // Add this line
 };
 
 export default function SummarizedConcepts({
@@ -36,6 +37,7 @@ export default function SummarizedConcepts({
     setHighlightId,
     segmentById,
     wavesurfer,
+    onSummaryChange,
 }: SummarizedConceptsProps) {
     const [currentId, setCurrentId] = useState(0);
     const [currentSegment, setCurrentSegment] = useState<string>('');
@@ -44,6 +46,10 @@ export default function SummarizedConcepts({
     useEffect(() => {
         if (!highlightId.selectedSegmentId) setCurrentSegment('');
     }, [highlightId]);
+
+    const handleSummaryChange = (sectionName: string, index: number, newContent: string) => {
+        onSummaryChange(sectionName, index, newContent);
+    };
 
     const sectionsWithExtractedData: SummarySectionEntityMapping[] = useMemo(
         () => mergeHealthScribeOutputWithComprehendMedicalOutput(sections, extractedHealthData),
@@ -110,6 +116,7 @@ export default function SummarizedConcepts({
                                 acceptableConfidence={acceptableConfidence}
                                 currentSegment={currentSegment}
                                 handleSegmentClick={handleSegmentClick}
+                                onSummaryChange={(index, newContent) => handleSummaryChange(SectionName, index, newContent)}
                             />
                         </div>
                     );

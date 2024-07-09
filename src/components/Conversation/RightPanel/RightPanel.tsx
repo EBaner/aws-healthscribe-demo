@@ -22,6 +22,7 @@ import { RightPanelActions, RightPanelSettings } from './RightPanelComponents';
 import SummarizedConcepts from './SummarizedConcepts';
 import { calculateNereUnits } from './rightPanelUtils';
 import { processSummarizedSegment } from './summarizedConceptsUtils';
+import toast from 'react-hot-toast';
 
 type RightPanelProps = {
     jobLoading: boolean;
@@ -47,6 +48,26 @@ export default function RightPanel({
         'Insights-Comprehend-Medical-Confidence-Threshold',
         75.0
     );
+    const [summaryChanges, setSummaryChanges] = useState<Record<string, Record<number, string>>>({});
+    const [isSaving, setIsSaving] = useState(false);
+
+    const handleSaveChanges = async () => {
+        setIsSaving(true);
+        try {
+            // Here you would implement the logic to save the changes
+            // This could involve calling an API or updating a database
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Simulating an API call
+            toast.success('Changes saved successfully');
+            // Clear the changes after successful save
+            setSummaryChanges({});
+        } catch (error) {
+            toast.error('Failed to save changes');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const hasSummaryChanges = Object.keys(summaryChanges).length > 0;
 
     const segmentById: { [key: string]: ITranscriptSegments } = useMemo(() => {
         if (transcriptFile == null) return {};
@@ -95,13 +116,15 @@ export default function RightPanel({
                 containerTitle="Insights"
                 containerActions={
                     <RightPanelActions
-                        hasInsightSections={hasInsightSections}
-                        dataExtracted={extractedHealthData.length > 0}
-                        extractingData={extractingData}
-                        clinicalDocumentNereUnits={clinicalDocumentNereUnits}
-                        setRightPanelSettingsOpen={setRightPanelSettingsOpen}
-                        handleExtractHealthData={handleExtractHealthData}
-                    />
+                    hasInsightSections={hasInsightSections}
+                    dataExtracted={extractedHealthData.length > 0}
+                    extractingData={extractingData}
+                    clinicalDocumentNereUnits={clinicalDocumentNereUnits}
+                    setRightPanelSettingsOpen={setRightPanelSettingsOpen}
+                    handleExtractHealthData={handleExtractHealthData}
+                    handleSaveChanges={handleSaveChanges}
+                    isSaving={isSaving}
+                    hasSummaryChanges={hasSummaryChanges}                 />
                 }
             >
                 <RightPanelSettings
@@ -118,6 +141,15 @@ export default function RightPanel({
                     setHighlightId={setHighlightId}
                     segmentById={segmentById}
                     wavesurfer={wavesurfer}
+                    onSummaryChange={(sectionName, index, newContent) => {
+                        setSummaryChanges(prev => ({
+                            ...prev,
+                            [sectionName]: {
+                                ...(prev[sectionName] || {}),
+                                [index]: newContent
+                            }
+                        }));
+                    }}
                 />
             </ScrollingContainer>
         );
