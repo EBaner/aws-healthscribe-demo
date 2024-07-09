@@ -164,7 +164,6 @@ export default function RightPanel({
     }, [clinicalDocument]);
 
     async function handleExtractHealthData() {
-
         if (!Array.isArray(clinicalDocument?.ClinicalDocumentation?.Sections)) return;
         setExtractingData(true);
 

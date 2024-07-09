@@ -81,7 +81,6 @@ export default function SummarizedConcepts({
             } else {
                 setCurrentId(0);
             }
-
         } else if (!current) {
             if (currentIdLocal < EvidenceLinks.length - 1) {
                 setCurrentId(currentIdLocal + 1);
