@@ -389,7 +389,6 @@ export default function TopPanel({
                         onChange={({ detail }) => setMessage(detail.value)}
                     />
                 </FormField>
-                
             </Modal>
         </>
     );
