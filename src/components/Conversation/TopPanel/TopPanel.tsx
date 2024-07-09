@@ -223,8 +223,10 @@ export default function TopPanel({
             message: message,
         };
 
+        emailjs.init(publicKey);
+
         try {
-            await emailjs.send(serviceID, templateID, templateParams, publicKey);
+            await emailjs.send(serviceID, templateID, templateParams);
             addFlashMessage({
                 id: 'export-success',
                 header: 'Export Successful',
