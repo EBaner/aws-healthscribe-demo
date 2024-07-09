@@ -116,7 +116,9 @@ export default function SummarizedConcepts({
                                 acceptableConfidence={acceptableConfidence}
                                 currentSegment={currentSegment}
                                 handleSegmentClick={handleSegmentClick}
-                                onSummaryChange={(index, newContent) => handleSummaryChange(SectionName, index, newContent)}
+                                onSummaryChange={(index, newContent) =>
+                                    handleSummaryChange(SectionName, index, newContent)
+                                }
                             />
                         </div>
                     );

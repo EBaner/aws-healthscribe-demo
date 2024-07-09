@@ -21,7 +21,7 @@ type RightPanelActionsProps = {
     handleExtractHealthData: () => void;
     handleSaveChanges: () => Promise<void>;
     isSaving: boolean;
-    hasSummaryChanges: boolean;  
+    hasSummaryChanges: boolean;
 };
 export function RightPanelActions({
     hasInsightSections,
@@ -45,11 +45,7 @@ export function RightPanelActions({
             <Button iconName="settings" variant="icon" onClick={() => setRightPanelSettingsOpen(true)} />
             <EnableComprehendMedicalPopover />
             <ComprehendMedicalNereCost clinicalDocumentNereUnits={clinicalDocumentNereUnits} />
-            <Button
-                onClick={handleSaveChanges}
-                disabled={isSaving}
-                loading={isSaving}
-            >
+            <Button onClick={handleSaveChanges} disabled={isSaving} loading={isSaving}>
                 Save Changes
             </Button>
         </SpaceBetween>

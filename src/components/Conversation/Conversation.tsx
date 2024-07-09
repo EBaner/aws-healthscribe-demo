@@ -54,6 +54,8 @@ export default function Conversation() {
                 setJobLoading(true);
                 const getHealthScribeJobRsp = await getHealthScribeJob({ MedicalScribeJobName: conversationName });
                 const medicalScribeJob = getHealthScribeJobRsp?.MedicalScribeJob;
+                const userTag = jobDetails?.Tags?.find((tag) => tag.Key === 'UserName');
+                const clinicTag = jobDetails?.Tags?.find((tag) => tag.Key === 'Clinic');
 
                 if (!medicalScribeJob) {
                     return;
@@ -134,6 +136,10 @@ export default function Conversation() {
                     highlightId={highlightId}
                     setHighlightId={setHighlightId}
                     wavesurfer={wavesurfer}
+                    jobName={jobDetails?.MedicalScribeJobName || ''}
+                    loginId={user?.username || ''}
+                    outputBucket={jobDetails?.MedicalScribeOutput || null}
+                    clinicName={jobDetails?.Tags?.find(tag => tag.Key === 'Clinic')?.Value || ''}
                 />
             </Grid>
         </ContentLayout>

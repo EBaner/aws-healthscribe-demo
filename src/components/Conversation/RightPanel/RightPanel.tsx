@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from 'react';
 
 import { DetectEntitiesV2Response } from '@aws-sdk/client-comprehendmedical';
+import toast from 'react-hot-toast';
 import WaveSurfer from 'wavesurfer.js';
 
 import { useLocalStorage } from '@/hooks/useLocalStorage';
@@ -22,7 +23,11 @@ import { RightPanelActions, RightPanelSettings } from './RightPanelComponents';
 import SummarizedConcepts from './SummarizedConcepts';
 import { calculateNereUnits } from './rightPanelUtils';
 import { processSummarizedSegment } from './summarizedConceptsUtils';
-import toast from 'react-hot-toast';
+import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { Readable } from "stream";
+import { MedicalScribeOutput } from '@aws-sdk/client-transcribe';
+import { useS3 } from '@/hooks/useS3';
+
 
 type RightPanelProps = {
     jobLoading: boolean;
@@ -31,7 +36,12 @@ type RightPanelProps = {
     highlightId: HighlightId;
     setHighlightId: React.Dispatch<React.SetStateAction<HighlightId>>;
     wavesurfer: React.MutableRefObject<WaveSurfer | undefined>;
+    jobName: string;
+    loginId: string;
+    clinicName: string;
+    outputBucket: MedicalScribeOutput | null;
 };
+
 
 export default function RightPanel({
     jobLoading,
@@ -40,6 +50,10 @@ export default function RightPanel({
     highlightId,
     setHighlightId,
     wavesurfer,
+    jobName,
+    loginId,
+    clinicName,
+    outputBucket,
 }: RightPanelProps) {
     const [extractingData, setExtractingData] = useState<boolean>(false);
     const [extractedHealthData, setExtractedHealthData] = useState<ExtractedHealthData[]>([]);
@@ -51,21 +65,71 @@ export default function RightPanel({
     const [summaryChanges, setSummaryChanges] = useState<Record<string, Record<number, string>>>({});
     const [isSaving, setIsSaving] = useState(false);
 
-    const handleSaveChanges = async () => {
-        setIsSaving(true);
-        try {
-            // Here you would implement the logic to save the changes
-            // This could involve calling an API or updating a database
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Simulating an API call
-            toast.success('Changes saved successfully');
-            // Clear the changes after successful save
-            setSummaryChanges({});
-        } catch (error) {
-            toast.error('Failed to save changes');
-        } finally {
-            setIsSaving(false);
+    const s3Client = new S3Client({ region: "YOUR_AWS_REGION" });
+
+const handleSaveChanges = async () => {
+    setIsSaving(true);
+    try {
+        const [outputBucket, getUploadMetadata] = useS3();
+        if (!outputBucket) {
+            throw new Error("Output bucket information is missing");
         }
-    };
+        
+
+        // Make sure bucketName is a string
+        
+        const savePromises = Object.entries(summaryChanges).map(async ([sectionName, sectionChanges]) => {
+            const originalKey = `${jobName}/`; // Adjust this path as needed
+            
+            // Get the original content
+            const getParams = {
+                Bucket: outputBucket, // Use the same bucket as in your submitJob function
+                Key: originalKey,
+            };
+            const getCommand = new GetObjectCommand(getParams);
+            const originalObject = await s3Client.send(getCommand);
+            
+            let originalContent = {};
+            if (originalObject.Body instanceof Readable) {
+                const chunks: Uint8Array[] = [];
+                for await (const chunk of originalObject.Body) {
+                    chunks.push(chunk);
+                }
+                const buffer = Buffer.concat(chunks);
+                originalContent = JSON.parse(buffer.toString('utf-8'));
+            }
+
+            // Merge changes with original content
+            const updatedContent = {
+                ...originalContent,
+                ...sectionChanges,
+                lastModified: new Date().toISOString(),
+                modifiedBy: loginId,
+                clinicName: clinicName
+            };
+
+            // Save the updated content back to S3
+            const putParams = {
+                Bucket: outputBucket,
+                Key: originalKey,
+                Body: JSON.stringify(updatedContent),
+                ContentType: "application/json"
+            };
+            const putCommand = new PutObjectCommand(putParams);
+            return s3Client.send(putCommand);
+        });
+
+        await Promise.all(savePromises);
+
+        toast.success('Changes saved successfully');
+        setSummaryChanges({});
+    } catch (error) {
+        console.error('Error saving changes:', error);
+        toast.error('Failed to save changes');
+    } finally {
+        setIsSaving(false);
+    }
+}
 
     const hasSummaryChanges = Object.keys(summaryChanges).length > 0;
 
@@ -116,15 +180,16 @@ export default function RightPanel({
                 containerTitle="Insights"
                 containerActions={
                     <RightPanelActions
-                    hasInsightSections={hasInsightSections}
-                    dataExtracted={extractedHealthData.length > 0}
-                    extractingData={extractingData}
-                    clinicalDocumentNereUnits={clinicalDocumentNereUnits}
-                    setRightPanelSettingsOpen={setRightPanelSettingsOpen}
-                    handleExtractHealthData={handleExtractHealthData}
-                    handleSaveChanges={handleSaveChanges}
-                    isSaving={isSaving}
-                    hasSummaryChanges={hasSummaryChanges}                 />
+                        hasInsightSections={hasInsightSections}
+                        dataExtracted={extractedHealthData.length > 0}
+                        extractingData={extractingData}
+                        clinicalDocumentNereUnits={clinicalDocumentNereUnits}
+                        setRightPanelSettingsOpen={setRightPanelSettingsOpen}
+                        handleExtractHealthData={handleExtractHealthData}
+                        handleSaveChanges={handleSaveChanges}
+                        isSaving={isSaving}
+                        hasSummaryChanges={hasSummaryChanges}
+                    />
                 }
             >
                 <RightPanelSettings
@@ -142,12 +207,12 @@ export default function RightPanel({
                     segmentById={segmentById}
                     wavesurfer={wavesurfer}
                     onSummaryChange={(sectionName, index, newContent) => {
-                        setSummaryChanges(prev => ({
+                        setSummaryChanges((prev) => ({
                             ...prev,
                             [sectionName]: {
                                 ...(prev[sectionName] || {}),
-                                [index]: newContent
-                            }
+                                [index]: newContent,
+                            },
                         }));
                     }}
                 />
