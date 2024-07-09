@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 
 import { useNavigate } from 'react-router-dom';
 
+import { MultiselectProps } from '@cloudscape-design/components';
 import Box from '@cloudscape-design/components/box';
 import Button from '@cloudscape-design/components/button';
 import ButtonDropdown from '@cloudscape-design/components/button-dropdown';
@@ -13,11 +14,10 @@ import FormField from '@cloudscape-design/components/form-field';
 import Header from '@cloudscape-design/components/header';
 import Input from '@cloudscape-design/components/input';
 import Modal from '@cloudscape-design/components/modal';
+import Multiselect from '@cloudscape-design/components/multiselect';
 import SpaceBetween from '@cloudscape-design/components/space-between';
 import Spinner from '@cloudscape-design/components/spinner';
 import Textarea from '@cloudscape-design/components/textarea';
-import Multiselect from '@cloudscape-design/components/multiselect';
-import { MultiselectProps } from '@cloudscape-design/components';
 
 import { MedicalScribeJob } from '@aws-sdk/client-transcribe';
 import emailjs from 'emailjs-com';
@@ -35,7 +35,6 @@ import { getPlainTextSummary } from '../RightPanel/RightPanel';
 import { SmallTalkList } from '../types';
 import styles from './TopPanel.module.css';
 import { extractRegions } from './extractRegions';
-
 
 const options: MultiselectProps.Option[] = [
     { value: 'chief complaint', label: 'Chief Complaint' },
@@ -89,7 +88,7 @@ export default function TopPanel({
     const [email, setEmail] = useState('');
     const [message, setMessage] = useState('');
     const [exportModalVisible, setExportModalVisible] = useState<boolean>(false);
-    const [selectedOptions, setSelectedOptions] = useState<MultiselectProps.Option[]>([]);    
+    const [selectedOptions, setSelectedOptions] = useState<MultiselectProps.Option[]>([]);
     //TO:DO handle selected options
 
     const waveformElement = document.getElementById('waveform');
@@ -407,6 +406,7 @@ export default function TopPanel({
                         onChange={({ detail }) => setMessage(detail.value)}
                     />
                 </FormField>
+                <br />
                 <Multiselect
                     selectedOptions={selectedOptions}
                     onChange={({ detail }) => setSelectedOptions([...detail.selectedOptions])}
