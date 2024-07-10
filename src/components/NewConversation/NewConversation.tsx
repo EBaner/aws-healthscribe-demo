@@ -89,13 +89,13 @@ async function getS3FileContent(bucketName: string, fileName: string): Promise<n
     });
 
     try {
-        const command = new GetObjectCommand({ Bucket: bucketName, Key: fileName });
+        const command = new GetObjectCommand({ Bucket: bucketName, Key: `ClinicCounter/${fileName}` });
         const response = await s3Client.send(command);
         const bodyContents = await streamToString(response.Body as Readable);
         return bodyContents ? parseInt(bodyContents, 10) : 0;
     } catch (error) {
         if (error instanceof NoSuchKey) {
-            // File doesn't exist, return 0 or create the file if needed
+            // File doesn't exist, create the file if needed
             await createS3FileIfNeeded(bucketName, fileName);
             return 0;
         }
@@ -116,7 +116,7 @@ async function putS3FileContent(bucketName: string, fileName: string, content: s
 
     const command = new PutObjectCommand({
         Bucket: bucketName,
-        Key: fileName,
+        Key: `ClinicCounter/${fileName}`,
         Body: content,
         ContentType: 'text/plain',
     });
@@ -277,7 +277,7 @@ export default function NewConversation() {
                 throw e;
             }
 
-            const s3FileName = `${clinicName}.txt`;
+            const s3FileName = `${clinicTag.Value}.txt`;
 
             // Ensure the S3 file exists or is created
             await getS3FileContent(outputBucket, s3FileName);
@@ -286,7 +286,6 @@ export default function NewConversation() {
             const currentCount = await getS3FileContent(outputBucket, s3FileName);
             const newCount = currentCount + 1;
             await putS3FileContent(outputBucket, s3FileName, newCount.toString());
-
             try {
                 const startJob = await startMedicalScribeJob(jobParams);
                 if (startJob?.MedicalScribeJob?.MedicalScribeJobStatus) {
