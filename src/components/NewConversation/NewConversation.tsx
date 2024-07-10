@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
+
 import { useNavigate } from 'react-router-dom';
+
 import Box from '@cloudscape-design/components/box';
 import Button from '@cloudscape-design/components/button';
 import Container from '@cloudscape-design/components/container';
@@ -13,18 +15,23 @@ import SpaceBetween from '@cloudscape-design/components/space-between';
 import Spinner from '@cloudscape-design/components/spinner';
 import StatusIndicator from '@cloudscape-design/components/status-indicator';
 import TokenGroup from '@cloudscape-design/components/token-group';
+
+import { GetObjectCommand, NoSuchKey, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { Tag } from '@aws-sdk/client-s3/dist-types/models/models_0';
 import { MedicalScribeParticipantRole, StartMedicalScribeJobRequest } from '@aws-sdk/client-transcribe';
 import { VocabularyFilterMethod } from '@aws-sdk/client-transcribe';
 import { Progress } from '@aws-sdk/lib-storage';
 import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
 import dayjs from 'dayjs';
+import { Readable } from 'stream';
+
 import { useS3 } from '@/hooks/useS3';
 import { useAuthContext } from '@/store/auth';
 import { useNotificationsContext } from '@/store/notifications';
 import { startMedicalScribeJob } from '@/utils/HealthScribeApi';
 import { multipartUpload } from '@/utils/S3Api';
 import sleep from '@/utils/sleep';
+
 import amplifyCustom from '../../aws-custom.json';
 import Auth from '../Auth';
 import AudioRecorder from './AudioRecorder';
@@ -33,8 +40,7 @@ import { AudioDetailSettings, AudioIdentificationType, InputName } from './FormC
 import styles from './NewConversation.module.css';
 import { verifyJobParams } from './formUtils';
 import { AudioDetails, AudioSelection } from './types';
-import { S3Client, GetObjectCommand, PutObjectCommand, NoSuchKey } from '@aws-sdk/client-s3';
-import { Readable } from 'stream';
+import { getCredentials } from '@/utils/Sdk';
 
 async function getUserAttributes(username: string): Promise<string | null> {
     try {
@@ -58,20 +64,21 @@ async function streamToString(stream: Readable): Promise<string> {
 }
 
 async function getS3FileContent(bucketName: string, fileName: string): Promise<number> {
-    const s3Client = new S3Client({});
+    const s3Client = new S3Client({
+        region: 'us-east-1', // Hardcoded to match the access point region
+        credentials: await getCredentials(),
+    });
     const command = new GetObjectCommand({ Bucket: bucketName, Key: fileName });
-
-    try {
-        const response = await s3Client.send(command);
-        const bodyContents = await streamToString(response.Body as Readable);
-        return bodyContents ? parseInt(bodyContents, 10) : 0;
-    } catch (error) {
-        throw error;
-    }
+    const response = await s3Client.send(command);
+    const bodyContents = await streamToString(response.Body as Readable);
+    return bodyContents ? parseInt(bodyContents, 10) : 0;
 }
 
 async function putS3FileContent(bucketName: string, fileName: string, content: string): Promise<void> {
-    const s3Client = new S3Client({});
+    const s3Client = new S3Client({
+        region: 'us-east-1', // Hardcoded to match the access point region
+        credentials: await getCredentials(),
+    });
     const command = new PutObjectCommand({
         Bucket: bucketName,
         Key: fileName,
@@ -158,7 +165,8 @@ export default function NewConversation() {
                           ChannelDefinitions: [
                               {
                                   ChannelId: 0,
-                                  ParticipantRole: audioDetails.channelIdentification.channel1 as MedicalScribeParticipantRole,
+                                  ParticipantRole: audioDetails.channelIdentification
+                                      .channel1 as MedicalScribeParticipantRole,
                               },
                               {
                                   ChannelId: 1,

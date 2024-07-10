@@ -19,76 +19,6 @@ interface Recording {
     index: number;
 }
 
-async function removeSilence(audioBlob: Blob, silenceThreshold = -50, minSilenceLength = 0.2): Promise<Blob> {
-    const audioContext = new (window.AudioContext || window.AudioContext)();
-    const arrayBuffer = await audioBlob.arrayBuffer();
-    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-
-    const channelData = audioBuffer.getChannelData(0);
-    const sampleRate = audioBuffer.sampleRate;
-    const minSilenceSamples = minSilenceLength * sampleRate;
-
-    const nonSilentSegments: { start: number; end: number }[] = [];
-    let silenceStart = 0;
-    let isSilence = true;
-
-    for (let i = 0; i < channelData.length; i++) {
-        const amplitude = Math.abs(channelData[i]);
-        const db = 20 * Math.log10(amplitude);
-
-        if (db < silenceThreshold) {
-            if (!isSilence) {
-                isSilence = true;
-                silenceStart = i;
-            }
-        } else {
-            if (isSilence) {
-                isSilence = false;
-                if (i - silenceStart >= minSilenceSamples) {
-                    nonSilentSegments.push({ start: silenceStart / sampleRate, end: i / sampleRate });
-                }
-            }
-        }
-    }
-
-    const totalDuration = nonSilentSegments.reduce((sum, segment) => sum + (segment.end - segment.start), 0);
-    const offlineContext = new OfflineAudioContext(
-        audioBuffer.numberOfChannels,
-        totalDuration * sampleRate,
-        sampleRate
-    );
-
-    const source = offlineContext.createBufferSource();
-    source.buffer = audioBuffer;
-
-    let currentTime = 0;
-    for (const segment of nonSilentSegments) {
-        const duration = segment.end - segment.start;
-        source.connect(offlineContext.destination);
-        source.start(currentTime, segment.start, duration);
-        currentTime += duration;
-    }
-
-    const renderedBuffer = await offlineContext.startRendering();
-
-    return new Promise((resolve) => {
-        const streamDestination = audioContext.createMediaStreamDestination();
-        const mediaRecorder = new MediaRecorder(streamDestination.stream, { mimeType: 'audio/webm' });
-
-        const source = audioContext.createBufferSource();
-        source.buffer = renderedBuffer;
-        source.connect(streamDestination);
-
-        const chunks: BlobPart[] = [];
-        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-        mediaRecorder.onstop = () => resolve(new Blob(chunks, { type: 'audio/webm' }));
-
-        mediaRecorder.start();
-        source.start(0);
-        setTimeout(() => mediaRecorder.stop(), renderedBuffer.duration * 1000);
-    });
-}
-
 export default function AudioRecorder({ setRecordedAudio }: AudioRecorderProps) {
     const wavesurfer = useRef<WaveSurfer | undefined>(undefined);
     const wavesurfermic = useRef<WaveSurfer | undefined>(undefined);
@@ -147,13 +77,11 @@ export default function AudioRecorder({ setRecordedAudio }: AudioRecorderProps) 
     const stopRecording = () => {
         setRecordingStatus('recorded');
         wavesurferRecordPlugin.current?.stopRecording();
-        wavesurferRecordPlugin.current?.on('record-end', async (blob) => {
-            const processedBlob = await removeSilence(blob);
-
-            const audioUrl = URL.createObjectURL(processedBlob);
-            setRecordedAudio(new File([processedBlob], 'recorded.mp3'));
+        wavesurferRecordPlugin.current?.on('record-end', (blob) => {
+            const audioUrl = URL.createObjectURL(blob);
+            setRecordedAudio(new File([blob], 'recorded.mp3'));
             setAudioUrl(audioUrl);
-            setAudioBlob(processedBlob);
+            setAudioBlob(blob);
             loadWaveSurfer(audioUrl);
             setLastRecordingDetails({
                 index: lastRecordingDetails === null ? 1 : lastRecordingDetails.index + 1,
