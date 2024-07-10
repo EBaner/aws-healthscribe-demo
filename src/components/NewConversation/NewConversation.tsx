@@ -44,11 +44,30 @@ import { AudioDetails, AudioSelection } from './types';
 
 async function getUserAttributes(username: string): Promise<string | null> {
     try {
-        const user = await getCurrentUser();
+        const { user } = useAuthContext();
+
+        // Ensure user is authenticated
+        if (!user) {
+            console.error('User not authenticated.');
+            return null;
+        }
+
+        // Fetch user attributes
         const attributes = await fetchUserAttributes();
+
+        // Check if the 'custom:Clinic' attribute exists
         const clinicAttribute = attributes['custom:Clinic'];
-        return clinicAttribute || 'No Clinic Found';
+
+        // Handle case where clinic attribute is missing
+        if (!clinicAttribute) {
+            console.warn('Clinic attribute not found for user.');
+            return 'No Clinic Found';
+        }
+
+        // Return the clinic attribute value
+        return clinicAttribute;
     } catch (error) {
+        // Log and throw any errors that occur during attribute fetching
         console.error('Error fetching user attributes: ', error);
         throw error;
     }
