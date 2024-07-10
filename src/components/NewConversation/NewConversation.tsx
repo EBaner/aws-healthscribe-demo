@@ -30,6 +30,7 @@ import { useAuthContext } from '@/store/auth';
 import { useNotificationsContext } from '@/store/notifications';
 import { startMedicalScribeJob } from '@/utils/HealthScribeApi';
 import { multipartUpload } from '@/utils/S3Api';
+import { getCredentials } from '@/utils/Sdk';
 import sleep from '@/utils/sleep';
 
 import amplifyCustom from '../../aws-custom.json';
@@ -40,7 +41,6 @@ import { AudioDetailSettings, AudioIdentificationType, InputName } from './FormC
 import styles from './NewConversation.module.css';
 import { verifyJobParams } from './formUtils';
 import { AudioDetails, AudioSelection } from './types';
-import { getCredentials } from '@/utils/Sdk';
 
 async function getUserAttributes(username: string): Promise<string | null> {
     try {
@@ -242,10 +242,12 @@ export default function NewConversation() {
                 throw e;
             }
 
-            const s3FileName = `${clinicName}.txt`;
+            
+
+            /*const s3FileName = `${clinicName}.txt`;
             const currentCount = await getS3FileContent(outputBucket, s3FileName);
             const newCount = currentCount + 1;
-            await putS3FileContent(outputBucket, s3FileName, newCount.toString());
+            await putS3FileContent(outputBucket, s3FileName, newCount.toString());*/
 
             try {
                 const startJob = await startMedicalScribeJob(jobParams);
