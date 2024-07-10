@@ -28,8 +28,8 @@ async function getClinicData(): Promise<{ [key: string]: number }> {
         for await (const chunk of bodyStream) {
             chunks.push(chunk);
         }
-
         const body = Buffer.concat(chunks).toString('utf-8');
+        console.log(body)
         return JSON.parse(body);
     } catch (error) {
         if (error instanceof NoSuchKey) {
