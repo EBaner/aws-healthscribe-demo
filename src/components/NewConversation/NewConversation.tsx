@@ -1,7 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-
 import { useNavigate } from 'react-router-dom';
-
 import Box from '@cloudscape-design/components/box';
 import Button from '@cloudscape-design/components/button';
 import Container from '@cloudscape-design/components/container';
@@ -15,27 +13,15 @@ import SpaceBetween from '@cloudscape-design/components/space-between';
 import Spinner from '@cloudscape-design/components/spinner';
 import StatusIndicator from '@cloudscape-design/components/status-indicator';
 import TokenGroup from '@cloudscape-design/components/token-group';
-
 import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { Tag } from '@aws-sdk/client-s3/dist-types/models/models_0';
-import {
-    GetMedicalTranscriptionJobCommand,
-    MedicalScribeJobSummary,
-    MedicalScribeParticipantRole,
-    MedicalTranscriptionJobSummary,
-    StartMedicalScribeJobRequest,
-} from '@aws-sdk/client-transcribe';
+import { GetMedicalTranscriptionJobCommand, MedicalScribeJobSummary, MedicalScribeParticipantRole, MedicalTranscriptionJobSummary, StartMedicalScribeJobRequest } from '@aws-sdk/client-transcribe';
 import { VocabularyFilterMethod } from '@aws-sdk/client-transcribe';
-import {
-    ListMedicalTranscriptionJobsCommand,
-    ListMedicalTranscriptionJobsCommandInput,
-    TranscribeClient,
-} from '@aws-sdk/client-transcribe';
+import { ListMedicalTranscriptionJobsCommand, ListMedicalTranscriptionJobsCommandInput, TranscribeClient } from '@aws-sdk/client-transcribe';
 import { Progress } from '@aws-sdk/lib-storage';
 import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
 import AWS from 'aws-sdk';
 import dayjs from 'dayjs';
-
 import { useS3 } from '@/hooks/useS3';
 import { useAuthContext } from '@/store/auth';
 import { useNotificationsContext } from '@/store/notifications';
@@ -43,7 +29,6 @@ import { getHealthScribeJob, listHealthScribeJobs, startMedicalScribeJob } from 
 import { multipartUpload } from '@/utils/S3Api';
 import { getConfigRegion, getCredentials } from '@/utils/Sdk';
 import sleep from '@/utils/sleep';
-
 import amplifyCustom from '../../aws-custom.json';
 import Auth from '../Auth';
 import AudioRecorder from './AudioRecorder';
@@ -116,10 +101,10 @@ async function clinicCounter(clinicName: string): Promise<number> {
         throw error; // Ensure the error is propagated for better debugging
     }
 }
+
 export default function NewConversation() {
     const { updateProgressBar } = useNotificationsContext();
     const navigate = useNavigate();
-
     const { user } = useAuthContext(); // Retrieve user info
     const loginId = user?.signInDetails?.loginId || 'No username found'; // Extract login ID
     const [clinicName, setClinicName] = useState<string>('No Clinic found');
@@ -160,7 +145,6 @@ export default function NewConversation() {
     });
     const [filePath, setFilePath] = useState<File>(); // only one file is allowed from react-dropzone. NOT an array
     const [outputBucket, getUploadMetadata] = useS3(); // outputBucket is the Amplify bucket, and uploadMetadata contains uuid4
-
     const [submissionMode, setSubmissionMode] = useState<string>('uploadRecording'); // to hide or show the live recorder
     const [recordedAudio, setRecordedAudio] = useState<File | undefined>(); // audio file recorded via live recorder
 
