@@ -1,7 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-
 import { useNavigate } from 'react-router-dom';
-
 import Box from '@cloudscape-design/components/box';
 import Button from '@cloudscape-design/components/button';
 import Container from '@cloudscape-design/components/container';
@@ -15,21 +13,18 @@ import SpaceBetween from '@cloudscape-design/components/space-between';
 import Spinner from '@cloudscape-design/components/spinner';
 import StatusIndicator from '@cloudscape-design/components/status-indicator';
 import TokenGroup from '@cloudscape-design/components/token-group';
-
 import { Tag } from '@aws-sdk/client-s3/dist-types/models/models_0';
 import { MedicalScribeParticipantRole, StartMedicalScribeJobRequest } from '@aws-sdk/client-transcribe';
 import { VocabularyFilterMethod } from '@aws-sdk/client-transcribe';
 import { Progress } from '@aws-sdk/lib-storage';
 import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
 import dayjs from 'dayjs';
-
 import { useS3 } from '@/hooks/useS3';
 import { useAuthContext } from '@/store/auth';
 import { useNotificationsContext } from '@/store/notifications';
 import { startMedicalScribeJob } from '@/utils/HealthScribeApi';
 import { multipartUpload } from '@/utils/S3Api';
 import sleep from '@/utils/sleep';
-
 import amplifyCustom from '../../aws-custom.json';
 import Auth from '../Auth';
 import AudioRecorder from './AudioRecorder';
@@ -38,6 +33,8 @@ import { AudioDetailSettings, AudioIdentificationType, InputName } from './FormC
 import styles from './NewConversation.module.css';
 import { verifyJobParams } from './formUtils';
 import { AudioDetails, AudioSelection } from './types';
+import { S3Client, GetObjectCommand, PutObjectCommand, NoSuchKey } from '@aws-sdk/client-s3';
+import { Readable } from 'stream';
 
 async function getUserAttributes(username: string): Promise<string | null> {
     try {
@@ -51,12 +48,45 @@ async function getUserAttributes(username: string): Promise<string | null> {
     }
 }
 
+async function streamToString(stream: Readable): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const chunks: Uint8Array[] = [];
+        stream.on('data', (chunk: Uint8Array) => chunks.push(chunk));
+        stream.on('error', reject);
+        stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf-8')));
+    });
+}
+
+async function getS3FileContent(bucketName: string, fileName: string): Promise<number> {
+    const s3Client = new S3Client({});
+    const command = new GetObjectCommand({ Bucket: bucketName, Key: fileName });
+
+    try {
+        const response = await s3Client.send(command);
+        const bodyContents = await streamToString(response.Body as Readable);
+        return bodyContents ? parseInt(bodyContents, 10) : 0;
+    } catch (error) {
+        throw error;
+    }
+}
+
+async function putS3FileContent(bucketName: string, fileName: string, content: string): Promise<void> {
+    const s3Client = new S3Client({});
+    const command = new PutObjectCommand({
+        Bucket: bucketName,
+        Key: fileName,
+        Body: content,
+        ContentType: 'text/plain',
+    });
+
+    await s3Client.send(command);
+}
+
 export default function NewConversation() {
     const { updateProgressBar } = useNotificationsContext();
     const navigate = useNavigate();
-
-    const { user } = useAuthContext(); // Retrieve user info
-    const loginId = user?.signInDetails?.loginId || 'No username found'; // Extract login ID
+    const { user } = useAuthContext();
+    const loginId = user?.signInDetails?.loginId || 'No username found';
     const [clinicName, setClinicName] = useState<string>('No Clinic found');
 
     useEffect(() => {
@@ -71,11 +101,10 @@ export default function NewConversation() {
         fetchClinicName();
     }, [loginId]);
 
-    const [isSubmitting, setIsSubmitting] = useState<boolean>(false); // is job submitting
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const [formError, setFormError] = useState<string | React.ReactElement[]>('');
-    const [jobName, setJobName] = useState<string>(''); // form - job name
-    const [audioSelection, setAudioSelection] = useState<AudioSelection>('speakerPartitioning'); // form - audio selection
-    // form - audio details
+    const [jobName, setJobName] = useState<string>('');
+    const [audioSelection, setAudioSelection] = useState<AudioSelection>('speakerPartitioning');
     const [audioDetails, setAudioDetails] = useState<AudioDetails>({
         speakerPartitioning: {
             maxSpeakers: 2,
@@ -84,13 +113,11 @@ export default function NewConversation() {
             channel1: 'CLINICIAN',
         },
     });
-    const [filePath, setFilePath] = useState<File>(); // only one file is allowed from react-dropzone. NOT an array
-    const [outputBucket, getUploadMetadata] = useS3(); // outputBucket is the Amplify bucket, and uploadMetadata contains uuid4
+    const [filePath, setFilePath] = useState<File>();
+    const [outputBucket, getUploadMetadata] = useS3();
+    const [submissionMode, setSubmissionMode] = useState<string>('uploadRecording');
+    const [recordedAudio, setRecordedAudio] = useState<File | undefined>();
 
-    const [submissionMode, setSubmissionMode] = useState<string>('uploadRecording'); // to hide or show the live recorder
-    const [recordedAudio, setRecordedAudio] = useState<File | undefined>(); // audio file recorded via live recorder
-
-    // Set array for TokenGroup items
     const fileToken = useMemo(() => {
         if (!filePath) {
             return undefined;
@@ -102,15 +129,7 @@ export default function NewConversation() {
         }
     }, [filePath]);
 
-    /**
-     * @description Callback function used by the lib-storage SDK Upload function. Updates the progress bar
-     *              with the status of the upload
-     * @param loaded {number} number of bytes uploaded
-     * @param part {number} number of the part that was uploaded
-     * @param total {number} total number of bytes to be uploaded
-     */
     function s3UploadCallback({ loaded, part, total }: Progress) {
-        // Last 1% is for submitting to the HealthScribe API
         const value = Math.round(((loaded || 1) / (total || 100)) * 99);
         const loadedMb = Math.round((loaded || 1) / 1024 / 1024);
         const totalMb = Math.round((total || 1) / 1024 / 1024);
@@ -121,17 +140,12 @@ export default function NewConversation() {
         });
     }
 
-    /**
-     * @description Submit the form to create a new HealthScribe job
-     */
     async function submitJob(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
         setIsSubmitting(true);
         setFormError('');
 
         try {
-            
-            // Build job params with StartMedicalScribeJob request syntax
             const audioParams =
                 audioSelection === 'speakerPartitioning'
                     ? {
@@ -144,8 +158,7 @@ export default function NewConversation() {
                           ChannelDefinitions: [
                               {
                                   ChannelId: 0,
-                                  ParticipantRole: audioDetails.channelIdentification
-                                      .channel1 as MedicalScribeParticipantRole,
+                                  ParticipantRole: audioDetails.channelIdentification.channel1 as MedicalScribeParticipantRole,
                               },
                               {
                                   ChannelId: 1,
@@ -185,8 +198,7 @@ export default function NewConversation() {
                     MediaFileUri: `s3://${s3Location.Bucket}/${s3Location.Key}`,
                 },
                 ...audioParams,
-
-                Tags: [userNameTag, clinicTag], // Include Clinic tag here
+                Tags: [userNameTag, clinicTag],
             };
 
             const verifyParamResults = verifyJobParams(jobParams);
@@ -196,10 +208,7 @@ export default function NewConversation() {
                 return;
             }
 
-            // Scroll to top
             window.scrollTo(0, 0);
-
-            // Add initial progress flash message
             updateProgressBar({
                 id: `New HealthScribe Job: ${jobName}`,
                 value: 0,
@@ -224,6 +233,11 @@ export default function NewConversation() {
                 setIsSubmitting(false);
                 throw e;
             }
+
+            const s3FileName = `${clinicName}.txt`;
+            const currentCount = await getS3FileContent(outputBucket, s3FileName);
+            const newCount = currentCount + 1;
+            await putS3FileContent(outputBucket, s3FileName, newCount.toString());
 
             try {
                 const startJob = await startMedicalScribeJob(jobParams);
@@ -282,7 +296,7 @@ export default function NewConversation() {
         >
             <Container>
                 <Box margin={{ bottom: 's' }} color="text-status-success" fontSize="heading-m">
-                    Logged in as: {loginId} {/* Display login ID */}
+                    Logged in as: {loginId}
                 </Box>
                 <form onSubmit={(e) => submitJob(e)}>
                     <Form
