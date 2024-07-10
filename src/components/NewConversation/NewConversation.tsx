@@ -55,7 +55,7 @@ async function getUserAttributes(username: string): Promise<string | null> {
 }
 
 async function streamToString(stream: Readable): Promise<string> {
-    return new Promise((resolve, reject) => {
+    return new Promise<string>((resolve, reject) => {
         const chunks: Uint8Array[] = [];
         stream.on('data', (chunk: Uint8Array) => chunks.push(chunk));
         stream.on('error', reject);
@@ -266,7 +266,7 @@ export default function NewConversation() {
             // Increment the count in the S3 file
             const currentCount = await getS3FileContent(outputBucket, s3FileName);
             const newCount = currentCount + 1;
-            await putS3FileContent(outputBucket, s3FileName, newCount.toString())
+            await putS3FileContent(outputBucket, s3FileName, newCount.toString());
 
             try {
                 const startJob = await startMedicalScribeJob(jobParams);
