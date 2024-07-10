@@ -23,13 +23,15 @@ async function getClinicData(): Promise<{ [key: string]: number }> {
         );
 
         const bodyStream = data.Body as Readable;
-        const chunks = [];
+        const chunks: Buffer[] = [];
 
+        
         for await (const chunk of bodyStream) {
-            chunks.push(chunk);
+            chunks.push(Buffer.from(chunk));
         }
+        
         const body = Buffer.concat(chunks).toString('utf-8');
-        console.log(body)
+        console.log(body);
         return JSON.parse(body);
     } catch (error) {
         if (error instanceof NoSuchKey) {
