@@ -277,19 +277,8 @@ export default function NewConversation() {
                 throw e;
             }
 
-            useEffect(() => {
-                async function fetchClinicName() {
-                    const name = await getUserAttributes(loginId);
-                    if (typeof name === 'string') {
-                        setClinicName(name);
-                    } else {
-                        setClinicName('No Clinic found');
-                    }
-                }
-                fetchClinicName();
-            }, [loginId]);
 
-            const s3FileName = `${clinicName}.txt`;
+            const s3FileName = `Check.txt`;
 
             // Ensure the S3 file exists or is created
             await getS3FileContent(outputBucket, s3FileName);
