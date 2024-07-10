@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+
 import { useNavigate } from 'react-router-dom';
 
 import Box from '@cloudscape-design/components/box';
@@ -15,12 +16,24 @@ import Spinner from '@cloudscape-design/components/spinner';
 import StatusIndicator from '@cloudscape-design/components/status-indicator';
 import TokenGroup from '@cloudscape-design/components/token-group';
 
+import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { Tag } from '@aws-sdk/client-s3/dist-types/models/models_0';
-import { GetMedicalTranscriptionJobCommand, MedicalScribeJobSummary, MedicalScribeParticipantRole, MedicalTranscriptionJobSummary, StartMedicalScribeJobRequest } from '@aws-sdk/client-transcribe';
-import { VocabularyFilterMethod} from '@aws-sdk/client-transcribe';
-import { TranscribeClient, ListMedicalTranscriptionJobsCommand, ListMedicalTranscriptionJobsCommandInput } from '@aws-sdk/client-transcribe';
+import {
+    GetMedicalTranscriptionJobCommand,
+    MedicalScribeJobSummary,
+    MedicalScribeParticipantRole,
+    MedicalTranscriptionJobSummary,
+    StartMedicalScribeJobRequest,
+} from '@aws-sdk/client-transcribe';
+import { VocabularyFilterMethod } from '@aws-sdk/client-transcribe';
+import {
+    ListMedicalTranscriptionJobsCommand,
+    ListMedicalTranscriptionJobsCommandInput,
+    TranscribeClient,
+} from '@aws-sdk/client-transcribe';
 import { Progress } from '@aws-sdk/lib-storage';
 import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
+import AWS from 'aws-sdk';
 import dayjs from 'dayjs';
 
 import { useS3 } from '@/hooks/useS3';
@@ -28,8 +41,8 @@ import { useAuthContext } from '@/store/auth';
 import { useNotificationsContext } from '@/store/notifications';
 import { getHealthScribeJob, listHealthScribeJobs, startMedicalScribeJob } from '@/utils/HealthScribeApi';
 import { multipartUpload } from '@/utils/S3Api';
+import { getConfigRegion, getCredentials } from '@/utils/Sdk';
 import sleep from '@/utils/sleep';
-
 
 import amplifyCustom from '../../aws-custom.json';
 import Auth from '../Auth';
@@ -39,9 +52,6 @@ import { AudioDetailSettings, AudioIdentificationType, InputName } from './FormC
 import styles from './NewConversation.module.css';
 import { verifyJobParams } from './formUtils';
 import { AudioDetails, AudioSelection } from './types';
-import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
-import { getConfigRegion, getCredentials } from '@/utils/Sdk';
-import AWS from 'aws-sdk';
 
 async function getUserAttributes(username: string): Promise<string | null> {
     try {
@@ -70,10 +80,12 @@ async function clinicCounter(clinicName: string): Promise<number> {
 
     try {
         const listHealthScribeJobsRsp = await transcribeClient.send(new ListMedicalTranscriptionJobsCommand({}));
-        if (typeof listHealthScribeJobsRsp.MedicalTranscriptionJobSummaries === 'undefined') {
+        
+        if (!listHealthScribeJobsRsp.MedicalTranscriptionJobSummaries) {
             console.log('No MedicalTranscriptionJobSummaries returned');
             return 0;
         }
+
         const listResults: MedicalTranscriptionJobSummary[] = listHealthScribeJobsRsp.MedicalTranscriptionJobSummaries;
 
         const detailedJobSummaries = await Promise.all(
@@ -95,10 +107,9 @@ async function clinicCounter(clinicName: string): Promise<number> {
         return clinicJobCount;
     } catch (error) {
         console.error('Error listing clinic jobs: ', error);
-        return 0;
+        throw error; // Ensure the error is propagated for better debugging
     }
 }
-
 export default function NewConversation() {
     const { updateProgressBar } = useNotificationsContext();
     const navigate = useNavigate();
