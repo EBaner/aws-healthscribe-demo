@@ -67,12 +67,10 @@ async function getUserAttributes(username: string): Promise<string | null> {
 
 async function getTranscribeClient() {
     const credentials = await getCredentials();
-    const transcribeClient = new TranscribeClient({
-        region: 'your-aws-region',
+    return new TranscribeClient({
+        region: getConfigRegion(),
         credentials,
-        // Provide your AWS credentials here, or use environment variables
     });
-    return transcribeClient;
 }
 
 async function clinicCounter(clinicName: string): Promise<number> {
@@ -80,7 +78,7 @@ async function clinicCounter(clinicName: string): Promise<number> {
 
     try {
         const listHealthScribeJobsRsp = await transcribeClient.send(new ListMedicalTranscriptionJobsCommand({}));
-        
+
         if (!listHealthScribeJobsRsp.MedicalTranscriptionJobSummaries) {
             console.log('No MedicalTranscriptionJobSummaries returned');
             return 0;
@@ -91,10 +89,18 @@ async function clinicCounter(clinicName: string): Promise<number> {
         const detailedJobSummaries = await Promise.all(
             listResults.map(async (job) => {
                 try {
-                    const jobDetails = await transcribeClient.send(new GetMedicalTranscriptionJobCommand({ MedicalTranscriptionJobName: job.MedicalTranscriptionJobName }));
-                    const clinicTag = jobDetails.MedicalTranscriptionJob?.Tags?.find((tag) => tag.Key === 'Clinic' && tag.Value === clinicName);
+                    const jobDetails = await transcribeClient.send(
+                        new GetMedicalTranscriptionJobCommand({
+                            MedicalTranscriptionJobName: job.MedicalTranscriptionJobName,
+                        })
+                    );
+                    const clinicTag = jobDetails.MedicalTranscriptionJob?.Tags?.find(
+                        (tag) => tag.Key === 'Clinic' && tag.Value === clinicName
+                    );
                     const isClinicJob = !!clinicTag;
-                    console.log(`Job: ${job.MedicalTranscriptionJobName}, ClinicTag: ${clinicTag?.Value}, IsClinicJob: ${isClinicJob}`);
+                    console.log(
+                        `Job: ${job.MedicalTranscriptionJobName}, ClinicTag: ${clinicTag?.Value}, IsClinicJob: ${isClinicJob}`
+                    );
                     return isClinicJob;
                 } catch (error) {
                     console.error(`Failed to fetch details for job ${job.MedicalTranscriptionJobName}:`, error);
