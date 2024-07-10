@@ -130,6 +130,7 @@ export default function NewConversation() {
         setFormError('');
 
         try {
+            
             // Build job params with StartMedicalScribeJob request syntax
             const audioParams =
                 audioSelection === 'speakerPartitioning'
