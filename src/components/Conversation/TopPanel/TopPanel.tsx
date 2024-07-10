@@ -31,22 +31,22 @@ import { IAuraTranscriptOutput } from '@/types/HealthScribe';
 import { getPresignedUrl, getS3Object } from '@/utils/S3Api';
 
 import AudioControls from '../../Common/AudioControls';
-import { getPlainTextSummary } from '../RightPanel/RightPanel';
+import { getSetSummary, getPlainTextSummary } from '../RightPanel/RightPanel';
 import { SmallTalkList } from '../types';
 import styles from './TopPanel.module.css';
 import { extractRegions } from './extractRegions';
 
 const options: MultiselectProps.Option[] = [
-    { value: 'chief complaint', label: 'Chief Complaint' },
-    { value: 'past family history', label: 'Past Family History' },
-    { value: 'past social history', label: 'Past Social History' },
-    { value: 'diagnostic testing', label: 'Diagnostic Testing' },
-    { value: 'history of present illness', label: 'History of Present Illness' },
-    { value: 'review of systems', label: 'Review of Systems' },
-    { value: 'past medical history', label: 'Past Medical History' },
-    { value: 'physical examination', label: 'Physical Examination' },
-    { value: 'assessment', label: 'Assessment' },
-    { value: 'plan', label: 'Plan' },
+    { value: 'CHIEF_COMPLAINT', label: 'Chief Complaint' },
+    { value: 'PAST_FAMILY_HISTORY', label: 'Past Family History' },
+    { value: 'PAST_SOCIAL_HISTORY', label: 'Past Social History' },
+    { value: 'DIAGNOSTIC_TESTING', label: 'Diagnostic Testing' },
+    { value: 'HISTORY_OF_PRESENT_ILLNESS', label: 'History of Present Illness' },
+    { value: 'REVIEW_OF_SYSTEMS', label: 'Review of Systems' },
+    { value: 'PAST_MEDICAL_HISTORY', label: 'Past Medical History' },
+    { value: 'PHYSICAL_EXAMINATION', label: 'Physical Examination' },
+    { value: 'ASSESSMENT', label: 'Assessment' },
+    { value: 'PLAN', label: 'Plan' },
 ];
 
 type TopPanelProps = {
@@ -89,7 +89,6 @@ export default function TopPanel({
     const [message, setMessage] = useState('');
     const [exportModalVisible, setExportModalVisible] = useState<boolean>(false);
     const [selectedOptions, setSelectedOptions] = useState<MultiselectProps.Option[]>(options);
-    //TO:DO handle selected options
 
     const waveformElement = document.getElementById('waveform');
 
@@ -231,7 +230,7 @@ export default function TopPanel({
         const serviceID = 'service_krsa45w';
         const templateID = 'template_j9sffks';
         const publicKey = 'XTCBlgLBoDDdJiBe7';
-        const summaryText = getPlainTextSummary(clinicalDocument);
+        const summaryText = getSetSummary(clinicalDocument, selectedOptions);
 
         const templateParams = {
             to_email: email,
