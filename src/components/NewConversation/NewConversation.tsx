@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
+
 import { useNavigate } from 'react-router-dom';
+
 import Box from '@cloudscape-design/components/box';
 import Button from '@cloudscape-design/components/button';
 import Container from '@cloudscape-design/components/container';
@@ -13,6 +15,7 @@ import SpaceBetween from '@cloudscape-design/components/space-between';
 import Spinner from '@cloudscape-design/components/spinner';
 import StatusIndicator from '@cloudscape-design/components/status-indicator';
 import TokenGroup from '@cloudscape-design/components/token-group';
+
 import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { Tag } from '@aws-sdk/client-s3/dist-types/models/models_0';
 import {
@@ -48,8 +51,8 @@ import { AudioDropzone } from './Dropzone';
 import { AudioDetailSettings, AudioIdentificationType, InputName } from './FormComponents';
 import styles from './NewConversation.module.css';
 import { verifyJobParams } from './formUtils';
-import { AudioDetails, AudioSelection } from './types';
 import { getClinicData, updateClinicData } from './s3ClinicManager';
+import { AudioDetails, AudioSelection } from './types';
 
 async function getUserAttributes(username: string): Promise<string | null> {
     try {
@@ -90,7 +93,6 @@ export default function NewConversation() {
         }
         fetchClinicName();
     }, [loginId]);
-
 
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false); // is job submitting
     const [formError, setFormError] = useState<string | React.ReactElement[]>('');
@@ -152,16 +154,16 @@ export default function NewConversation() {
         try {
             const clinicData = await getClinicData();
             let clinicJobCount = clinicData[clinicName] || 0;
-    
+
             // Increment job count
             clinicJobCount++;
-    
+
             // Update clinic data in S3
             await updateClinicData(clinicName, clinicJobCount);
-        }  catch (error) {
+        } catch (error) {
             console.error('Error managing clinic data:', error);
-            setFormError('Error managing clinic data. Please try again later.');}
-
+            setFormError('Error managing clinic data. Please try again later.');
+        }
 
         try {
             // Build job params with StartMedicalScribeJob request syntax
@@ -252,7 +254,8 @@ export default function NewConversation() {
                 throw e;
             }
 
-            try { // Increment clinic job count
+            try {
+                // Increment clinic job count
                 const startJob = await startMedicalScribeJob(jobParams);
                 if (startJob?.MedicalScribeJob?.MedicalScribeJobStatus) {
                     updateProgressBar({
