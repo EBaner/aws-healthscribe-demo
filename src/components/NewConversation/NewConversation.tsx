@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
+
 import { useNavigate } from 'react-router-dom';
+
 import Box from '@cloudscape-design/components/box';
 import Button from '@cloudscape-design/components/button';
 import Container from '@cloudscape-design/components/container';
@@ -13,15 +15,27 @@ import SpaceBetween from '@cloudscape-design/components/space-between';
 import Spinner from '@cloudscape-design/components/spinner';
 import StatusIndicator from '@cloudscape-design/components/status-indicator';
 import TokenGroup from '@cloudscape-design/components/token-group';
+
 import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { Tag } from '@aws-sdk/client-s3/dist-types/models/models_0';
-import { GetMedicalTranscriptionJobCommand, MedicalScribeJobSummary, MedicalScribeParticipantRole, MedicalTranscriptionJobSummary, StartMedicalScribeJobRequest } from '@aws-sdk/client-transcribe';
+import {
+    GetMedicalTranscriptionJobCommand,
+    MedicalScribeJobSummary,
+    MedicalScribeParticipantRole,
+    MedicalTranscriptionJobSummary,
+    StartMedicalScribeJobRequest,
+} from '@aws-sdk/client-transcribe';
 import { VocabularyFilterMethod } from '@aws-sdk/client-transcribe';
-import { ListMedicalTranscriptionJobsCommand, ListMedicalTranscriptionJobsCommandInput, TranscribeClient } from '@aws-sdk/client-transcribe';
+import {
+    ListMedicalTranscriptionJobsCommand,
+    ListMedicalTranscriptionJobsCommandInput,
+    TranscribeClient,
+} from '@aws-sdk/client-transcribe';
 import { Progress } from '@aws-sdk/lib-storage';
 import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
 import AWS from 'aws-sdk';
 import dayjs from 'dayjs';
+
 import { useS3 } from '@/hooks/useS3';
 import { useAuthContext } from '@/store/auth';
 import { useNotificationsContext } from '@/store/notifications';
@@ -29,6 +43,7 @@ import { getHealthScribeJob, listHealthScribeJobs, startMedicalScribeJob } from 
 import { multipartUpload } from '@/utils/S3Api';
 import { getConfigRegion, getCredentials } from '@/utils/Sdk';
 import sleep from '@/utils/sleep';
+
 import amplifyCustom from '../../aws-custom.json';
 import Auth from '../Auth';
 import AudioRecorder from './AudioRecorder';
@@ -60,47 +75,31 @@ async function getTranscribeClient() {
 
 async function clinicCounter(clinicName: string): Promise<number> {
     const transcribeClient = await getTranscribeClient();
+    let clinicJobCount = 0;
 
     try {
         const listHealthScribeJobsRsp = await transcribeClient.send(new ListMedicalTranscriptionJobsCommand({}));
-
-        if (!listHealthScribeJobsRsp.MedicalTranscriptionJobSummaries) {
+        if (typeof listHealthScribeJobsRsp.MedicalTranscriptionJobSummaries === 'undefined') {
             console.log('No MedicalTranscriptionJobSummaries returned');
             return 0;
         }
-
         const listResults: MedicalTranscriptionJobSummary[] = listHealthScribeJobsRsp.MedicalTranscriptionJobSummaries;
 
-        const detailedJobSummaries = await Promise.all(
-            listResults.map(async (job) => {
-                try {
-                    const jobDetails = await transcribeClient.send(
-                        new GetMedicalTranscriptionJobCommand({
-                            MedicalTranscriptionJobName: job.MedicalTranscriptionJobName,
-                        })
-                    );
-                    const clinicTag = jobDetails.MedicalTranscriptionJob?.Tags?.find(
-                        (tag) => tag.Key === 'Clinic' && tag.Value === clinicName
-                    );
-                    const isClinicJob = !!clinicTag;
-                    console.log(
-                        `Job: ${job.MedicalTranscriptionJobName}, ClinicTag: ${clinicTag?.Value}, IsClinicJob: ${isClinicJob}`
-                    );
-                    return isClinicJob;
-                } catch (error) {
-                    console.error(`Failed to fetch details for job ${job.MedicalTranscriptionJobName}:`, error);
-                    return false;
-                }
-            })
-        );
+        for (const job of listResults) {
+            const jobDetails = await transcribeClient.send(new GetMedicalTranscriptionJobCommand({ MedicalTranscriptionJobName: job.MedicalTranscriptionJobName }));
+            const clinicTag = jobDetails.MedicalTranscriptionJob?.Tags?.find((tag) => tag.Key === 'Clinic' && tag.Value === clinicName);
+            if (clinicTag) {
+                clinicJobCount++;
+            }
+        }
 
-        const clinicJobCount = detailedJobSummaries.filter(Boolean).length;
         return clinicJobCount;
     } catch (error) {
         console.error('Error listing clinic jobs: ', error);
-        throw error; // Ensure the error is propagated for better debugging
+        return 0;
     }
 }
+
 
 export default function NewConversation() {
     const { updateProgressBar } = useNotificationsContext();
