@@ -68,10 +68,25 @@ async function getS3FileContent(bucketName: string, fileName: string): Promise<n
         region: 'us-east-1', // Hardcoded to match the access point region
         credentials: await getCredentials(),
     });
-    const command = new GetObjectCommand({ Bucket: bucketName, Key: fileName });
-    const response = await s3Client.send(command);
-    const bodyContents = await streamToString(response.Body as Readable);
-    return bodyContents ? parseInt(bodyContents, 10) : 0;
+
+    try {
+        const command = new GetObjectCommand({ Bucket: bucketName, Key: fileName });
+        const response = await s3Client.send(command);
+        const bodyContents = await streamToString(response.Body as Readable);
+        return bodyContents ? parseInt(bodyContents, 10) : 0;
+    } catch (error) {
+        if (error instanceof NoSuchKey) {
+            // File doesn't exist, return 0 or create the file if needed
+            await createS3FileIfNeeded(bucketName, fileName);
+            return 0;
+        }
+        throw error; // Rethrow other errors
+    }
+}
+
+async function createS3FileIfNeeded(bucketName: string, fileName: string): Promise<void> {
+    const initialCount = 0; // Initial count value
+    await putS3FileContent(bucketName, fileName, initialCount.toString());
 }
 
 async function putS3FileContent(bucketName: string, fileName: string, content: string): Promise<void> {
@@ -79,6 +94,7 @@ async function putS3FileContent(bucketName: string, fileName: string, content: s
         region: 'us-east-1', // Hardcoded to match the access point region
         credentials: await getCredentials(),
     });
+
     const command = new PutObjectCommand({
         Bucket: bucketName,
         Key: fileName,
@@ -242,12 +258,15 @@ export default function NewConversation() {
                 throw e;
             }
 
-            
+            const s3FileName = `${clinicName}.txt`;
 
-            /*const s3FileName = `${clinicName}.txt`;
+            // Ensure the S3 file exists or is created
+            await getS3FileContent(outputBucket, s3FileName);
+
+            // Increment the count in the S3 file
             const currentCount = await getS3FileContent(outputBucket, s3FileName);
             const newCount = currentCount + 1;
-            await putS3FileContent(outputBucket, s3FileName, newCount.toString());*/
+            await putS3FileContent(outputBucket, s3FileName, newCount.toString())
 
             try {
                 const startJob = await startMedicalScribeJob(jobParams);
