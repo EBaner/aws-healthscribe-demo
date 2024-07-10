@@ -88,7 +88,7 @@ export default function TopPanel({
     const [email, setEmail] = useState('');
     const [message, setMessage] = useState('');
     const [exportModalVisible, setExportModalVisible] = useState<boolean>(false);
-    const [selectedOptions, setSelectedOptions] = useState<MultiselectProps.Option[]>([]);
+    const [selectedOptions, setSelectedOptions] = useState<MultiselectProps.Option[]>(options);
     //TO:DO handle selected options
 
     const waveformElement = document.getElementById('waveform');
