@@ -1,7 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-
 import { useNavigate } from 'react-router-dom';
-
 import Box from '@cloudscape-design/components/box';
 import Button from '@cloudscape-design/components/button';
 import Container from '@cloudscape-design/components/container';
@@ -15,7 +13,6 @@ import SpaceBetween from '@cloudscape-design/components/space-between';
 import Spinner from '@cloudscape-design/components/spinner';
 import StatusIndicator from '@cloudscape-design/components/status-indicator';
 import TokenGroup from '@cloudscape-design/components/token-group';
-
 import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { Tag } from '@aws-sdk/client-s3/dist-types/models/models_0';
 import {
@@ -52,6 +49,7 @@ import { AudioDetailSettings, AudioIdentificationType, InputName } from './FormC
 import styles from './NewConversation.module.css';
 import { verifyJobParams } from './formUtils';
 import { AudioDetails, AudioSelection } from './types';
+import { getClinicData, updateClinicData } from './s3ClinicManager';
 
 async function getUserAttributes(username: string): Promise<string | null> {
     try {
@@ -73,34 +71,6 @@ async function getTranscribeClient() {
     });
 }
 
-async function clinicCounter(clinicName: string): Promise<number> {
-    const transcribeClient = await getTranscribeClient();
-    let clinicJobCount = 0;
-
-    try {
-        const listHealthScribeJobsRsp = await transcribeClient.send(new ListMedicalTranscriptionJobsCommand({}));
-        if (typeof listHealthScribeJobsRsp.MedicalTranscriptionJobSummaries === 'undefined') {
-            console.log('No MedicalTranscriptionJobSummaries returned');
-            return 0;
-        }
-        const listResults: MedicalTranscriptionJobSummary[] = listHealthScribeJobsRsp.MedicalTranscriptionJobSummaries;
-
-        for (const job of listResults) {
-            const jobDetails = await transcribeClient.send(new GetMedicalTranscriptionJobCommand({ MedicalTranscriptionJobName: job.MedicalTranscriptionJobName }));
-            const clinicTag = jobDetails.MedicalTranscriptionJob?.Tags?.find((tag) => tag.Key === 'Clinic' && tag.Value === clinicName);
-            if (clinicTag) {
-                clinicJobCount++;
-            }
-        }
-
-        return clinicJobCount;
-    } catch (error) {
-        console.error('Error listing clinic jobs: ', error);
-        return 0;
-    }
-}
-
-
 export default function NewConversation() {
     const { updateProgressBar } = useNotificationsContext();
     const navigate = useNavigate();
@@ -121,13 +91,6 @@ export default function NewConversation() {
         fetchClinicName();
     }, [loginId]);
 
-    useEffect(() => {
-        async function fetchUserJobCount() {
-            const count = await clinicCounter(clinicName);
-            setUserJobCount(count);
-        }
-        fetchUserJobCount();
-    }, [clinicName]);
 
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false); // is job submitting
     const [formError, setFormError] = useState<string | React.ReactElement[]>('');
@@ -187,6 +150,20 @@ export default function NewConversation() {
         setFormError('');
 
         try {
+            const clinicData = await getClinicData();
+            let clinicJobCount = clinicData[clinicName] || 0;
+    
+            // Increment job count
+            clinicJobCount++;
+    
+            // Update clinic data in S3
+            await updateClinicData(clinicName, clinicJobCount);
+        }  catch (error) {
+            console.error('Error managing clinic data:', error);
+            setFormError('Error managing clinic data. Please try again later.');}
+
+
+        try {
             // Build job params with StartMedicalScribeJob request syntax
             const audioParams =
                 audioSelection === 'speakerPartitioning'
@@ -228,11 +205,6 @@ export default function NewConversation() {
                 Value: loginId,
             };
 
-            const clinicTag: Tag = {
-                Key: 'Clinic',
-                Value: clinicName,
-            };
-
             const jobParams: StartMedicalScribeJobRequest = {
                 MedicalScribeJobName: jobName,
                 DataAccessRoleArn: amplifyCustom.healthScribeServiceRole,
@@ -241,8 +213,7 @@ export default function NewConversation() {
                     MediaFileUri: `s3://${s3Location.Bucket}/${s3Location.Key}`,
                 },
                 ...audioParams,
-
-                Tags: [userNameTag, clinicTag], // Include Clinic tag here
+                Tags: [userNameTag],
             };
 
             const verifyParamResults = verifyJobParams(jobParams);
@@ -281,7 +252,7 @@ export default function NewConversation() {
                 throw e;
             }
 
-            try {
+            try { // Increment clinic job count
                 const startJob = await startMedicalScribeJob(jobParams);
                 if (startJob?.MedicalScribeJob?.MedicalScribeJobStatus) {
                     updateProgressBar({
@@ -339,9 +310,6 @@ export default function NewConversation() {
             <Container>
                 <Box margin={{ bottom: 's' }} color="text-status-success" fontSize="heading-m">
                     Logged in as: {loginId} {/* Display login ID */}
-                </Box>
-                <Box margin={{ bottom: 's' }} color="text-status-success" fontSize="heading-m">
-                    Number of jobs for the logged-in user: {userJobCount}
                 </Box>
                 <form onSubmit={(e) => submitJob(e)}>
                     <Form
