@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
 
+import { MultiselectProps } from '@cloudscape-design/components';
+
 import { DetectEntitiesV2Response } from '@aws-sdk/client-comprehendmedical';
 import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { MedicalScribeOutput } from '@aws-sdk/client-transcribe';
@@ -25,6 +27,28 @@ import { RightPanelActions, RightPanelSettings } from './RightPanelComponents';
 import SummarizedConcepts from './SummarizedConcepts';
 import { calculateNereUnits } from './rightPanelUtils';
 import { processSummarizedSegment } from './summarizedConceptsUtils';
+
+export function getSetSummary(
+    clinicalDocument: IAuraClinicalDocOutput | null,
+    selectedOptions: MultiselectProps.Option[]
+) {
+    if (!Array.isArray(clinicalDocument?.ClinicalDocumentation?.Sections)) return '';
+    let setSummary = '';
+
+    const selectedSections = new Set(selectedOptions.map((option) => option.value));
+
+    for (const section of clinicalDocument.ClinicalDocumentation.Sections) {
+        if (selectedSections.has(section.SectionName)) {
+            setSummary += `${section.SectionName}\n`;
+            for (const summary of section.Summary) {
+                setSummary += `${summary.SummarizedSegment}\n`;
+            }
+            setSummary += '\n';
+        }
+    }
+
+    return setSummary;
+}
 
 type RightPanelProps = {
     jobLoading: boolean;

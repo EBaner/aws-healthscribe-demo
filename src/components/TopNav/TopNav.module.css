@@ -30,3 +30,14 @@
     height: 200px !important;
     object-fit: contain;
 }
+:global(.awsui-top-navigation-header) {
+    height: auto !important;
+    min-height: none !important; /* Adjust this to match the logo height */
+    display: flex;
+    align-items: center;
+}
+
+.topNavWrapper :global(.awsui-top-navigation-header) {
+    display: flex;
+    align-items: center;
+}

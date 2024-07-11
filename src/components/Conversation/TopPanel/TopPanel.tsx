@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 
 import { useNavigate } from 'react-router-dom';
 
+import { MultiselectProps } from '@cloudscape-design/components';
 import Box from '@cloudscape-design/components/box';
 import Button from '@cloudscape-design/components/button';
 import ButtonDropdown from '@cloudscape-design/components/button-dropdown';
@@ -13,22 +14,40 @@ import FormField from '@cloudscape-design/components/form-field';
 import Header from '@cloudscape-design/components/header';
 import Input from '@cloudscape-design/components/input';
 import Modal from '@cloudscape-design/components/modal';
+import Multiselect from '@cloudscape-design/components/multiselect';
 import SpaceBetween from '@cloudscape-design/components/space-between';
 import Spinner from '@cloudscape-design/components/spinner';
+import Textarea from '@cloudscape-design/components/textarea';
 
 import { MedicalScribeJob } from '@aws-sdk/client-transcribe';
+import emailjs from 'emailjs-com';
 import reduce from 'lodash/reduce';
 import WaveSurfer from 'wavesurfer.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions';
 
 import { useNotificationsContext } from '@/store/notifications';
+import { IAuraClinicalDocOutput } from '@/types/HealthScribe';
 import { IAuraTranscriptOutput } from '@/types/HealthScribe';
 import { getPresignedUrl, getS3Object } from '@/utils/S3Api';
 
 import AudioControls from '../../Common/AudioControls';
+import { getSetSummary } from '../RightPanel/RightPanel';
 import { SmallTalkList } from '../types';
 import styles from './TopPanel.module.css';
 import { extractRegions } from './extractRegions';
+
+const options: MultiselectProps.Option[] = [
+    { value: 'CHIEF_COMPLAINT', label: 'Chief Complaint' },
+    { value: 'PAST_FAMILY_HISTORY', label: 'Past Family History' },
+    { value: 'PAST_SOCIAL_HISTORY', label: 'Past Social History' },
+    { value: 'DIAGNOSTIC_TESTING', label: 'Diagnostic Testing' },
+    { value: 'HISTORY_OF_PRESENT_ILLNESS', label: 'History of Present Illness' },
+    { value: 'REVIEW_OF_SYSTEMS', label: 'Review of Systems' },
+    { value: 'PAST_MEDICAL_HISTORY', label: 'Past Medical History' },
+    { value: 'PHYSICAL_EXAMINATION', label: 'Physical Examination' },
+    { value: 'ASSESSMENT', label: 'Assessment' },
+    { value: 'PLAN', label: 'Plan' },
+];
 
 type TopPanelProps = {
     jobLoading: boolean;
@@ -40,6 +59,7 @@ type TopPanelProps = {
     setAudioTime: React.Dispatch<React.SetStateAction<number>>;
     setAudioReady: React.Dispatch<React.SetStateAction<boolean>>;
     setShowOutputModal: React.Dispatch<React.SetStateAction<boolean>>;
+    clinicalDocument: IAuraClinicalDocOutput | null;
 };
 
 export default function TopPanel({
@@ -52,6 +72,7 @@ export default function TopPanel({
     setAudioTime,
     setAudioReady,
     setShowOutputModal,
+    clinicalDocument,
 }: TopPanelProps) {
     const navigate = useNavigate();
     const { addFlashMessage } = useNotificationsContext();
@@ -65,7 +86,9 @@ export default function TopPanel({
     const [silencePercent, setSilencePercent] = useState<number>(0);
     const [smallTalkPercent, setSmallTalkPercent] = useState<number>(0);
     const [email, setEmail] = useState('');
+    const [message, setMessage] = useState('');
     const [exportModalVisible, setExportModalVisible] = useState<boolean>(false);
+    const [selectedOptions, setSelectedOptions] = useState<MultiselectProps.Option[]>(options);
 
     const waveformElement = document.getElementById('waveform');
 
@@ -203,16 +226,36 @@ export default function TopPanel({
         });
     }, [wavesurfer, smallTalkCheck, smallTalkList, silenceChecked, silencePeaks]);
 
-    const handleExport = () => {
-        // Here you would implement the logic to send the transcript file to the email address
-        console.log(`Sending transcript to ${email}`);
-        // You might want to call an API or use a service to actually send the email
-        addFlashMessage({
-            id: 'export-success',
-            header: 'Export Successful',
-            content: `Transcript sent to ${email}`,
-            type: 'success',
-        });
+    const handleExport = async () => {
+        const serviceID = 'service_krsa45w';
+        const templateID = 'template_j9sffks';
+        const publicKey = 'XTCBlgLBoDDdJiBe7';
+        const summaryText = getSetSummary(clinicalDocument, selectedOptions);
+
+        const templateParams = {
+            to_email: email,
+            subject: 'VetScribe Visit Summary',
+            summary: summaryText,
+            message: message,
+        };
+
+        try {
+            await emailjs.send(serviceID, templateID, templateParams, publicKey);
+            addFlashMessage({
+                id: 'export-success',
+                header: 'Export Successful',
+                content: `Transcript sent to ${email}`,
+                type: 'success',
+            });
+        } catch (error) {
+            addFlashMessage({
+                id: 'export-failure',
+                header: 'Export Failed',
+                content: `Transcript did not send to ${email}. Message: ${error}`,
+                type: 'error',
+            });
+        }
+
         setExportModalVisible(false);
         setEmail('');
     };
@@ -348,8 +391,28 @@ export default function TopPanel({
                 }
             >
                 <FormField label="Email address">
-                    <Input type="email" value={email} onChange={({ detail }) => setEmail(detail.value)} />
+                    <Input
+                        type="email"
+                        value={email}
+                        placeholder="example@email.com"
+                        onChange={({ detail }) => setEmail(detail.value)}
+                    />
                 </FormField>
+                <FormField label="Message">
+                    <Textarea
+                        value={message}
+                        placeholder="Enter a message to the client (Optional)"
+                        onChange={({ detail }) => setMessage(detail.value)}
+                    />
+                </FormField>
+                <br />
+                <Multiselect
+                    selectedOptions={selectedOptions}
+                    onChange={({ detail }) => setSelectedOptions([...detail.selectedOptions])}
+                    options={options}
+                    keepOpen={false}
+                    placeholder="Please deselect any insights you do not want to include"
+                />
             </Modal>
         </>
     );
