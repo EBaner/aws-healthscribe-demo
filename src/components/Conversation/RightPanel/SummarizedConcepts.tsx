@@ -14,7 +14,11 @@ import toTitleCase from '@/utils/toTitleCase';
 import { HighlightId } from '../types';
 import { SummaryListDefault } from './SummaryList';
 import { SECTION_ORDER } from './sectionOrder';
-import { fetchSummaryJson, mergeHealthScribeOutputWithComprehendMedicalOutput, transformToSegmentExtractedData } from './summarizedConceptsUtils';
+import {
+    fetchSummaryJson,
+    mergeHealthScribeOutputWithComprehendMedicalOutput,
+    transformToSegmentExtractedData,
+} from './summarizedConceptsUtils';
 
 type SummarizedConceptsProps = {
     jobName: string; // Add this prop
@@ -42,13 +46,13 @@ export default function SummarizedConcepts({
 }: SummarizedConceptsProps) {
     const [currentId, setCurrentId] = useState(0);
     const [currentSegment, setCurrentSegment] = useState<string>('');
-    const [sections, setSections] = useState<any[]>([]);
+    const [sections, setSections] = useState<IAuraClinicalDocOutputSection[]>([]);
 
     useEffect(() => {
         async function loadSummary() {
             try {
                 const summaryData = await fetchSummaryJson(jobName);
-                setSections(summaryData.ClinicalDocumentation.Sections);
+                setSections(summaryData.ClinicalDocumentation.Sections as IAuraClinicalDocOutputSection[]);
             } catch (error) {
                 console.error('Error loading summary:', error);
                 toast.error('Failed to load summary');
@@ -57,7 +61,6 @@ export default function SummarizedConcepts({
         loadSummary();
     }, [jobName]);
 
-    
     useEffect(() => {
         if (!highlightId.selectedSegmentId) setCurrentSegment('');
     }, [highlightId]);
@@ -113,9 +116,11 @@ export default function SummarizedConcepts({
             {sections
                 .sort((a, b) => SECTION_ORDER.indexOf(a.SectionName) - SECTION_ORDER.indexOf(b.SectionName) || 1)
                 .map(({ SectionName, Summary }, i) => {
-                    const sectionExtractedHealthData = extractedHealthData.find(s => s.SectionName === SectionName);
-                    const transformedExtractedData = transformToSegmentExtractedData(sectionExtractedHealthData?.ExtractedEntities);
-                    
+                    const sectionExtractedHealthData = extractedHealthData.find((s) => s.SectionName === SectionName);
+                    const transformedExtractedData = transformToSegmentExtractedData(
+                        sectionExtractedHealthData?.ExtractedEntities
+                    );
+
                     return (
                         <div key={`insightsSection_${i}`}>
                             <TextContent>

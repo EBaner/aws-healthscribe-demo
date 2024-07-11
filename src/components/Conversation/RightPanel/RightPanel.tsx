@@ -232,7 +232,7 @@ export default function RightPanel({
                     setAcceptableConfidence={setAcceptableConfidence}
                 />
                 <SummarizedConcepts
-                    jobName= {jobName}
+                    jobName={jobName}
                     sections={clinicalDocument.ClinicalDocumentation.Sections as IAuraClinicalDocOutputSection[]}
                     extractedHealthData={extractedHealthData}
                     acceptableConfidence={acceptableConfidence}

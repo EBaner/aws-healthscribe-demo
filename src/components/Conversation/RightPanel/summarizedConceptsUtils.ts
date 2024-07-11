@@ -1,10 +1,11 @@
+import { DetectEntitiesV2Response } from '@aws-sdk/client-comprehendmedical';
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+
 import { useS3 } from '@/hooks/useS3';
 import { ExtractedHealthData, SegmentExtractedData, SummarySectionEntityMapping } from '@/types/ComprehendMedical';
 import { IAuraClinicalDocOutputSection } from '@/types/HealthScribe';
-import { flattenAndUnique } from '@/utils/array';
 import { getCredentials } from '@/utils/Sdk';
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { DetectEntitiesV2Response } from '@aws-sdk/client-comprehendmedical';
+import { flattenAndUnique } from '@/utils/array';
 
 /**
  * Remove leading dashes and trims the string
@@ -31,7 +32,7 @@ export async function fetchSummaryJson(jobName: string) {
     try {
         const command = new GetObjectCommand(getParams);
         const response = await s3Client.send(command);
-        
+
         if (response.Body) {
             const str = await response.Body.transformToString();
             return JSON.parse(str);
@@ -49,9 +50,9 @@ export function transformToSegmentExtractedData(
 ): SegmentExtractedData[] | undefined {
     if (!entities) return undefined;
 
-    return entities.map(entity => ({
+    return entities.map((entity) => ({
         words: [], // We don't have word-level data here, so we'll leave it empty
-        extractedData: entity.Entities || []
+        extractedData: entity.Entities || [],
     }));
 }
 
