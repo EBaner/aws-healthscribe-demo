@@ -31,7 +31,7 @@ import { IAuraTranscriptOutput } from '@/types/HealthScribe';
 import { getPresignedUrl, getS3Object } from '@/utils/S3Api';
 
 import AudioControls from '../../Common/AudioControls';
-import { getSetSummary, getPlainTextSummary } from '../RightPanel/RightPanel';
+import { getSetSummary } from '../RightPanel/RightPanel';
 import { SmallTalkList } from '../types';
 import styles from './TopPanel.module.css';
 import { extractRegions } from './extractRegions';

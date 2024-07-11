@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: MIT-0
 import React, { useMemo, useState } from 'react';
 
+import { MultiselectProps } from '@cloudscape-design/components';
+
 import { DetectEntitiesV2Response } from '@aws-sdk/client-comprehendmedical';
 import WaveSurfer from 'wavesurfer.js';
 
@@ -22,38 +24,24 @@ import { RightPanelActions, RightPanelSettings } from './RightPanelComponents';
 import SummarizedConcepts from './SummarizedConcepts';
 import { calculateNereUnits } from './rightPanelUtils';
 import { processSummarizedSegment } from './summarizedConceptsUtils';
-import { MultiselectProps } from '@cloudscape-design/components';
 
-export function getPlainTextSummary(clinicalDocument: IAuraClinicalDocOutput | null) {
-    if (!Array.isArray(clinicalDocument?.ClinicalDocumentation?.Sections)) return '';
-    let plainTextSummary = '';
-
-    for (const section of clinicalDocument.ClinicalDocumentation.Sections) {
-        plainTextSummary += `${section.SectionName}\n`;
-        for (const summary of section.Summary) {
-            plainTextSummary += `${summary.SummarizedSegment}\n`;
-        }
-        plainTextSummary += '\n';
-    }
-
-    return plainTextSummary;
-}
-
-export function getSetSummary(clinicalDocument: IAuraClinicalDocOutput | null, selectedOptions: MultiselectProps.Option[]) {
+export function getSetSummary(
+    clinicalDocument: IAuraClinicalDocOutput | null,
+    selectedOptions: MultiselectProps.Option[]
+) {
     if (!Array.isArray(clinicalDocument?.ClinicalDocumentation?.Sections)) return '';
     let setSummary = '';
 
-    const selectedSections = new Set(selectedOptions.map(option => option.value));
+    const selectedSections = new Set(selectedOptions.map((option) => option.value));
 
     for (const section of clinicalDocument.ClinicalDocumentation.Sections) {
         if (selectedSections.has(section.SectionName)) {
             setSummary += `${section.SectionName}\n`;
             for (const summary of section.Summary) {
-            setSummary += `${summary.SummarizedSegment}\n`;
+                setSummary += `${summary.SummarizedSegment}\n`;
             }
             setSummary += '\n';
         }
-        
     }
 
     return setSummary;

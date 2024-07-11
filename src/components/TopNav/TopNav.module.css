@@ -39,7 +39,7 @@
 }
 :global(.awsui-top-navigation-header) {
     height: auto !important;
-    min-height: 320px !important; /* Adjust this to match the logo height */
+    min-height: none !important; /* Adjust this to match the logo height */
     display: flex;
     align-items: center;
 }
