@@ -25,6 +25,11 @@ import SummarizedConcepts from './SummarizedConcepts';
 import { calculateNereUnits } from './rightPanelUtils';
 import { processSummarizedSegment } from './summarizedConceptsUtils';
 
+function formatName(sectionName: string) {
+    const words = sectionName.split('_');
+    return words.map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+}
+
 export function getSetSummary(
     clinicalDocument: IAuraClinicalDocOutput | null,
     selectedOptions: MultiselectProps.Option[]
@@ -36,7 +41,7 @@ export function getSetSummary(
 
     for (const section of clinicalDocument.ClinicalDocumentation.Sections) {
         if (selectedSections.has(section.SectionName)) {
-            setSummary += `${section.SectionName}\n`;
+            setSummary += `${formatName(section.SectionName)}\n`;
             for (const summary of section.Summary) {
                 setSummary += `${summary.SummarizedSegment}\n`;
             }
