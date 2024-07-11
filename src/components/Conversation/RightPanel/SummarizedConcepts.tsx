@@ -14,9 +14,10 @@ import toTitleCase from '@/utils/toTitleCase';
 import { HighlightId } from '../types';
 import { SummaryListDefault } from './SummaryList';
 import { SECTION_ORDER } from './sectionOrder';
-import { mergeHealthScribeOutputWithComprehendMedicalOutput } from './summarizedConceptsUtils';
+import { fetchSummaryJson, mergeHealthScribeOutputWithComprehendMedicalOutput, transformToSegmentExtractedData } from './summarizedConceptsUtils';
 
 type SummarizedConceptsProps = {
+    jobName: string; // Add this prop
     sections: IAuraClinicalDocOutputSection[];
     extractedHealthData: ExtractedHealthData[];
     acceptableConfidence: number;
@@ -26,11 +27,11 @@ type SummarizedConceptsProps = {
         [key: string]: ITranscriptSegments;
     };
     wavesurfer: React.MutableRefObject<WaveSurfer | undefined>;
-    onSummaryChange: (sectionName: string, index: number, newContent: string) => void; // Add this line
+    onSummaryChange: (sectionName: string, index: number, newContent: string) => void;
 };
 
 export default function SummarizedConcepts({
-    sections,
+    jobName,
     extractedHealthData,
     acceptableConfidence,
     highlightId,
@@ -41,8 +42,22 @@ export default function SummarizedConcepts({
 }: SummarizedConceptsProps) {
     const [currentId, setCurrentId] = useState(0);
     const [currentSegment, setCurrentSegment] = useState<string>('');
+    const [sections, setSections] = useState<any[]>([]);
 
-    // Unset current segment when the highlight is removed, i.e. the current audio time is outside the summarization
+    useEffect(() => {
+        async function loadSummary() {
+            try {
+                const summaryData = await fetchSummaryJson(jobName);
+                setSections(summaryData.ClinicalDocumentation.Sections);
+            } catch (error) {
+                console.error('Error loading summary:', error);
+                toast.error('Failed to load summary');
+            }
+        }
+        loadSummary();
+    }, [jobName]);
+
+    
     useEffect(() => {
         if (!highlightId.selectedSegmentId) setCurrentSegment('');
     }, [highlightId]);
@@ -98,10 +113,9 @@ export default function SummarizedConcepts({
             {sections
                 .sort((a, b) => SECTION_ORDER.indexOf(a.SectionName) - SECTION_ORDER.indexOf(b.SectionName) || 1)
                 .map(({ SectionName, Summary }, i) => {
-                    // Match this section name to the Comprehend Medical extracted data. Returns undefined if the section doesn't exist
-                    const sectionExtractedHealthData = sectionsWithExtractedData.find(
-                        (s) => s.SectionName === SectionName
-                    );
+                    const sectionExtractedHealthData = extractedHealthData.find(s => s.SectionName === SectionName);
+                    const transformedExtractedData = transformToSegmentExtractedData(sectionExtractedHealthData?.ExtractedEntities);
+                    
                     return (
                         <div key={`insightsSection_${i}`}>
                             <TextContent>
@@ -110,7 +124,7 @@ export default function SummarizedConcepts({
                             <SummaryListDefault
                                 sectionName={SectionName}
                                 summary={Summary}
-                                summaryExtractedHealthData={sectionExtractedHealthData?.Summary}
+                                summaryExtractedHealthData={transformedExtractedData}
                                 acceptableConfidence={acceptableConfidence}
                                 currentSegment={currentSegment}
                                 handleSegmentClick={handleSegmentClick}
