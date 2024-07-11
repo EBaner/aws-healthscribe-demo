@@ -1,5 +1,10 @@
+import { DetectEntitiesV2Response } from '@aws-sdk/client-comprehendmedical';
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+
+import { useS3 } from '@/hooks/useS3';
 import { ExtractedHealthData, SegmentExtractedData, SummarySectionEntityMapping } from '@/types/ComprehendMedical';
 import { IAuraClinicalDocOutputSection } from '@/types/HealthScribe';
+import { getCredentials } from '@/utils/Sdk';
 import { flattenAndUnique } from '@/utils/array';
 
 /**
@@ -8,6 +13,47 @@ import { flattenAndUnique } from '@/utils/array';
  */
 export function processSummarizedSegment(summarizedSegment: string): string {
     return summarizedSegment.trim().replace(/^-/, '').trim();
+}
+
+export async function fetchSummaryJson(jobName: string) {
+    const s3Client = new S3Client({
+        region: 'us-east-1',
+        credentials: await getCredentials(),
+    });
+
+    const [outputBucket, getUploadMetadata] = useS3();
+    const key = `${jobName}/summary.json`;
+
+    const getParams = {
+        Bucket: outputBucket,
+        Key: key,
+    };
+
+    try {
+        const command = new GetObjectCommand(getParams);
+        const response = await s3Client.send(command);
+
+        if (response.Body) {
+            const str = await response.Body.transformToString();
+            return JSON.parse(str);
+        } else {
+            throw new Error('Empty response body');
+        }
+    } catch (error) {
+        console.error('Error fetching summary.json:', error);
+        throw error;
+    }
+}
+
+export function transformToSegmentExtractedData(
+    entities: DetectEntitiesV2Response[] | undefined
+): SegmentExtractedData[] | undefined {
+    if (!entities) return undefined;
+
+    return entities.map((entity) => ({
+        words: [], // We don't have word-level data here, so we'll leave it empty
+        extractedData: entity.Entities || [],
+    }));
 }
 
 /**

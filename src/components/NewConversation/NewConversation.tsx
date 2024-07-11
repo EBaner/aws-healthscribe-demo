@@ -16,18 +16,32 @@ import Spinner from '@cloudscape-design/components/spinner';
 import StatusIndicator from '@cloudscape-design/components/status-indicator';
 import TokenGroup from '@cloudscape-design/components/token-group';
 
+import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { Tag } from '@aws-sdk/client-s3/dist-types/models/models_0';
-import { MedicalScribeParticipantRole, StartMedicalScribeJobRequest } from '@aws-sdk/client-transcribe';
+import {
+    GetMedicalTranscriptionJobCommand,
+    MedicalScribeJobSummary,
+    MedicalScribeParticipantRole,
+    MedicalTranscriptionJobSummary,
+    StartMedicalScribeJobRequest,
+} from '@aws-sdk/client-transcribe';
 import { VocabularyFilterMethod } from '@aws-sdk/client-transcribe';
+import {
+    ListMedicalTranscriptionJobsCommand,
+    ListMedicalTranscriptionJobsCommandInput,
+    TranscribeClient,
+} from '@aws-sdk/client-transcribe';
 import { Progress } from '@aws-sdk/lib-storage';
 import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
+import AWS from 'aws-sdk';
 import dayjs from 'dayjs';
 
 import { useS3 } from '@/hooks/useS3';
 import { useAuthContext } from '@/store/auth';
 import { useNotificationsContext } from '@/store/notifications';
-import { startMedicalScribeJob } from '@/utils/HealthScribeApi';
+import { getHealthScribeJob, listHealthScribeJobs, startMedicalScribeJob } from '@/utils/HealthScribeApi';
 import { multipartUpload } from '@/utils/S3Api';
+import { getConfigRegion, getCredentials } from '@/utils/Sdk';
 import sleep from '@/utils/sleep';
 
 import amplifyCustom from '../../aws-custom.json';
@@ -37,6 +51,7 @@ import { AudioDropzone } from './Dropzone';
 import { AudioDetailSettings, AudioIdentificationType, InputName } from './FormComponents';
 import styles from './NewConversation.module.css';
 import { verifyJobParams } from './formUtils';
+import { getClinicData, updateClinicData } from './s3ClinicManager';
 import { AudioDetails, AudioSelection } from './types';
 
 async function getUserAttributes(username: string): Promise<string | null> {
@@ -51,13 +66,21 @@ async function getUserAttributes(username: string): Promise<string | null> {
     }
 }
 
+async function getTranscribeClient() {
+    const credentials = await getCredentials();
+    return new TranscribeClient({
+        region: getConfigRegion(),
+        credentials,
+    });
+}
+
 export default function NewConversation() {
     const { updateProgressBar } = useNotificationsContext();
     const navigate = useNavigate();
-
     const { user } = useAuthContext(); // Retrieve user info
     const loginId = user?.signInDetails?.loginId || 'No username found'; // Extract login ID
     const [clinicName, setClinicName] = useState<string>('No Clinic found');
+    const [userJobCount, setUserJobCount] = useState<number>(0); // Counter state
 
     useEffect(() => {
         async function fetchClinicName() {
@@ -86,7 +109,6 @@ export default function NewConversation() {
     });
     const [filePath, setFilePath] = useState<File>(); // only one file is allowed from react-dropzone. NOT an array
     const [outputBucket, getUploadMetadata] = useS3(); // outputBucket is the Amplify bucket, and uploadMetadata contains uuid4
-
     const [submissionMode, setSubmissionMode] = useState<string>('uploadRecording'); // to hide or show the live recorder
     const [recordedAudio, setRecordedAudio] = useState<File | undefined>(); // audio file recorded via live recorder
 
@@ -130,6 +152,20 @@ export default function NewConversation() {
         setFormError('');
 
         try {
+            const clinicData = await getClinicData();
+            let clinicJobCount = clinicData[clinicName] || 0;
+
+            // Increment job count
+            clinicJobCount++;
+
+            // Update clinic data in S3
+            await updateClinicData(clinicName, clinicJobCount);
+        } catch (error) {
+            console.error('Error managing clinic data:', error);
+            setFormError('Error managing clinic data. Please try again later.');
+        }
+
+        try {
             // Build job params with StartMedicalScribeJob request syntax
             const audioParams =
                 audioSelection === 'speakerPartitioning'
@@ -160,7 +196,7 @@ export default function NewConversation() {
                           },
                       };
 
-            const uploadLocation = getUploadMetadata();
+            const uploadLocation = getUploadMetadata(jobName);
             const s3Location = {
                 Bucket: uploadLocation.bucket,
                 Key: `${uploadLocation.key}/${(filePath as File).name}`,
@@ -171,11 +207,6 @@ export default function NewConversation() {
                 Value: loginId,
             };
 
-            const clinicTag: Tag = {
-                Key: 'Clinic',
-                Value: clinicName,
-            };
-
             const jobParams: StartMedicalScribeJobRequest = {
                 MedicalScribeJobName: jobName,
                 DataAccessRoleArn: amplifyCustom.healthScribeServiceRole,
@@ -184,8 +215,7 @@ export default function NewConversation() {
                     MediaFileUri: `s3://${s3Location.Bucket}/${s3Location.Key}`,
                 },
                 ...audioParams,
-
-                Tags: [userNameTag, clinicTag], // Include Clinic tag here
+                Tags: [userNameTag],
             };
 
             const verifyParamResults = verifyJobParams(jobParams);
@@ -225,6 +255,7 @@ export default function NewConversation() {
             }
 
             try {
+                // Increment clinic job count
                 const startJob = await startMedicalScribeJob(jobParams);
                 if (startJob?.MedicalScribeJob?.MedicalScribeJobStatus) {
                     updateProgressBar({

@@ -135,6 +135,17 @@ export default function TopNav() {
 
     const navUtils = [utilVisual, utilUser];
 
+    const identity = {
+        title: 'Auribus Technologies',
+        logo: {
+            src: '/AURIBUSICON2.png', // Replace with your logo file path
+            alt: 'Auribus',
+            width: '200px', // Set the desired width
+            height: '200px', // Set the desired height
+        },
+        href: '/',
+    };
+
     return (
         <>
             {authVisible && (
@@ -142,18 +153,7 @@ export default function TopNav() {
                     <Auth setVisible={setAuthVisible} />
                 </Suspense>
             )}
-            <div className={styles.topNavWrapper}>
-                <TopNavigation
-                    identity={{
-                        href: '/',
-                        logo: {
-                            src: '/AURIBUS.png',
-                            alt: 'Auribus Technologies',
-                        },
-                    }}
-                    utilities={navUtils}
-                />
-            </div>
+            <TopNavigation identity={identity} utilities={navUtils} />
         </>
     );
 }

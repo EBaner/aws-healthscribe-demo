@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { MutableRefObject, useEffect, useRef, useState } from 'react';
 
 import * as awsui from '@cloudscape-design/design-tokens';
 import Box from '@cloudscape-design/components/box';
@@ -10,13 +10,53 @@ import styles from './SummarizedConcepts.module.css';
 import { ExtractedHealthDataWord } from './SummaryListComponents';
 import { processSummarizedSegment } from './summarizedConceptsUtils';
 
-function NoEntities() {
-    return (
-        <div style={{ paddingLeft: '5px' }}>
-            <Box variant="small">No Clinical Entities</Box>
-        </div>
-    );
-}
+type NoEntitiesProps = {
+    handleInput: () => void;
+    editableContent: string;
+};
+
+const NoEntities = React.forwardRef<HTMLDivElement, NoEntitiesProps>(
+    ({ handleInput, editableContent }, forwardedRef) => {
+        const [editing, setEditing] = useState(false);
+        const ref = useRef<HTMLDivElement>(null);
+
+        const handleFocus = () => {
+            if (!editing && editableContent === 'No Clinical Entities') {
+                setEditing(true);
+                // Clear the content when editing starts
+                if (ref.current) {
+                    ref.current.innerText = '';
+                }
+            }
+        };
+
+        const handleBlur = () => {
+            setEditing(false);
+            // Restore the placeholder text if content is empty on blur
+            if (ref.current?.innerText === '') {
+                ref.current.innerText = 'No Clinical Entities';
+            }
+            // Call handleInput to update the parent component's state
+            handleInput();
+        };
+
+        return (
+            <div
+                contentEditable
+                suppressContentEditableWarning
+                ref={ref as React.MutableRefObject<HTMLDivElement>}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                style={{ paddingLeft: '5px' }}
+            >
+                {'No Clinical entries'}
+                <Box variant="small">{editableContent}</Box>
+            </div>
+        );
+    }
+);
+
+NoEntities.displayName = 'NoEntities';
 
 type SummaryListDefaultProps = {
     sectionName: string;
@@ -25,7 +65,9 @@ type SummaryListDefaultProps = {
     acceptableConfidence: number;
     currentSegment: string;
     handleSegmentClick: (SummarizedSegment: string, EvidenceLinks: { SegmentId: string }[]) => void;
+    onSummaryChange: (index: number, newContent: string) => void; // Add this line
 };
+
 export function SummaryListDefault({
     sectionName,
     summary,
@@ -33,20 +75,55 @@ export function SummaryListDefault({
     acceptableConfidence,
     currentSegment = '',
     handleSegmentClick,
+    onSummaryChange,
 }: SummaryListDefaultProps) {
+    const editableRefs = useRef<(HTMLDivElement | null)[]>([]);
+    const [editableSummary, setEditableSummary] = useState<string[]>([]);
+    const [emptySectionsContent, setEmptySectionsContent] = useState<string[]>([]);
+
+    useEffect(() => {
+        editableRefs.current = editableRefs.current.slice(0, summary.length);
+        setEditableSummary(summary.map(({ SummarizedSegment }) => SummarizedSegment));
+        setEmptySectionsContent(summary.map(() => 'No Clinical Entities'));
+    }, [summary]);
+
+    const handleInput = (index: number) => {
+        const newSummary = editableRefs.current[index]?.innerText || '';
+        setEditableSummary((prev) => {
+            const updated = [...prev];
+            updated[index] = newSummary;
+            return updated;
+        });
+        onSummaryChange(index, newSummary);
+    };
+
+    const handleEmptySectionInput = (index: number) => {
+        const newEmptySectionsContent = editableRefs.current.map((ref) => ref?.innerText || 'No Clinical Entities');
+        setEmptySectionsContent(newEmptySectionsContent);
+    };
+
     if (summary.length) {
         return (
             <ul className={styles.summaryList}>
                 {summary.map(({ EvidenceLinks, SummarizedSegment }, sectionIndex) => {
-                    if (SummarizedSegment === '') return false;
+                    if (SummarizedSegment === '') {
+                        return (
+                            <li key={`${sectionName}_${sectionIndex}`} className={styles.summaryListItem}>
+                                <NoEntities
+                                    ref={(el: HTMLDivElement | null) => (editableRefs.current[sectionIndex] = el)}
+                                    handleInput={() => handleEmptySectionInput(sectionIndex)}
+                                    editableContent={emptySectionsContent[sectionIndex]}
+                                />
+                            </li>
+                        );
+                    }
 
-                    // Check if the segment is a section header
                     let sectionHeader = '';
                     let indent = false;
                     if (SummarizedSegment.endsWith('\n')) {
-                        const splitSegement = SummarizedSegment.split('\n');
-                        if (SummarizedSegment.split('\n').length === 3) {
-                            sectionHeader = splitSegement[0];
+                        const splitSegment = SummarizedSegment.split('\n');
+                        if (splitSegment.length === 3) {
+                            sectionHeader = splitSegment[0];
                             SummarizedSegment = SummarizedSegment.substring(SummarizedSegment.indexOf('\n') + 1);
                         }
                         indent = true;
@@ -80,6 +157,10 @@ export function SummaryListDefault({
                                 )}
                                 <li className={`${styles.summaryListItem} ${indent && styles.summaryListItemIndent}`}>
                                     <div
+                                        contentEditable
+                                        suppressContentEditableWarning
+                                        ref={(el: HTMLDivElement | null) => (editableRefs.current[sectionIndex] = el)}
+                                        onInput={() => handleInput(sectionIndex)}
                                         onClick={() => handleSegmentClick(SummarizedSegment, EvidenceLinks)}
                                         className={styles.summarizedSegment}
                                         style={summaryItemDivStyle}
@@ -111,6 +192,10 @@ export function SummaryListDefault({
                                 )}
                                 <li className={`${styles.summaryListItem} ${indent && styles.summaryListItemIndent}`}>
                                     <div
+                                        contentEditable
+                                        suppressContentEditableWarning
+                                        ref={(el: HTMLDivElement | null) => (editableRefs.current[sectionIndex] = el)}
+                                        onInput={() => handleInput(sectionIndex)}
                                         onClick={() => handleSegmentClick(SummarizedSegment, EvidenceLinks)}
                                         className={styles.summarizedSegment}
                                         style={summaryItemDivStyle}
@@ -125,6 +210,16 @@ export function SummaryListDefault({
             </ul>
         );
     } else {
-        return <NoEntities />;
+        return (
+            <ul className={styles.summaryList}>
+                <li className={styles.summaryListItem}>
+                    <NoEntities
+                        ref={(el: HTMLDivElement | null) => (editableRefs.current[0] = el)}
+                        handleInput={() => handleEmptySectionInput(0)}
+                        editableContent={emptySectionsContent[0]}
+                    />
+                </li>
+            </ul>
+        );
     }
 }
