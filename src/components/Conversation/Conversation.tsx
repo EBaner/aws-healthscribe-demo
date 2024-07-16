@@ -1,39 +1,47 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
 import React, { Suspense, lazy, useEffect, useState } from 'react';
-
 import { useParams } from 'react-router-dom';
-
 import ContentLayout from '@cloudscape-design/components/content-layout';
 import Grid from '@cloudscape-design/components/grid';
-
 import { MedicalScribeJob } from '@aws-sdk/client-transcribe';
-
 import ModalLoader from '@/components/SuspenseLoader/ModalLoader';
 import { useAudio } from '@/hooks/useAudio';
 import { useAuthContext } from '@/store/auth';
 import { useNotificationsContext } from '@/store/notifications';
-import { IAuraClinicalDocOutput, IAuraTranscriptOutput } from '@/types/HealthScribe';
+import { IAuraTranscriptOutput } from '@/types/HealthScribe';
 import { getHealthScribeJob } from '@/utils/HealthScribeApi';
 import { getObject, getS3Object } from '@/utils/S3Api';
-
 import LeftPanel from './LeftPanel';
 import RightPanel from './RightPanel';
 import TopPanel from './TopPanel';
 
-// Import your auth context
-
 const ViewOutput = lazy(() => import('./ViewOutput'));
+
+type SummaryData = {
+  ClinicalDocumentation: {
+    Sections: {
+      SectionName: string;
+      Summary: {
+        EvidenceLinks: { SegmentId: string }[];
+        SummarizedSegment: string;
+      }[];
+    }[];
+  };
+  lastModified: string;
+  modifiedBy: string;
+  clinicName: string;
+};
 
 export default function Conversation() {
     const { conversationName } = useParams();
     const { addFlashMessage } = useNotificationsContext();
-    const { isUserAuthenticated, user, signOut } = useAuthContext(); // Get the current user
+    const { isUserAuthenticated, user, signOut } = useAuthContext();
 
     const [jobLoading, setJobLoading] = useState(true);
     const [jobDetails, setJobDetails] = useState<MedicalScribeJob | null>(null);
     const [showOutputModal, setShowOutputModal] = useState<boolean>(false);
-    const [clinicalDocument, setClinicalDocument] = useState<IAuraClinicalDocOutput | null>(null);
+    const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
     const [transcriptFile, setTranscriptFile] = useState<IAuraTranscriptOutput | null>(null);
 
     const [
@@ -63,9 +71,9 @@ export default function Conversation() {
 
                 setJobDetails(medicalScribeJob);
 
-                const clinicalDocumentUri = medicalScribeJob.MedicalScribeOutput?.ClinicalDocumentUri;
-                const clinicalDocumentRsp = await getObject(getS3Object(clinicalDocumentUri || ''));
-                setClinicalDocument(JSON.parse((await clinicalDocumentRsp?.Body?.transformToString()) || ''));
+                const summaryUri = medicalScribeJob.MedicalScribeOutput?.ClinicalDocumentUri;
+                const summaryRsp = await getObject(getS3Object(summaryUri || ''));
+                setSummaryData(JSON.parse((await summaryRsp?.Body?.transformToString()) || ''));
 
                 const transcriptFileUri = medicalScribeJob.MedicalScribeOutput?.TranscriptFileUri;
                 const transcriptFileRsp = await getObject(getS3Object(transcriptFileUri || ''));
@@ -96,7 +104,7 @@ export default function Conversation() {
                     <ViewOutput
                         setVisible={setShowOutputModal}
                         transcriptString={JSON.stringify(transcriptFile || 'Loading...', null, 2)}
-                        clinicalDocumentString={JSON.stringify(clinicalDocument || 'Loading...', null, 2)}
+                        clinicalDocumentString={JSON.stringify(summaryData || 'Loading...', null, 2)}
                     />
                 </Suspense>
             )}
@@ -131,7 +139,7 @@ export default function Conversation() {
                 />
                 <RightPanel
                     jobLoading={jobLoading}
-                    clinicalDocument={clinicalDocument}
+                    summaryData={summaryData}
                     transcriptFile={transcriptFile}
                     highlightId={highlightId}
                     setHighlightId={setHighlightId}
