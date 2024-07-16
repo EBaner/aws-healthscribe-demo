@@ -30,7 +30,7 @@ import { processSummarizedSegment } from './summarizedConceptsUtils';
 
 function formatName(sectionName: string) {
     const words = sectionName.split('_');
-    return words.map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+    return words.map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
 }
 
 /*  Old getSetSummary from not JSON
@@ -57,10 +57,12 @@ export function getSetSummary(
 }
 */
 
-export async function getSetSummary(
-    jobName: string,
-    selectedOptions: MultiselectProps.Option[]
-): Promise<string> {
+export async function getSetSummary(jobName: string | undefined, selectedOptions: MultiselectProps.Option[]): Promise<string> {
+    if (!jobName) {
+        console.error('jobName is undefined');
+        return '';
+    }
+    
     try {
         const s3Client = new S3Client({
             region: 'us-east-1',
@@ -102,7 +104,7 @@ export async function getSetSummary(
         let setSummary = '';
         const selectedSections = new Set(selectedOptions.map((option) => option.value));
 
-        if (!Array.isArray(clinicalDocument?.ClinicalDocumentation?.Sections)){
+        if (!Array.isArray(clinicalDocument?.ClinicalDocumentation?.Sections)) {
             for (const section of clinicalDocument.ClinicalDocumentation.Sections) {
                 if (selectedSections.has(section.SectionName)) {
                     setSummary += `${formatName(section.SectionName)}\n`;
@@ -115,13 +117,11 @@ export async function getSetSummary(
         }
 
         return setSummary;
-
     } catch (error) {
         console.error('Error fetching summary from S3:', error);
         throw error;
     }
 }
-
 
 type RightPanelProps = {
     jobLoading: boolean;
