@@ -33,6 +33,7 @@ function formatName(sectionName: string) {
     return words.map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
 }
 
+/*  Old getSetSummary from not JSON
 export function getSetSummary(
     clinicalDocument: IAuraClinicalDocOutput | null,
     selectedOptions: MultiselectProps.Option[]
@@ -54,6 +55,73 @@ export function getSetSummary(
 
     return setSummary;
 }
+*/
+
+export async function getSetSummary(
+    jobName: string,
+    selectedOptions: MultiselectProps.Option[]
+): Promise<string> {
+    try {
+        const s3Client = new S3Client({
+            region: 'us-east-1',
+            credentials: await getCredentials(),
+        });
+
+        const outputBucket = 'your-bucket-name'; // Replace with your actual bucket name
+        const originalKey = `${jobName}/summary.json`;
+
+        console.log(`Fetching from S3 with key: ${originalKey} in bucket: ${outputBucket}`);
+
+        // Get the original content
+        const getParams = {
+            Bucket: outputBucket,
+            Key: originalKey,
+        };
+        const getCommand = new GetObjectCommand(getParams);
+        const originalObject = await s3Client.send(getCommand);
+
+        let originalContent = '';
+        if (originalObject.Body) {
+            const stream = originalObject.Body as ReadableStream;
+            const reader = stream.getReader();
+            const decoder = new TextDecoder('utf-8');
+            let result = '';
+            let done = false;
+
+            while (!done) {
+                const { value, done: doneReading } = await reader.read();
+                done = doneReading;
+                if (value) {
+                    result += decoder.decode(value, { stream: !done });
+                }
+            }
+            originalContent = result;
+        }
+        const clinicalDocument = JSON.parse(originalContent);
+
+        let setSummary = '';
+        const selectedSections = new Set(selectedOptions.map((option) => option.value));
+
+        if (!Array.isArray(clinicalDocument?.ClinicalDocumentation?.Sections)){
+            for (const section of clinicalDocument.ClinicalDocumentation.Sections) {
+                if (selectedSections.has(section.SectionName)) {
+                    setSummary += `${formatName(section.SectionName)}\n`;
+                    for (const summary of section.Summary) {
+                        setSummary += `${summary.SummarizedSegment}\n`;
+                    }
+                    setSummary += '\n';
+                }
+            }
+        }
+
+        return setSummary;
+
+    } catch (error) {
+        console.error('Error fetching summary from S3:', error);
+        throw error;
+    }
+}
+
 
 type RightPanelProps = {
     jobLoading: boolean;
