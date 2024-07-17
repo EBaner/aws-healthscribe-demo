@@ -74,7 +74,7 @@ export async function getSetSummary(
 
         const [outputBucket, getUploadMetadata] = useS3();
         if (!outputBucket) {
-            throw new Error('Output bucket information is missing in get');
+            console.error('Output bucket information is missing in get');
         }
         const originalKey = `${jobName}/summary.json`;
 
@@ -108,11 +108,10 @@ export async function getSetSummary(
         const clinicalDocument = JSON.parse(originalContent);
         console.log('Export content:', clinicalDocument);
 
-        /*
         let setSummary = '';
         const selectedSections = new Set(selectedOptions.map((option) => option.value));
 
-        if (!Array.isArray(clinicalDocument?.ClinicalDocumentation?.Sections)) {
+        if (Array.isArray(clinicalDocument?.ClinicalDocumentation?.Sections)) {
             for (const section of clinicalDocument.ClinicalDocumentation.Sections) {
                 if (selectedSections.has(section.SectionName)) {
                     setSummary += `${formatName(section.SectionName)}\n`;
@@ -123,12 +122,11 @@ export async function getSetSummary(
                 }
             }
         }
-        */
 
-        return clinicalDocument;
+        return setSummary;
     } catch (error) {
         console.error('Error fetching summary from S3:', error);
-        throw error;
+        return 'Error fetching summary';
     }
 }
 
