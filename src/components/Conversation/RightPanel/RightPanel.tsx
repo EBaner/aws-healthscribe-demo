@@ -57,19 +57,25 @@ export function getSetSummary(
 }
 */
 
-export async function getSetSummary(jobName: string | undefined, selectedOptions: MultiselectProps.Option[]): Promise<string> {
+export async function getSetSummary(
+    jobName: string | undefined,
+    selectedOptions: MultiselectProps.Option[]
+): Promise<string> {
     if (!jobName) {
         console.error('jobName is undefined');
         return '';
     }
-    
+
     try {
         const s3Client = new S3Client({
             region: 'us-east-1',
             credentials: await getCredentials(),
         });
 
-        const outputBucket = 'your-bucket-name'; // Replace with your actual bucket name
+        const [outputBucket, getUploadMetadata] = useS3();
+        if (!outputBucket) {
+            throw new Error('Output bucket information is missing in get');
+        }
         const originalKey = `${jobName}/summary.json`;
 
         console.log(`Fetching from S3 with key: ${originalKey} in bucket: ${outputBucket}`);
