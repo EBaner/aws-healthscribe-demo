@@ -106,7 +106,6 @@ export async function getSetSummary(
             originalContent = result;
         }
         const clinicalDocument = JSON.parse(originalContent);
-        //console.log('Export content:', clinicalDocument);
 
         let setSummary = '';
         const selectedSections = new Set(selectedOptions.map((option) => option.value));
@@ -123,7 +122,6 @@ export async function getSetSummary(
             }
         }
 
-        console.log('Summary:', setSummary);
         return setSummary;
     } catch (error) {
         console.error('Error fetching summary from S3:', error);

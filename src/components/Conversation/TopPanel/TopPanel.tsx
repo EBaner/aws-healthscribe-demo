@@ -231,7 +231,6 @@ export default function TopPanel({
         const templateID = 'template_j9sffks';
         const publicKey = 'XTCBlgLBoDDdJiBe7';
         const summaryText = await getSetSummary(jobDetails?.MedicalScribeJobName, selectedOptions);
-        console.log('TopSummary:', summaryText);
 
         const templateParams = {
             to_email: email,
