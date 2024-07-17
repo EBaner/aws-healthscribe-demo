@@ -230,7 +230,7 @@ export default function TopPanel({
         const serviceID = 'service_krsa45w';
         const templateID = 'template_j9sffks';
         const publicKey = 'XTCBlgLBoDDdJiBe7';
-        const summaryText = getSetSummary(jobDetails?.MedicalScribeJobName, selectedOptions);
+        const summaryText = await getSetSummary(jobDetails?.MedicalScribeJobName, selectedOptions);
         console.log('TopSummary:', summaryText);
 
         const templateParams = {

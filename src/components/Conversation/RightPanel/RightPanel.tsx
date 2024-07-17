@@ -122,7 +122,7 @@ export async function getSetSummary(
                 }
             }
         }
-        
+
         console.log('Summary:', setSummary);
         return setSummary;
     } catch (error) {
