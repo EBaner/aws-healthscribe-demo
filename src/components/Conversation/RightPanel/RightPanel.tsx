@@ -21,7 +21,6 @@ import SummarizedConcepts from './SummarizedConcepts';
 import { calculateNereUnits } from './rightPanelUtils';
 import { fetchSummaryJson, processSummarizedSegment } from './summarizedConceptsUtils';
 
-
 type SummaryData = {
     ClinicalDocumentation: {
         Sections: {
@@ -61,6 +60,7 @@ export default function RightPanel({
     clinicName,
     outputBucket,
 }: RightPanelProps) {
+    console.log('RightPanel rendered with jobName:', jobName);
     const [extractingData, setExtractingData] = useState<boolean>(false);
     const [extractedHealthData, setExtractedHealthData] = useState<ExtractedHealthData[]>([]);
     const [rightPanelSettingsOpen, setRightPanelSettingsOpen] = useState<boolean>(false);
@@ -78,20 +78,23 @@ export default function RightPanel({
             setIsLoading(true);
             if (jobName) {
                 try {
+                    console.log(`Attempting to load summary for job: ${jobName}`);
                     const data = await fetchSummaryJson(jobName);
+                    console.log('Summary data loaded:', data);
                     setSummaryData(data);
                 } catch (error) {
                     console.error('Failed to load summary.json:', error);
-                    toast.error('Failed to load summary data');
                 } finally {
                     setIsLoading(false);
                 }
+            } else {
+                console.warn('No jobName provided, skipping summary load');
+                setIsLoading(false);
             }
         }
         loadSummaryJson();
     }, [jobName]);
 
-    
     const handleSaveChanges = async () => {
         setIsSaving(true);
         try {

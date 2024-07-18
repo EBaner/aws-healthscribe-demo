@@ -16,13 +16,16 @@ export function processSummarizedSegment(summarizedSegment: string): string {
 }
 
 export async function fetchSummaryJson(jobName: string) {
+    console.log(`Attempting to fetch summary for job: ${jobName}`);
     const s3Client = new S3Client({
         region: 'us-east-1',
         credentials: await getCredentials(),
     });
 
     const [outputBucket, getUploadMetadata] = useS3();
-    const key = `${jobName}/summary.json?t=${Date.now()}`;
+    console.log(`Output bucket: ${outputBucket}`);
+    const key = `${jobName}/summary.json`;
+    console.log(`Fetching from key: ${key}`);
 
     const getParams = {
         Bucket: outputBucket,
@@ -35,7 +38,9 @@ export async function fetchSummaryJson(jobName: string) {
 
         if (response.Body) {
             const str = await response.Body.transformToString();
-            return JSON.parse(str);
+            const parsedData = JSON.parse(str);
+            console.log('Successfully fetched and parsed summary data');
+            return parsedData;
         } else {
             throw new Error('Empty response body');
         }
