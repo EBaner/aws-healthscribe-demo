@@ -1,10 +1,14 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
 import React, { Suspense, lazy, useEffect, useState } from 'react';
+
 import { useParams } from 'react-router-dom';
+
 import ContentLayout from '@cloudscape-design/components/content-layout';
 import Grid from '@cloudscape-design/components/grid';
+
 import { MedicalScribeJob } from '@aws-sdk/client-transcribe';
+
 import ModalLoader from '@/components/SuspenseLoader/ModalLoader';
 import { useAudio } from '@/hooks/useAudio';
 import { useAuthContext } from '@/store/auth';
@@ -12,6 +16,7 @@ import { useNotificationsContext } from '@/store/notifications';
 import { IAuraTranscriptOutput } from '@/types/HealthScribe';
 import { getHealthScribeJob } from '@/utils/HealthScribeApi';
 import { getObject, getS3Object } from '@/utils/S3Api';
+
 import LeftPanel from './LeftPanel';
 import RightPanel from './RightPanel';
 import TopPanel from './TopPanel';
@@ -19,18 +24,18 @@ import TopPanel from './TopPanel';
 const ViewOutput = lazy(() => import('./ViewOutput'));
 
 type SummaryData = {
-  ClinicalDocumentation: {
-    Sections: {
-      SectionName: string;
-      Summary: {
-        EvidenceLinks: { SegmentId: string }[];
-        SummarizedSegment: string;
-      }[];
-    }[];
-  };
-  lastModified: string;
-  modifiedBy: string;
-  clinicName: string;
+    ClinicalDocumentation: {
+        Sections: {
+            SectionName: string;
+            Summary: {
+                EvidenceLinks: { SegmentId: string }[];
+                SummarizedSegment: string;
+            }[];
+        }[];
+    };
+    lastModified: string;
+    modifiedBy: string;
+    clinicName: string;
 };
 
 export default function Conversation() {
