@@ -60,22 +60,31 @@ export function transformToSegmentExtractedData(
         extractedData: entity.Entities || [],
     }));
 }
-
 /**
- * Merge HealthScribe output with Comprehend Medical output
- * @param sections - HealthScribe output sections
+ * Merge summary.json data with Comprehend Medical output
+ * @param summaryData - summary.json data
  * @param sectionsWithEntities - Comprehend Medical output sections
  * @returns SummarySectionEntityMapping[]
  */
 export function mergeHealthScribeOutputWithComprehendMedicalOutput(
-    sections: IAuraClinicalDocOutputSection[],
+    summaryData: {
+        ClinicalDocumentation: {
+            Sections: {
+                SectionName: string;
+                Summary: {
+                    EvidenceLinks: { SegmentId: string }[];
+                    SummarizedSegment: string;
+                }[];
+            }[];
+        };
+    },
     sectionsWithEntities: ExtractedHealthData[]
 ): SummarySectionEntityMapping[] {
-    if (sections.length === 0 || sectionsWithEntities.length === 0) return [];
+    if (!summaryData.ClinicalDocumentation?.Sections || sectionsWithEntities.length === 0) return [];
 
     const buildSectionsWithExtractedData: SummarySectionEntityMapping[] = [];
 
-    sections.forEach((section) => {
+    summaryData.ClinicalDocumentation.Sections.forEach((section) => {
         const sectionName = section.SectionName;
         const sectionWithEntities = sectionsWithEntities.find((s) => s.SectionName === sectionName);
 
