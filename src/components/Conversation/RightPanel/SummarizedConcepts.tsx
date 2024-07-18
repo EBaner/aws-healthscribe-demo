@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
+
 import TextContent from '@cloudscape-design/components/text-content';
+
 import toast from 'react-hot-toast';
 import WaveSurfer from 'wavesurfer.js';
 
@@ -54,7 +56,6 @@ export default function SummarizedConcepts({
 }: SummarizedConceptsProps) {
     const [currentId, setCurrentId] = useState(0);
     const [currentSegment, setCurrentSegment] = useState<string>('');
-
 
     function handleSegmentClick(SummarizedSegment: string, EvidenceLinks: { SegmentId: string }[]) {
         let currentIdLocal = currentId;

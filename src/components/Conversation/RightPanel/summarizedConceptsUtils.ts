@@ -22,7 +22,7 @@ export async function fetchSummaryJson(jobName: string) {
     });
 
     const [outputBucket, getUploadMetadata] = useS3();
-    const key = `${jobName}/summary.json`;
+    const key = `${jobName}/summary.json?t=${Date.now()}`;
 
     const getParams = {
         Bucket: outputBucket,

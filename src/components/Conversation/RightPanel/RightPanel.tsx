@@ -21,6 +21,7 @@ import SummarizedConcepts from './SummarizedConcepts';
 import { calculateNereUnits } from './rightPanelUtils';
 import { fetchSummaryJson, processSummarizedSegment } from './summarizedConceptsUtils';
 
+
 type SummaryData = {
     ClinicalDocumentation: {
         Sections: {
@@ -70,9 +71,11 @@ export default function RightPanel({
     const [summaryChanges, setSummaryChanges] = useState<Record<string, Record<number, string>>>({});
     const [isSaving, setIsSaving] = useState(false);
     const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         async function loadSummaryJson() {
+            setIsLoading(true);
             if (jobName) {
                 try {
                     const data = await fetchSummaryJson(jobName);
@@ -80,12 +83,15 @@ export default function RightPanel({
                 } catch (error) {
                     console.error('Failed to load summary.json:', error);
                     toast.error('Failed to load summary data');
+                } finally {
+                    setIsLoading(false);
                 }
             }
         }
         loadSummaryJson();
     }, [jobName]);
 
+    
     const handleSaveChanges = async () => {
         setIsSaving(true);
         try {
@@ -190,8 +196,10 @@ export default function RightPanel({
 
     const clinicalDocumentNereUnits = useMemo(() => calculateNereUnits(summaryData), [summaryData]);
 
-    if (jobLoading || summaryData == null) {
+    if (jobLoading || isLoading) {
         return <LoadingContainer containerTitle="Insights" text="Loading Insights" />;
+    } else if (summaryData == null) {
+        return <LoadingContainer containerTitle="Insights" text="No summary data available" />;
     } else {
         return (
             <ScrollingContainer
