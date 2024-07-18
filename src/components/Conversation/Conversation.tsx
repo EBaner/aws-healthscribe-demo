@@ -20,6 +20,7 @@ import { getObject, getS3Object } from '@/utils/S3Api';
 import LeftPanel from './LeftPanel';
 import RightPanel from './RightPanel';
 import TopPanel from './TopPanel';
+import { fetchSummaryJson } from './RightPanel/summarizedConceptsUtils';
 
 const ViewOutput = lazy(() => import('./ViewOutput'));
 
@@ -76,9 +77,8 @@ export default function Conversation() {
 
                 setJobDetails(medicalScribeJob);
 
-                const summaryUri = medicalScribeJob.MedicalScribeOutput?.ClinicalDocumentUri;
-                const summaryRsp = await getObject(getS3Object(summaryUri || ''));
-                setSummaryData(JSON.parse((await summaryRsp?.Body?.transformToString()) || ''));
+                const summaryData = await fetchSummaryJson(conversationName);
+                setSummaryData(summaryData);
 
                 const transcriptFileUri = medicalScribeJob.MedicalScribeOutput?.TranscriptFileUri;
                 const transcriptFileRsp = await getObject(getS3Object(transcriptFileUri || ''));
