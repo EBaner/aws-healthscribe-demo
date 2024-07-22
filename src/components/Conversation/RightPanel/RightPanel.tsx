@@ -152,7 +152,7 @@ export default function RightPanel({
             await s3Client.send(putCommand);
 
             setSummaryData(updatedData);
-            
+
             await refreshSummaryData();
             setSummaryChanges({});
             toast.success('Changes saved successfully');

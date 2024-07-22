@@ -24,8 +24,6 @@ import TopPanel from './TopPanel';
 
 const ViewOutput = lazy(() => import('./ViewOutput'));
 
-
-
 type SummaryData = {
     ClinicalDocumentation: {
         Sections: {
@@ -40,8 +38,6 @@ type SummaryData = {
     modifiedBy: string;
     clinicName: string;
 };
-
-
 
 export default function Conversation() {
     const { conversationName } = useParams();
@@ -68,12 +64,12 @@ export default function Conversation() {
 
     async function fetchLatestSummaryData(jobName: string) {
         try {
-          const latestSummaryData = await fetchSummaryJson(jobName);
-          setSummaryData(latestSummaryData);
+            const latestSummaryData = await fetchSummaryJson(jobName);
+            setSummaryData(latestSummaryData);
         } catch (error) {
-          console.error('Failed to fetch latest summary data:', error);
+            console.error('Failed to fetch latest summary data:', error);
         }
-      }
+    }
 
     useEffect(() => {
         async function getJob(conversationName: string) {

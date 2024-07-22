@@ -30,6 +30,7 @@ export async function fetchSummaryJson(jobName: string) {
     const getParams = {
         Bucket: outputBucket,
         Key: key,
+        ResponseCacheControl: 'no-cache',
     };
 
     try {
