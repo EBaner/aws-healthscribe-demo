@@ -19,10 +19,12 @@ import { getObject, getS3Object } from '@/utils/S3Api';
 
 import LeftPanel from './LeftPanel';
 import RightPanel from './RightPanel';
-import TopPanel from './TopPanel';
 import { fetchSummaryJson } from './RightPanel/summarizedConceptsUtils';
+import TopPanel from './TopPanel';
 
 const ViewOutput = lazy(() => import('./ViewOutput'));
+
+
 
 type SummaryData = {
     ClinicalDocumentation: {
@@ -38,6 +40,8 @@ type SummaryData = {
     modifiedBy: string;
     clinicName: string;
 };
+
+
 
 export default function Conversation() {
     const { conversationName } = useParams();
@@ -61,6 +65,15 @@ export default function Conversation() {
         highlightId,
         setHighlightId,
     ] = useAudio();
+
+    async function fetchLatestSummaryData(jobName: string) {
+        try {
+          const latestSummaryData = await fetchSummaryJson(jobName);
+          setSummaryData(latestSummaryData);
+        } catch (error) {
+          console.error('Failed to fetch latest summary data:', error);
+        }
+      }
 
     useEffect(() => {
         async function getJob(conversationName: string) {
@@ -153,6 +166,7 @@ export default function Conversation() {
                     loginId={user?.username || ''}
                     outputBucket={jobDetails?.MedicalScribeOutput || null}
                     clinicName={jobDetails?.Tags?.find((tag) => tag.Key === 'Clinic')?.Value || ''}
+                    refreshSummaryData={() => fetchLatestSummaryData(jobDetails?.MedicalScribeJobName || '')}
                 />
             </Grid>
         </ContentLayout>

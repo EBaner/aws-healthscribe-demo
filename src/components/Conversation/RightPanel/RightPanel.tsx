@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
 import { DetectEntitiesV2Response } from '@aws-sdk/client-comprehendmedical';
-import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { MedicalScribeOutput } from '@aws-sdk/client-transcribe';
 import toast from 'react-hot-toast';
 import WaveSurfer from 'wavesurfer.js';
@@ -47,6 +47,7 @@ type RightPanelProps = {
     loginId: string;
     clinicName: string;
     outputBucket: MedicalScribeOutput | null;
+    refreshSummaryData: () => Promise<void>;
 };
 
 export default function RightPanel({
@@ -59,6 +60,7 @@ export default function RightPanel({
     loginId,
     clinicName,
     outputBucket,
+    refreshSummaryData,
 }: RightPanelProps) {
     console.log('RightPanel rendered with jobName:', jobName);
     const [extractingData, setExtractingData] = useState<boolean>(false);
@@ -150,6 +152,8 @@ export default function RightPanel({
             await s3Client.send(putCommand);
 
             setSummaryData(updatedData);
+            
+            await refreshSummaryData();
             setSummaryChanges({});
             toast.success('Changes saved successfully');
         } catch (error) {
