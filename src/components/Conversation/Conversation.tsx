@@ -139,7 +139,7 @@ export default function Conversation() {
                     setAudioTime={setAudioTime}
                     setAudioReady={setAudioReady}
                     setShowOutputModal={setShowOutputModal}
-                    clinicalDocument={clinicalDocument}
+                    clinicalDocument={summaryData}
                 />
                 <LeftPanel
                     jobLoading={jobLoading}

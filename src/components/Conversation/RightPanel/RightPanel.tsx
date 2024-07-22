@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { MultiselectProps } from '@cloudscape-design/components';
 
 import { DetectEntitiesV2Response } from '@aws-sdk/client-comprehendmedical';
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { MedicalScribeOutput } from '@aws-sdk/client-transcribe';
 import toast from 'react-hot-toast';
 import WaveSurfer from 'wavesurfer.js';
