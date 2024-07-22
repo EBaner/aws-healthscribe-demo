@@ -1,9 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import { MultiselectProps } from '@cloudscape-design/components';
 
 import { DetectEntitiesV2Response } from '@aws-sdk/client-comprehendmedical';
-import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { MedicalScribeOutput } from '@aws-sdk/client-transcribe';
 import toast from 'react-hot-toast';
 import WaveSurfer from 'wavesurfer.js';
@@ -11,12 +11,7 @@ import WaveSurfer from 'wavesurfer.js';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useS3 } from '@/hooks/useS3';
 import { ExtractedHealthData } from '@/types/ComprehendMedical';
-import {
-    IAuraClinicalDocOutput,
-    IAuraClinicalDocOutputSection,
-    IAuraTranscriptOutput,
-    ITranscriptSegments,
-} from '@/types/HealthScribe';
+import { IAuraTranscriptOutput, ITranscriptSegments } from '@/types/HealthScribe';
 import { detectEntitiesFromComprehendMedical } from '@/utils/ComprehendMedicalApi';
 import { getCredentials } from '@/utils/Sdk';
 
@@ -26,7 +21,22 @@ import { HighlightId } from '../types';
 import { RightPanelActions, RightPanelSettings } from './RightPanelComponents';
 import SummarizedConcepts from './SummarizedConcepts';
 import { calculateNereUnits } from './rightPanelUtils';
-import { processSummarizedSegment } from './summarizedConceptsUtils';
+import { fetchSummaryJson, processSummarizedSegment } from './summarizedConceptsUtils';
+
+type SummaryData = {
+    ClinicalDocumentation: {
+        Sections: {
+            SectionName: string;
+            Summary: {
+                EvidenceLinks: { SegmentId: string }[];
+                SummarizedSegment: string;
+            }[];
+        }[];
+    };
+    lastModified: string;
+    modifiedBy: string;
+    clinicName: string;
+};
 
 function formatName(sectionName: string) {
     const words = sectionName.split('_');
@@ -131,7 +141,7 @@ export async function getSetSummary(
 
 type RightPanelProps = {
     jobLoading: boolean;
-    clinicalDocument: IAuraClinicalDocOutput | null;
+    summaryData: SummaryData | null;
     transcriptFile: IAuraTranscriptOutput | null;
     highlightId: HighlightId;
     setHighlightId: React.Dispatch<React.SetStateAction<HighlightId>>;
@@ -140,11 +150,11 @@ type RightPanelProps = {
     loginId: string;
     clinicName: string;
     outputBucket: MedicalScribeOutput | null;
+    refreshSummaryData: () => Promise<void>;
 };
 
 export default function RightPanel({
     jobLoading,
-    clinicalDocument,
     transcriptFile,
     highlightId,
     setHighlightId,
@@ -153,7 +163,9 @@ export default function RightPanel({
     loginId,
     clinicName,
     outputBucket,
+    refreshSummaryData,
 }: RightPanelProps) {
+    console.log('RightPanel rendered with jobName:', jobName);
     const [extractingData, setExtractingData] = useState<boolean>(false);
     const [extractedHealthData, setExtractedHealthData] = useState<ExtractedHealthData[]>([]);
     const [rightPanelSettingsOpen, setRightPanelSettingsOpen] = useState<boolean>(false);
@@ -163,79 +175,67 @@ export default function RightPanel({
     );
     const [summaryChanges, setSummaryChanges] = useState<Record<string, Record<number, string>>>({});
     const [isSaving, setIsSaving] = useState(false);
+    const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        async function loadSummaryJson() {
+            setIsLoading(true);
+            if (jobName) {
+                try {
+                    console.log(`Attempting to load summary for job: ${jobName}`);
+                    const data = await fetchSummaryJson(jobName);
+                    console.log('Summary data loaded:', data);
+                    setSummaryData(data);
+                } catch (error) {
+                    console.error('Failed to load summary.json:', error);
+                } finally {
+                    setIsLoading(false);
+                }
+            } else {
+                console.warn('No jobName provided, skipping summary load');
+                setIsLoading(false);
+            }
+        }
+        loadSummaryJson();
+    }, [jobName]);
 
     const handleSaveChanges = async () => {
         setIsSaving(true);
         try {
+            if (!summaryData) {
+                throw new Error('No summary data available');
+            }
+
             const s3Client = new S3Client({
                 region: 'us-east-1',
                 credentials: await getCredentials(),
             });
 
-            const [outputBucket, getUploadMetadata] = useS3();
+            const [outputBucket] = useS3();
             if (!outputBucket) {
                 throw new Error('Output bucket information is missing');
             }
 
-            const originalKey = `${jobName}/summary.json`;
+            const key = `${jobName}/summary.json`;
 
-            console.log(`Fetching from S3 with key: ${originalKey} in bucket: ${outputBucket}`);
-
-            // Get the original content
-            const getParams = {
-                Bucket: outputBucket,
-                Key: originalKey,
+            const updatedData: SummaryData = {
+                ...summaryData,
+                ClinicalDocumentation: {
+                    Sections: [...summaryData.ClinicalDocumentation.Sections],
+                },
             };
-            const getCommand = new GetObjectCommand(getParams);
-            const originalObject = await s3Client.send(getCommand);
-
-            let originalContent = '';
-            if (originalObject.Body) {
-                const stream = originalObject.Body as ReadableStream;
-                const reader = stream.getReader();
-                const decoder = new TextDecoder('utf-8');
-                let result = '';
-                let done = false;
-
-                while (!done) {
-                    const { value, done: doneReading } = await reader.read();
-                    done = doneReading;
-                    if (value) {
-                        result += decoder.decode(value, { stream: !done });
-                    }
-                }
-                originalContent = result;
-            }
-
-            if (!originalContent) {
-                throw new Error('Original content is empty');
-            }
-
-            const originalData = JSON.parse(originalContent);
-            console.log('Original Data:', originalData);
-
-            interface Section {
-                SectionName: string;
-                Summary: Array<{
-                    SummarizedSegment: string;
-                    EvidenceLinks?: Array<{ SegmentId: string }>;
-                }>;
-            }
-
-            // Merge changes with original content
-            const updatedData = { ...originalData };
 
             for (const [sectionName, sectionChanges] of Object.entries(summaryChanges)) {
-                if (updatedData.ClinicalDocumentation && updatedData.ClinicalDocumentation.Sections) {
-                    const section = updatedData.ClinicalDocumentation.Sections.find(
-                        (s: Section) => s.SectionName === sectionName
-                    );
-                    if (section && section.Summary) {
-                        for (const [index, newContent] of Object.entries(sectionChanges)) {
-                            const indexNum = parseInt(index);
-                            if (section.Summary[indexNum]) {
-                                section.Summary[indexNum].SummarizedSegment = newContent;
-                            }
+                const sectionIndex = updatedData.ClinicalDocumentation.Sections.findIndex(
+                    (s) => s.SectionName === sectionName
+                );
+                if (sectionIndex !== -1) {
+                    const section = updatedData.ClinicalDocumentation.Sections[sectionIndex];
+                    for (const [index, newContent] of Object.entries(sectionChanges)) {
+                        const indexNum = parseInt(index);
+                        if (section.Summary[indexNum]) {
+                            section.Summary[indexNum].SummarizedSegment = newContent;
                         }
                     }
                 }
@@ -245,20 +245,20 @@ export default function RightPanel({
             updatedData.modifiedBy = loginId;
             updatedData.clinicName = clinicName;
 
-            console.log('Updated Content:', updatedData);
-
-            // Save the updated content back to S3
             const putParams = {
                 Bucket: outputBucket,
-                Key: originalKey,
-                Body: JSON.stringify(updatedData, null, 2), // Indent for readability
+                Key: key,
+                Body: JSON.stringify(updatedData, null, 2),
                 ContentType: 'application/json',
             };
             const putCommand = new PutObjectCommand(putParams);
             await s3Client.send(putCommand);
 
-            toast.success('Changes saved successfully');
+            setSummaryData(updatedData);
+
+            await refreshSummaryData();
             setSummaryChanges({});
+            toast.success('Changes saved successfully');
         } catch (error) {
             console.error('Error saving changes:', error);
             toast.error('Failed to save changes');
@@ -277,16 +277,15 @@ export default function RightPanel({
     }, [transcriptFile]);
 
     const hasInsightSections: boolean = useMemo(() => {
-        if (typeof clinicalDocument?.ClinicalDocumentation?.Sections === 'undefined') return false;
-        return clinicalDocument?.ClinicalDocumentation?.Sections?.length > 0;
-    }, [clinicalDocument]);
+        return (summaryData?.ClinicalDocumentation.Sections.length ?? 0) > 0;
+    }, [summaryData]);
 
     async function handleExtractHealthData() {
-        if (!Array.isArray(clinicalDocument?.ClinicalDocumentation?.Sections)) return;
+        if (!summaryData?.ClinicalDocumentation?.Sections) return;
         setExtractingData(true);
 
         const buildExtractedHealthData = [];
-        for (const section of clinicalDocument.ClinicalDocumentation.Sections) {
+        for (const section of summaryData.ClinicalDocumentation.Sections) {
             const sectionEntities: DetectEntitiesV2Response[] = [];
             for (const summary of section.Summary) {
                 const summarizedSegment = processSummarizedSegment(summary.SummarizedSegment);
@@ -305,11 +304,12 @@ export default function RightPanel({
         setExtractingData(false);
     }
 
-    // Calculate the number of CM units (100-character segments) in the clinical document.
-    const clinicalDocumentNereUnits = useMemo(() => calculateNereUnits(clinicalDocument), [clinicalDocument]);
+    const clinicalDocumentNereUnits = useMemo(() => calculateNereUnits(summaryData), [summaryData]);
 
-    if (jobLoading || clinicalDocument == null) {
+    if (jobLoading || isLoading) {
         return <LoadingContainer containerTitle="Insights" text="Loading Insights" />;
+    } else if (summaryData == null) {
+        return <LoadingContainer containerTitle="Insights" text="No summary data available" />;
     } else {
         return (
             <ScrollingContainer
@@ -336,7 +336,7 @@ export default function RightPanel({
                 />
                 <SummarizedConcepts
                     jobName={jobName}
-                    sections={clinicalDocument.ClinicalDocumentation.Sections as IAuraClinicalDocOutputSection[]}
+                    summaryData={summaryData}
                     extractedHealthData={extractedHealthData}
                     acceptableConfidence={acceptableConfidence}
                     highlightId={highlightId}

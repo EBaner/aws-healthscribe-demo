@@ -60,12 +60,15 @@ NoEntities.displayName = 'NoEntities';
 
 type SummaryListDefaultProps = {
     sectionName: string;
-    summary: IEvidence[];
+    summary: {
+        EvidenceLinks: { SegmentId: string }[];
+        SummarizedSegment: string;
+    }[];
     summaryExtractedHealthData?: SegmentExtractedData[];
     acceptableConfidence: number;
     currentSegment: string;
     handleSegmentClick: (SummarizedSegment: string, EvidenceLinks: { SegmentId: string }[]) => void;
-    onSummaryChange: (index: number, newContent: string) => void; // Add this line
+    onSummaryChange: (index: number, newContent: string) => void;
 };
 
 export function SummaryListDefault({
