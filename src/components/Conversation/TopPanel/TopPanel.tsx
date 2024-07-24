@@ -262,18 +262,72 @@ export default function TopPanel({
 
     function AudioHeader() {
         async function openUrl(detail: { id: string }) {
-            let jobUrl: string = '';
-            if (detail.id === 'audio') {
-                jobUrl = jobDetails?.Media?.MediaFileUri as string;
-            } else if (detail.id === 'transcript') {
-                jobUrl = jobDetails?.MedicalScribeOutput?.TranscriptFileUri as string;
-            } else if (detail.id === 'summary') {
-                jobUrl = jobDetails?.MedicalScribeOutput?.ClinicalDocumentUri as string;
+            let jobUrl: string | undefined;
+            let fileName: string;
+            let fileType: string;
+            let content: string | Blob;
+
+            const jobName = jobDetails?.MedicalScribeJobName || 'unnamed_job';
+            const safeJobName = jobName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+        
+            switch (detail.id) {
+                case 'audio':
+                    jobUrl = jobDetails?.Media?.MediaFileUri;
+                    fileName = '${safeJobName}_audio.mp3';
+                    fileType = 'audio/mpeg';
+                    content = new Blob();
+                    break;
+                case 'transcript':
+                    jobUrl = jobDetails?.MedicalScribeOutput?.TranscriptFileUri;
+                    fileName = '${safeJobName}_transcript.txt';
+                    fileType = 'text/plain';
+                    content = new Blob(); 
+                    break;
+                case 'summary':
+                    fileName = '${safeJobName}_summary.txt';
+                    fileType = 'text/plain';
+                    content = await getSetSummary(jobDetails?.MedicalScribeJobName, selectedOptions);
+                    break;
+                default:
+                    addFlashMessage({
+                        id: 'invalid-option',
+                        header: 'Invalid Option',
+                        content: 'Invalid download option selected.',
+                        type: 'error',
+                    });
+                    return;
             }
-            if (jobUrl) {
-                const presignedUrl = await getPresignedUrl(getS3Object(jobUrl));
-                window.open(presignedUrl, '_blank');
+        
+            try {
+                if (detail.id === 'summary') {
+                    const file = new Blob([content], { type: fileType });
+                    downloadFile(file, fileName);
+                } else if (jobUrl) {
+                    const presignedUrl = await getPresignedUrl(getS3Object(jobUrl));
+                    const response = await fetch(presignedUrl);
+                    const blob = await response.blob();
+                    const file = new Blob([blob], { type: fileType });
+                    downloadFile(file, fileName);
+                } else {
+                    throw new Error('Job URL is undefined');
+                }
+            } catch (error) {
+                addFlashMessage({
+                    id: 'download-error',
+                    header: 'Download Failed',
+                    content: `Failed to download ${fileName}. Please try again.`,
+                    type: 'error',
+                });
             }
+        }
+        
+        function downloadFile(file: Blob, fileName: string) {
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(file);
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         return (
