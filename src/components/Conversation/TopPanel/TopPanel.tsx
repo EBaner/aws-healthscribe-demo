@@ -269,22 +269,22 @@ export default function TopPanel({
 
             const jobName = jobDetails?.MedicalScribeJobName || 'unnamed_job';
             const safeJobName = jobName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-        
+
             switch (detail.id) {
                 case 'audio':
                     jobUrl = jobDetails?.Media?.MediaFileUri;
-                    fileName = '${safeJobName}_audio.mp3';
+                    fileName = `${safeJobName}_audio.mp3`;
                     fileType = 'audio/mpeg';
                     content = new Blob();
                     break;
                 case 'transcript':
                     jobUrl = jobDetails?.MedicalScribeOutput?.TranscriptFileUri;
-                    fileName = '${safeJobName}_transcript.txt';
+                    fileName = `${safeJobName}_transcript.txt`;
                     fileType = 'text/plain';
-                    content = new Blob(); 
+                    content = new Blob();
                     break;
                 case 'summary':
-                    fileName = '${safeJobName}_summary.txt';
+                    fileName = `${safeJobName}_summary.txt`;
                     fileType = 'text/plain';
                     content = await getSetSummary(jobDetails?.MedicalScribeJobName, selectedOptions);
                     break;
@@ -297,7 +297,7 @@ export default function TopPanel({
                     });
                     return;
             }
-        
+
             try {
                 if (detail.id === 'summary') {
                     const file = new Blob([content], { type: fileType });
@@ -320,7 +320,7 @@ export default function TopPanel({
                 });
             }
         }
-        
+
         function downloadFile(file: Blob, fileName: string) {
             const link = document.createElement('a');
             link.href = URL.createObjectURL(file);
