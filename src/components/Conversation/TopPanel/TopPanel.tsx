@@ -1,9 +1,5 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-// SPDX-License-Identifier: MIT-0
 import React, { useEffect, useMemo, useState } from 'react';
-
 import { useNavigate } from 'react-router-dom';
-
 import Box from '@cloudscape-design/components/box';
 import Button from '@cloudscape-design/components/button';
 import ButtonDropdown from '@cloudscape-design/components/button-dropdown';
@@ -15,16 +11,13 @@ import Input from '@cloudscape-design/components/input';
 import Modal from '@cloudscape-design/components/modal';
 import SpaceBetween from '@cloudscape-design/components/space-between';
 import Spinner from '@cloudscape-design/components/spinner';
-
 import { MedicalScribeJob } from '@aws-sdk/client-transcribe';
 import reduce from 'lodash/reduce';
 import WaveSurfer from 'wavesurfer.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions';
-
 import { useNotificationsContext } from '@/store/notifications';
 import { IAuraTranscriptOutput } from '@/types/HealthScribe';
 import { getPresignedUrl, getS3Object } from '@/utils/S3Api';
-
 import AudioControls from '../../Common/AudioControls';
 import { SmallTalkList } from '../types';
 import styles from './TopPanel.module.css';
@@ -69,7 +62,6 @@ export default function TopPanel({
 
     const waveformElement = document.getElementById('waveform');
 
-    // Get small talk from HealthScribe transcript
     const smallTalkList: SmallTalkList = useMemo(() => {
         if (!transcriptFile) return [];
         const transcriptSegments = transcriptFile!.Conversation.TranscriptSegments;
@@ -86,7 +78,6 @@ export default function TopPanel({
         }
     }, [transcriptFile]);
 
-    // Download audio from S3 and initialize waveform
     useEffect(() => {
         async function getAudio() {
             try {
@@ -96,7 +87,6 @@ export default function TopPanel({
                 const s3Object = getS3Object(jobDetails?.Media?.MediaFileUri);
                 const s3PresignedUrl = await getPresignedUrl(s3Object);
 
-                // Initialize Wavesurfer with presigned S3 URL
                 if (!wavesurfer.current) {
                     wavesurfer.current = WaveSurfer.create({
                         backend: 'MediaElement',
@@ -110,10 +100,8 @@ export default function TopPanel({
 
                     setWavesurferRegions(wavesurfer.current.registerPlugin(RegionsPlugin.create()));
                 }
-                // Disable spinner when Wavesurfer is ready
                 wavesurfer.current.on('ready', () => {
                     const audioDuration = wavesurfer.current!.getDuration();
-                    // Manage silences
                     const sPeaks = wavesurfer.current!.exportPeaks();
                     const silenceTotal = reduce(
                         extractRegions(sPeaks[0], audioDuration),
@@ -125,7 +113,6 @@ export default function TopPanel({
                     setSilencePeaks(sPeaks[0]);
                     setSilencePercent(silenceTotal / audioDuration);
 
-                    // Manage smalltalk
                     const timeSmallTalk = reduce(
                         smallTalkList,
                         (sum, { EndAudioTime, BeginAudioTime }) => {
@@ -140,7 +127,6 @@ export default function TopPanel({
                     setAudioReady(true);
                 });
 
-                // Do not loop around
                 wavesurfer.current?.on('finish', () => {
                     setPlayingAudio(!!wavesurfer.current?.isPlaying());
                 });
@@ -150,7 +136,6 @@ export default function TopPanel({
                 };
 
                 wavesurfer.current?.on('audioprocess', updateTimer);
-                // Need to watch for seek in addition to audioprocess as audioprocess doesn't fire if the audio is paused.
                 wavesurfer.current?.on('seeking', updateTimer);
             } catch (e) {
                 setAudioLoading(false);
@@ -166,7 +151,6 @@ export default function TopPanel({
         if (!jobLoading && waveformElement) getAudio().catch(console.error);
     }, [jobLoading, waveformElement]);
 
-    // Draw regions on the audio player for small talk and silences
     useEffect(() => {
         if (!wavesurfer.current || !wavesurferRegions) return;
         wavesurferRegions.clearRegions();
@@ -195,7 +179,6 @@ export default function TopPanel({
             }
         }
 
-        // Skip to the end of the region when playing. I.e. skip small talk and silences
         wavesurferRegions!.on('region-in', ({ end }) => {
             if (wavesurfer.current!.getCurrentTime() < end) {
                 wavesurfer.current?.seekTo(end / wavesurfer.current?.getDuration());
@@ -204,9 +187,7 @@ export default function TopPanel({
     }, [wavesurfer, smallTalkCheck, smallTalkList, silenceChecked, silencePeaks]);
 
     const handleExport = () => {
-        // Here you would implement the logic to send the transcript file to the email address
         console.log(`Sending transcript to ${email}`);
-        // You might want to call an API or use a service to actually send the email
         addFlashMessage({
             id: 'export-success',
             header: 'Export Successful',
@@ -217,13 +198,44 @@ export default function TopPanel({
         setEmail('');
     };
 
+    function formatTranscript(transcript: IAuraTranscriptOutput): string {
+        return transcript.Conversation.ClinicalInsights.map((insight) => {
+            const attributes = insight.Attributes.map(attr => 
+                `Attribute Type: ${attr.Type}, Spans: ${attr.Spans.map(span => `"${span.Content}"`).join(', ')}`
+            ).join('\n');
+
+            const spans = insight.Spans.map(span => 
+                `Segment ID: ${span.SegmentId}, Begin: ${span.BeginCharacterOffset}, End: ${span.EndCharacterOffset}, Content: "${span.Content}"`
+            ).join('\n');
+
+            return `Insight ID: ${insight.InsightId}\nCategory: ${insight.Category}\nType: ${insight.Type}\nAttributes:\n${attributes}\nSpans:\n${spans}\n`;
+        }).join('\n\n');
+    }
+
+    function downloadFormattedTranscript() {
+        if (transcriptFile) {
+            const formattedTranscript = formatTranscript(transcriptFile);
+            const blob = new Blob([formattedTranscript], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${jobDetails?.MedicalScribeJobName || 'transcript'}.txt`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+    }
+
     function AudioHeader() {
         async function openUrl(detail: { id: string }) {
             let jobUrl: string = '';
             if (detail.id === 'audio') {
                 jobUrl = jobDetails?.Media?.MediaFileUri as string;
             } else if (detail.id === 'transcript') {
-                jobUrl = jobDetails?.MedicalScribeOutput?.TranscriptFileUri as string;
+                // Replace opening URL with downloading formatted transcript
+                downloadFormattedTranscript();
+                return;
             } else if (detail.id === 'summary') {
                 jobUrl = jobDetails?.MedicalScribeOutput?.ClinicalDocumentUri as string;
             }
