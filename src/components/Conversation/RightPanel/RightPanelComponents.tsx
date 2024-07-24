@@ -44,13 +44,14 @@ export function RightPanelActions({
         <SpaceBetween size={'xs'} alignItems="center" direction={'horizontal'}>
             <Button iconName="settings" variant="icon" onClick={() => setRightPanelSettingsOpen(true)} />
             <EnableComprehendMedicalPopover />
-            <ComprehendMedicalNereCost clinicalDocumentNereUnits={clinicalDocumentNereUnits} />
             <Button onClick={handleSaveChanges} disabled={isSaving} loading={isSaving}>
                 Save Changes
             </Button>
         </SpaceBetween>
     );
 }
+
+// <ComprehendMedicalNereCost clinicalDocumentNereUnits={clinicalDocumentNereUnits} />
 
 type RightPanelSettingsProps = {
     rightPanelSettingsOpen: boolean;

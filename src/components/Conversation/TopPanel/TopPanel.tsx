@@ -292,7 +292,6 @@ export default function TopPanel({
                             Download
                         </ButtonDropdown>
                         <Button onClick={() => setExportModalVisible(true)}>Export</Button>
-                        <Button onClick={() => setShowOutputModal(true)}>View HealthScribe Output</Button>
                         <Button variant="primary" onClick={() => navigate('/conversations')}>
                             Exit Conversation
                         </Button>
@@ -303,6 +302,9 @@ export default function TopPanel({
             </Header>
         );
     }
+
+    // <Button onClick={() => setShowOutputModal(true)}>View HealthScribe Output</Button>
+    // Was in between Export and Exit Conversation
 
     function Loading() {
         return (
