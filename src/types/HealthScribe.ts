@@ -3,6 +3,9 @@
 
 export interface IAuraClinicalDocOutput {
     ClinicalDocumentation: { Sections: IAuraClinicalDocOutputSection[] };
+    lastModified?: string;
+    modifiedBy?: string;
+    clinicName?: string;
 }
 
 export interface IAuraClinicalDocOutputSection {

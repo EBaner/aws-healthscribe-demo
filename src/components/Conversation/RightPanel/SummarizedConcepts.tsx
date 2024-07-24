@@ -1,28 +1,37 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-// SPDX-License-Identifier: MIT-0
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useState } from 'react';
 
 import TextContent from '@cloudscape-design/components/text-content';
 
 import toast from 'react-hot-toast';
 import WaveSurfer from 'wavesurfer.js';
 
-import { ExtractedHealthData, SummarySectionEntityMapping } from '@/types/ComprehendMedical';
-import { IAuraClinicalDocOutputSection, ITranscriptSegments } from '@/types/HealthScribe';
+import { ExtractedHealthData } from '@/types/ComprehendMedical';
+import { ITranscriptSegments } from '@/types/HealthScribe';
 import toTitleCase from '@/utils/toTitleCase';
 
 import { HighlightId } from '../types';
 import { SummaryListDefault } from './SummaryList';
 import { SECTION_ORDER } from './sectionOrder';
-import {
-    fetchSummaryJson,
-    mergeHealthScribeOutputWithComprehendMedicalOutput,
-    transformToSegmentExtractedData,
-} from './summarizedConceptsUtils';
+import { transformToSegmentExtractedData } from './summarizedConceptsUtils';
+
+type SummaryData = {
+    ClinicalDocumentation: {
+        Sections: {
+            SectionName: string;
+            Summary: {
+                EvidenceLinks: { SegmentId: string }[];
+                SummarizedSegment: string;
+            }[];
+        }[];
+    };
+    lastModified: string;
+    modifiedBy: string;
+    clinicName: string;
+};
 
 type SummarizedConceptsProps = {
-    jobName: string; // Add this prop
-    sections: IAuraClinicalDocOutputSection[];
+    jobName: string;
+    summaryData: SummaryData;
     extractedHealthData: ExtractedHealthData[];
     acceptableConfidence: number;
     highlightId: HighlightId;
@@ -36,6 +45,7 @@ type SummarizedConceptsProps = {
 
 export default function SummarizedConcepts({
     jobName,
+    summaryData,
     extractedHealthData,
     acceptableConfidence,
     highlightId,
@@ -46,33 +56,6 @@ export default function SummarizedConcepts({
 }: SummarizedConceptsProps) {
     const [currentId, setCurrentId] = useState(0);
     const [currentSegment, setCurrentSegment] = useState<string>('');
-    const [sections, setSections] = useState<IAuraClinicalDocOutputSection[]>([]);
-
-    useEffect(() => {
-        async function loadSummary() {
-            try {
-                const summaryData = await fetchSummaryJson(jobName);
-                setSections(summaryData.ClinicalDocumentation.Sections as IAuraClinicalDocOutputSection[]);
-            } catch (error) {
-                console.error('Error loading summary:', error);
-                toast.error('Failed to load summary');
-            }
-        }
-        loadSummary();
-    }, [jobName]);
-
-    useEffect(() => {
-        if (!highlightId.selectedSegmentId) setCurrentSegment('');
-    }, [highlightId]);
-
-    const handleSummaryChange = (sectionName: string, index: number, newContent: string) => {
-        onSummaryChange(sectionName, index, newContent);
-    };
-
-    const sectionsWithExtractedData: SummarySectionEntityMapping[] = useMemo(
-        () => mergeHealthScribeOutputWithComprehendMedicalOutput(sections, extractedHealthData),
-        [sections, extractedHealthData]
-    );
 
     function handleSegmentClick(SummarizedSegment: string, EvidenceLinks: { SegmentId: string }[]) {
         let currentIdLocal = currentId;
@@ -82,7 +65,6 @@ export default function SummarizedConcepts({
             currentIdLocal = 0;
         }
         const id = EvidenceLinks[currentIdLocal].SegmentId;
-        // Set state back to Conversation, used to highlight the transcript in LeftPanel
         const newHighlightId = {
             allSegmentIds: EvidenceLinks.map((i) => i.SegmentId),
             selectedSegmentId: id,
@@ -113,33 +95,31 @@ export default function SummarizedConcepts({
 
     return (
         <>
-            {sections
-                .sort((a, b) => SECTION_ORDER.indexOf(a.SectionName) - SECTION_ORDER.indexOf(b.SectionName) || 1)
-                .map(({ SectionName, Summary }, i) => {
-                    const sectionExtractedHealthData = extractedHealthData.find((s) => s.SectionName === SectionName);
-                    const transformedExtractedData = transformToSegmentExtractedData(
-                        sectionExtractedHealthData?.ExtractedEntities
-                    );
+            {summaryData.ClinicalDocumentation.Sections.sort(
+                (a, b) => SECTION_ORDER.indexOf(a.SectionName) - SECTION_ORDER.indexOf(b.SectionName) || 1
+            ).map(({ SectionName, Summary }, i) => {
+                const sectionExtractedHealthData = extractedHealthData.find((s) => s.SectionName === SectionName);
+                const transformedExtractedData = transformToSegmentExtractedData(
+                    sectionExtractedHealthData?.ExtractedEntities
+                );
 
-                    return (
-                        <div key={`insightsSection_${i}`}>
-                            <TextContent>
-                                <h3>{toTitleCase(SectionName.replace(/_/g, ' '))}</h3>
-                            </TextContent>
-                            <SummaryListDefault
-                                sectionName={SectionName}
-                                summary={Summary}
-                                summaryExtractedHealthData={transformedExtractedData}
-                                acceptableConfidence={acceptableConfidence}
-                                currentSegment={currentSegment}
-                                handleSegmentClick={handleSegmentClick}
-                                onSummaryChange={(index, newContent) =>
-                                    handleSummaryChange(SectionName, index, newContent)
-                                }
-                            />
-                        </div>
-                    );
-                })}
+                return (
+                    <div key={`insightsSection_${i}`}>
+                        <TextContent>
+                            <h3>{toTitleCase(SectionName.replace(/_/g, ' '))}</h3>
+                        </TextContent>
+                        <SummaryListDefault
+                            sectionName={SectionName}
+                            summary={Summary}
+                            summaryExtractedHealthData={transformedExtractedData}
+                            acceptableConfidence={acceptableConfidence}
+                            currentSegment={currentSegment}
+                            handleSegmentClick={handleSegmentClick}
+                            onSummaryChange={(index, newContent) => onSummaryChange(SectionName, index, newContent)}
+                        />
+                    </div>
+                );
+            })}
         </>
     );
 }

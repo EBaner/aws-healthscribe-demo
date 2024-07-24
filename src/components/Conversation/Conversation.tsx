@@ -13,27 +13,41 @@ import ModalLoader from '@/components/SuspenseLoader/ModalLoader';
 import { useAudio } from '@/hooks/useAudio';
 import { useAuthContext } from '@/store/auth';
 import { useNotificationsContext } from '@/store/notifications';
-import { IAuraClinicalDocOutput, IAuraTranscriptOutput } from '@/types/HealthScribe';
+import { IAuraTranscriptOutput } from '@/types/HealthScribe';
 import { getHealthScribeJob } from '@/utils/HealthScribeApi';
 import { getObject, getS3Object } from '@/utils/S3Api';
 
 import LeftPanel from './LeftPanel';
 import RightPanel from './RightPanel';
+import { fetchSummaryJson } from './RightPanel/summarizedConceptsUtils';
 import TopPanel from './TopPanel';
 
-// Import your auth context
-
 const ViewOutput = lazy(() => import('./ViewOutput'));
+
+type SummaryData = {
+    ClinicalDocumentation: {
+        Sections: {
+            SectionName: string;
+            Summary: {
+                EvidenceLinks: { SegmentId: string }[];
+                SummarizedSegment: string;
+            }[];
+        }[];
+    };
+    lastModified: string;
+    modifiedBy: string;
+    clinicName: string;
+};
 
 export default function Conversation() {
     const { conversationName } = useParams();
     const { addFlashMessage } = useNotificationsContext();
-    const { isUserAuthenticated, user, signOut } = useAuthContext(); // Get the current user
+    const { isUserAuthenticated, user, signOut } = useAuthContext();
 
     const [jobLoading, setJobLoading] = useState(true);
     const [jobDetails, setJobDetails] = useState<MedicalScribeJob | null>(null);
     const [showOutputModal, setShowOutputModal] = useState<boolean>(false);
-    const [clinicalDocument, setClinicalDocument] = useState<IAuraClinicalDocOutput | null>(null);
+    const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
     const [transcriptFile, setTranscriptFile] = useState<IAuraTranscriptOutput | null>(null);
 
     const [
@@ -47,6 +61,15 @@ export default function Conversation() {
         highlightId,
         setHighlightId,
     ] = useAudio();
+
+    async function fetchLatestSummaryData(jobName: string) {
+        try {
+            const latestSummaryData = await fetchSummaryJson(jobName);
+            setSummaryData(latestSummaryData);
+        } catch (error) {
+            console.error('Failed to fetch latest summary data:', error);
+        }
+    }
 
     useEffect(() => {
         async function getJob(conversationName: string) {
@@ -63,9 +86,8 @@ export default function Conversation() {
 
                 setJobDetails(medicalScribeJob);
 
-                const clinicalDocumentUri = medicalScribeJob.MedicalScribeOutput?.ClinicalDocumentUri;
-                const clinicalDocumentRsp = await getObject(getS3Object(clinicalDocumentUri || ''));
-                setClinicalDocument(JSON.parse((await clinicalDocumentRsp?.Body?.transformToString()) || ''));
+                const summaryData = await fetchSummaryJson(conversationName);
+                setSummaryData(summaryData);
 
                 const transcriptFileUri = medicalScribeJob.MedicalScribeOutput?.TranscriptFileUri;
                 const transcriptFileRsp = await getObject(getS3Object(transcriptFileUri || ''));
@@ -96,7 +118,7 @@ export default function Conversation() {
                     <ViewOutput
                         setVisible={setShowOutputModal}
                         transcriptString={JSON.stringify(transcriptFile || 'Loading...', null, 2)}
-                        clinicalDocumentString={JSON.stringify(clinicalDocument || 'Loading...', null, 2)}
+                        clinicalDocumentString={JSON.stringify(summaryData || 'Loading...', null, 2)}
                     />
                 </Suspense>
             )}
@@ -117,7 +139,7 @@ export default function Conversation() {
                     setAudioTime={setAudioTime}
                     setAudioReady={setAudioReady}
                     setShowOutputModal={setShowOutputModal}
-                    clinicalDocument={clinicalDocument}
+                    clinicalDocument={summaryData}
                 />
                 <LeftPanel
                     jobLoading={jobLoading}
@@ -132,7 +154,7 @@ export default function Conversation() {
                 />
                 <RightPanel
                     jobLoading={jobLoading}
-                    clinicalDocument={clinicalDocument}
+                    summaryData={summaryData}
                     transcriptFile={transcriptFile}
                     highlightId={highlightId}
                     setHighlightId={setHighlightId}
@@ -141,6 +163,7 @@ export default function Conversation() {
                     loginId={user?.username || ''}
                     outputBucket={jobDetails?.MedicalScribeOutput || null}
                     clinicName={jobDetails?.Tags?.find((tag) => tag.Key === 'Clinic')?.Value || ''}
+                    refreshSummaryData={() => fetchLatestSummaryData(jobDetails?.MedicalScribeJobName || '')}
                 />
             </Grid>
         </ContentLayout>

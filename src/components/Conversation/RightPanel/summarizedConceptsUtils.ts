@@ -16,17 +16,21 @@ export function processSummarizedSegment(summarizedSegment: string): string {
 }
 
 export async function fetchSummaryJson(jobName: string) {
+    console.log(`Attempting to fetch summary for job: ${jobName}`);
     const s3Client = new S3Client({
         region: 'us-east-1',
         credentials: await getCredentials(),
     });
 
     const [outputBucket, getUploadMetadata] = useS3();
+    console.log(`Output bucket: ${outputBucket}`);
     const key = `${jobName}/summary.json`;
+    console.log(`Fetching from key: ${key}`);
 
     const getParams = {
         Bucket: outputBucket,
         Key: key,
+        ResponseCacheControl: 'no-cache',
     };
 
     try {
@@ -35,7 +39,9 @@ export async function fetchSummaryJson(jobName: string) {
 
         if (response.Body) {
             const str = await response.Body.transformToString();
-            return JSON.parse(str);
+            const parsedData = JSON.parse(str);
+            console.log('Successfully fetched and parsed summary data');
+            return parsedData;
         } else {
             throw new Error('Empty response body');
         }
@@ -55,22 +61,31 @@ export function transformToSegmentExtractedData(
         extractedData: entity.Entities || [],
     }));
 }
-
 /**
- * Merge HealthScribe output with Comprehend Medical output
- * @param sections - HealthScribe output sections
+ * Merge summary.json data with Comprehend Medical output
+ * @param summaryData - summary.json data
  * @param sectionsWithEntities - Comprehend Medical output sections
  * @returns SummarySectionEntityMapping[]
  */
 export function mergeHealthScribeOutputWithComprehendMedicalOutput(
-    sections: IAuraClinicalDocOutputSection[],
+    summaryData: {
+        ClinicalDocumentation: {
+            Sections: {
+                SectionName: string;
+                Summary: {
+                    EvidenceLinks: { SegmentId: string }[];
+                    SummarizedSegment: string;
+                }[];
+            }[];
+        };
+    },
     sectionsWithEntities: ExtractedHealthData[]
 ): SummarySectionEntityMapping[] {
-    if (sections.length === 0 || sectionsWithEntities.length === 0) return [];
+    if (!summaryData.ClinicalDocumentation?.Sections || sectionsWithEntities.length === 0) return [];
 
     const buildSectionsWithExtractedData: SummarySectionEntityMapping[] = [];
 
-    sections.forEach((section) => {
+    summaryData.ClinicalDocumentation.Sections.forEach((section) => {
         const sectionName = section.SectionName;
         const sectionWithEntities = sectionsWithEntities.find((s) => s.SectionName === sectionName);
 
