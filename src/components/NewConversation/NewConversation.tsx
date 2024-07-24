@@ -33,7 +33,6 @@ import {
 } from '@aws-sdk/client-transcribe';
 import { Progress } from '@aws-sdk/lib-storage';
 import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
-import AWS from 'aws-sdk';
 import dayjs from 'dayjs';
 
 import { useS3 } from '@/hooks/useS3';
@@ -333,10 +332,6 @@ export default function NewConversation() {
                     >
                         <SpaceBetween direction="vertical" size="xl">
                             <InputName jobName={jobName} setJobName={setJobName} />
-                            <AudioIdentificationType
-                                audioSelection={audioSelection}
-                                setAudioSelection={setAudioSelection}
-                            />
                             <AudioDetailSettings
                                 audioSelection={audioSelection}
                                 audioDetails={audioDetails}
@@ -408,3 +403,13 @@ export default function NewConversation() {
         </ContentLayout>
     );
 }
+
+
+/* <AudioIdentificationType
+        audioSelection={audioSelection}
+        setAudioSelection={setAudioSelection}
+    />
+
+
+    Removed from above AudioDetailSettings
+*/
