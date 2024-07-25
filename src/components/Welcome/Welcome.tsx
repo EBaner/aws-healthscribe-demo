@@ -23,44 +23,21 @@ function Welcome() {
             return (
                 <TextContent>
                     <p>
-                        Auribus Scribe is a HIPAA-eligible service empowering healthcare software vendors to build
-                        clinical applications that automatically generate clinical notes by analyzing patient-clinician
-                        conversations.
+                      Auribus Scribe is an ambient listening scribe solution for veterinarians powered by AWS HealthScribe. 
+                      Our software automatically generates transcripts and clinical summaries for your patient visits, 
+                      empowering veterinarians to focus their time on caring for pets in need.
                     </p>
-                    <p>Currently this demo allows you to:</p>
+                    <p>Auribus Scribe Currently Allows you to:</p>
                     <ul>
-                        <li>
-                            <Link onFollow={() => navigate('/conversations')}>View HealthScribe results</Link>,
-                            including:
-                        </li>
                         <ul>
-                            <li>Summarized clinical notes</li>
-                            <li>Rich consultation transcripts</li>
-                            <li>Transcript segmentation</li>
-                            <li>Evidence mapping</li>
-                            <li>Structured medical terms</li>
+                            <li>Upload prior recordings or record visits live</li>
+                            <li>View speaker-partitioned transcripts of patient visits</li>
+                            <li>View and edit SOAP formatted summaries of patient visits</li>
+                            <li>Download the audio, transcript and summary</li>
+                            <li>Send customizable discharge notes to patients via email</li>
                         </ul>
-                        <li>
-                            Integrate HealthScribe output with{' '}
-                            <Link external href="https://aws.amazon.com/comprehend/medical/">
-                                Amazon Comprehend Medical
-                            </Link>
-                            , allowing you to:
-                            <ul>
-                                <li>
-                                    Infer medical ontologies (RxNorm, ICD-10-CM, and SNOMED CT) from the HealthScribe
-                                    trancript
-                                </li>
-                                <li>
-                                    Detect medical terminologies and infer medical ontologies from the HealthScribe
-                                    insights output
-                                </li>
-                            </ul>
-                        </li>
-                        <li>
-                            <Link onFollow={() => navigate('/new')}>Submit or record your own audio file</Link> to AWS
-                            HealthScribe.
-                        </li>
+                
+                        
                     </ul>
                 </TextContent>
             );
