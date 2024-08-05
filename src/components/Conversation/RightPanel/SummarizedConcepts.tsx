@@ -118,7 +118,7 @@ export default function SummarizedConcepts({
                 const sectionText = Summary.map((s) => s.SummarizedSegment).join('\n');
 
                 return (
-                    <div key={`insightsSection_${i}`}>
+                    <div key={`insightsSection_${i}  `}>
                         <TextContent>
                             <h3>
                                 {toTitleCase(SectionName.replace(/_/g, ' '))}
@@ -126,7 +126,7 @@ export default function SummarizedConcepts({
                                     <img
                                         src="/copy-to-clipboard.svg"
                                         alt="Copy to clipboard"
-                                        style={{ height: '16px', width: '16px' }}
+                                        style={{ height: '5px', width: '5px' }}
                                     />
                                 </Button>
                             </h3>
