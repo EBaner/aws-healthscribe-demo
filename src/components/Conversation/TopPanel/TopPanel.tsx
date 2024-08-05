@@ -74,8 +74,8 @@ const reformat_json_to_transcript = (json_input: string): string => {
 
     // Create a mapping for span content by segment ID
     const spans_by_segment: { [key: string]: string[] } = {};
-    insights.forEach((insight: any) => {
-        insight.Spans.forEach((span: any) => {
+    insights.forEach((insight: { Spans: { SegmentId: string; Content: string }[] }) => {
+        insight.Spans.forEach((span: { SegmentId: string; Content: string }) => {
             const segment_id = span.SegmentId;
             if (!spans_by_segment[segment_id]) {
                 spans_by_segment[segment_id] = [];
@@ -86,18 +86,18 @@ const reformat_json_to_transcript = (json_input: string): string => {
 
     // Create a structured transcript
     Object.entries(spans_by_segment).forEach(([segment_id, contents]) => {
-        let speaker = "Unknown"; // Default speaker
+        let speaker = 'Unknown'; // Default speaker
         // Infer speaker based on the content
-        if (contents.some(content => ["Doctor", "Clinician", "Nurse"].some(word => content.includes(word)))) {
-            speaker = "Clinician";
-        } else if (contents.some(content => ["Patient", "Client"].some(word => content.includes(word)))) {
-            speaker = "Patient";
+        if (contents.some((content) => ['Doctor', 'Clinician', 'Nurse'].some((word) => content.includes(word)))) {
+            speaker = 'Clinician';
+        } else if (contents.some((content) => ['Patient', 'Client'].some((word) => content.includes(word)))) {
+            speaker = 'Patient';
         }
 
         // Add the contents to the transcript
         transcript.Transcript.push({
             Speaker: speaker,
-            Content: contents.join(" "),
+            Content: contents.join(' '),
         });
     });
 
@@ -303,15 +303,15 @@ export default function TopPanel({
     };
 
     function AudioHeader() {
-        async function openUrl(detail: { id: string}) {
+        async function openUrl(detail: { id: string }) {
             let jobUrl;
             let fileName;
             let fileType;
             let content;
-        
+
             const jobName = jobDetails?.MedicalScribeJobName || 'unnamed_job';
             const safeJobName = jobName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-        
+
             switch (detail.id) {
                 case 'audio':
                     jobUrl = jobDetails?.Media?.MediaFileUri;
@@ -339,7 +339,7 @@ export default function TopPanel({
                     });
                     return;
             }
-        
+
             try {
                 if (detail.id === 'summary') {
                     const file = new Blob([content], { type: fileType });
@@ -369,9 +369,6 @@ export default function TopPanel({
                 });
             }
         }
-        
-
-        
 
         function downloadFile(blob: Blob, fileName: string) {
             const url = window.URL.createObjectURL(blob);

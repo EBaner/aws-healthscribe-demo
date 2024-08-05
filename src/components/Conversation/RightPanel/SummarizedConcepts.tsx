@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
+
+import Button from '@cloudscape-design/components/button';
 import TextContent from '@cloudscape-design/components/text-content';
-import Button from '@cloudscape-design/components/button'; // Import the Button component
+
+// Import the Button component
 import toast from 'react-hot-toast';
 import WaveSurfer from 'wavesurfer.js';
 
@@ -93,7 +96,8 @@ export default function SummarizedConcepts({
     }
 
     function copyToClipboard(text: string) {
-        navigator.clipboard.writeText(text)
+        navigator.clipboard
+            .writeText(text)
             .then(() => {
                 toast.success('Section text copied to clipboard');
             })
@@ -119,10 +123,7 @@ export default function SummarizedConcepts({
                         <TextContent>
                             <h3>
                                 {toTitleCase(SectionName.replace(/_/g, ' '))}
-                                <Button
-                                    variant="primary"
-                                    onClick={() => copyToClipboard(sectionText)}
-                                >
+                                <Button variant="primary" onClick={() => copyToClipboard(sectionText)}>
                                     Copy Section
                                 </Button>
                             </h3>
