@@ -129,7 +129,7 @@ export default function SummarizedConcepts({
                                         justifyContent: 'center',
                                         width: '32px', // Button size
                                         height: '32px', // Button size
-                                        backgroundColor: 'grey',
+                                        backgroundColor: 'white',
                                         borderRadius: '50%', // Makes the button a circle
                                         marginLeft: '8px', // Space between section name and button
                                         padding: '4px', // Adjust padding to control space inside the circle
