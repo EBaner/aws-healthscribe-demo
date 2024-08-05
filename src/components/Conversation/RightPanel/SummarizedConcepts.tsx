@@ -1,18 +1,12 @@
 import React, { useState } from 'react';
-
 import Button from '@cloudscape-design/components/button';
 import TextContent from '@cloudscape-design/components/text-content';
-
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faClipboard } from '@fortawesome/free-solid-svg-icons';
-
 import toast from 'react-hot-toast';
 import WaveSurfer from 'wavesurfer.js';
 
 import { ExtractedHealthData } from '@/types/ComprehendMedical';
 import { ITranscriptSegments } from '@/types/HealthScribe';
 import toTitleCase from '@/utils/toTitleCase';
-
 import { HighlightId } from '../types';
 import { SummaryListDefault } from './SummaryList';
 import { SECTION_ORDER } from './sectionOrder';
@@ -126,7 +120,7 @@ export default function SummarizedConcepts({
                             <h3>
                                 {toTitleCase(SectionName.replace(/_/g, ' '))}
                                 <Button variant="primary" onClick={() => copyToClipboard(sectionText)}>
-                                    <FontAwesomeIcon icon={faClipboard} />
+                                    <img src='/copy-to-clipboard.svg' alt="Copy to clipboard" style={{ height: '16px', width: '16px' }} />
                                 </Button>
                             </h3>
                         </TextContent>

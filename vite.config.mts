@@ -8,17 +8,11 @@ export default defineConfig({
     build: {
         outDir: 'build',
         rollupOptions: {
-            external: ['@cloudscape-design/{}-styles/index.css', '@cloudscape-design/{}-styles', '@fortawesome/fontawesome-svg-core',
-        '@fortawesome/free-solid-svg-icons',
-        '@fortawesome/react-fontawesome'],
+            external: ['@cloudscape-design/{}-styles/index.css', '@cloudscape-design/{}-styles'],
         },
-        
     },
     plugins: [optimizeCssModules(), react()],
     optimizeDeps: {
-        include: ['@fortawesome/fontawesome-svg-core',
-      '@fortawesome/free-solid-svg-icons',
-      '@fortawesome/react-fontawesome'],
         esbuildOptions: {
             define: {
                 global: 'globalThis',
