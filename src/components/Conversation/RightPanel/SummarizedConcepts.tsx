@@ -15,7 +15,9 @@ import { HighlightId } from '../types';
 import { SummaryListDefault } from './SummaryList';
 import { SECTION_ORDER } from './sectionOrder';
 import { transformToSegmentExtractedData } from './summarizedConceptsUtils';
-import 'bootstrap-icons/font/bootstrap-icons.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faClipboard } from '@fortawesome/free-solid-svg-icons';
+
 
 
 type SummaryData = {
@@ -125,13 +127,8 @@ export default function SummarizedConcepts({
                         <TextContent>
                         <h3>
                             {toTitleCase(SectionName.replace(/_/g, ' '))}
-                            <Button
-                                variant="icon"
-                                onClick={() => copyToClipboard(sectionText)}
-                                className="copy-button"
-                                aria-label="Copy to clipboard"
-                            >
-                                <i className="bi bi-clipboard" />
+                            <Button variant="primary" onClick={() => copyToClipboard(sectionText)}>
+                                <FontAwesomeIcon icon={faClipboard} />
                             </Button>
                         </h3>
                         </TextContent>
