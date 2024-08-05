@@ -120,15 +120,31 @@ export default function SummarizedConcepts({
                 return (
                     <div key={`insightsSection_${i}  `}>
                         <TextContent>
-                            <h3>
+                            <h3 style={{ display: 'flex', alignItems: 'center' }}>
                                 {toTitleCase(SectionName.replace(/_/g, ' '))}
-                                <Button variant="normal" onClick={() => copyToClipboard(sectionText)}>
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        width: '32px', // Button size
+                                        height: '32px', // Button size
+                                        backgroundColor: 'grey',
+                                        borderRadius: '50%', // Makes the button a circle
+                                        marginLeft: '8px', // Space between section name and button
+                                        padding: '4px', // Adjust padding to control space inside the circle
+                                    }}
+                                    onClick={() => copyToClipboard(sectionText)}
+                                >
                                     <img
                                         src="/copy-to-clipboard.svg"
                                         alt="Copy to clipboard"
-                                        style={{ height: '5px', width: '5px' }}
+                                        style={{
+                                            height: '16px',
+                                            width: '16px',
+                                        }}
                                     />
-                                </Button>
+                                </div>
                             </h3>
                         </TextContent>
                         <SummaryListDefault
