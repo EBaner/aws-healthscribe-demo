@@ -62,6 +62,48 @@ type TopPanelProps = {
     clinicalDocument: IAuraClinicalDocOutput | null;
 };
 
+const reformat_json_to_transcript = (json_input: string): string => {
+    // Load JSON data
+    const data = JSON.parse(json_input);
+
+    // Initialize transcript dictionary
+    const transcript = { Transcript: [] as { Speaker: string; Content: string }[] };
+
+    // Extract insights
+    const insights = data?.Conversation?.ClinicalInsights || [];
+
+    // Create a mapping for span content by segment ID
+    const spans_by_segment: { [key: string]: string[] } = {};
+    insights.forEach((insight: any) => {
+        insight.Spans.forEach((span: any) => {
+            const segment_id = span.SegmentId;
+            if (!spans_by_segment[segment_id]) {
+                spans_by_segment[segment_id] = [];
+            }
+            spans_by_segment[segment_id].push(span.Content);
+        });
+    });
+
+    // Create a structured transcript
+    Object.entries(spans_by_segment).forEach(([segment_id, contents]) => {
+        let speaker = "Unknown"; // Default speaker
+        // Infer speaker based on the content
+        if (contents.some(content => ["Doctor", "Clinician", "Nurse"].some(word => content.includes(word)))) {
+            speaker = "Clinician";
+        } else if (contents.some(content => ["Patient", "Client"].some(word => content.includes(word)))) {
+            speaker = "Patient";
+        }
+
+        // Add the contents to the transcript
+        transcript.Transcript.push({
+            Speaker: speaker,
+            Content: contents.join(" "),
+        });
+    });
+
+    return JSON.stringify(transcript, null, 2);
+};
+
 export default function TopPanel({
     jobLoading,
     jobDetails,
@@ -261,15 +303,15 @@ export default function TopPanel({
     };
 
     function AudioHeader() {
-        async function openUrl(detail: { id: string }) {
-            let jobUrl: string | undefined;
-            let fileName: string;
-            let fileType: string;
-            let content: string | Blob;
-
+        async function openUrl(detail: { id: string}) {
+            let jobUrl;
+            let fileName;
+            let fileType;
+            let content;
+        
             const jobName = jobDetails?.MedicalScribeJobName || 'unnamed_job';
             const safeJobName = jobName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-
+        
             switch (detail.id) {
                 case 'audio':
                     jobUrl = jobDetails?.Media?.MediaFileUri;
@@ -297,7 +339,7 @@ export default function TopPanel({
                     });
                     return;
             }
-
+        
             try {
                 if (detail.id === 'summary') {
                     const file = new Blob([content], { type: fileType });
@@ -306,8 +348,15 @@ export default function TopPanel({
                     const presignedUrl = await getPresignedUrl(getS3Object(jobUrl));
                     const response = await fetch(presignedUrl);
                     const blob = await response.blob();
-                    const file = new Blob([blob], { type: fileType });
-                    downloadFile(file, fileName);
+                    if (detail.id === 'transcript') {
+                        const text = await blob.text();
+                        const formattedText = reformat_json_to_transcript(text);
+                        const file = new Blob([formattedText], { type: fileType });
+                        downloadFile(file, fileName);
+                    } else {
+                        const file = new Blob([blob], { type: fileType });
+                        downloadFile(file, fileName);
+                    }
                 } else {
                     throw new Error('Job URL is undefined');
                 }
@@ -320,14 +369,19 @@ export default function TopPanel({
                 });
             }
         }
+        
 
-        function downloadFile(file: Blob, fileName: string) {
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(file);
-            link.download = fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        
+
+        function downloadFile(blob: Blob, fileName: string) {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
         }
 
         return (

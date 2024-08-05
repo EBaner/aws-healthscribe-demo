@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-
 import TextContent from '@cloudscape-design/components/text-content';
-
+import Button from '@cloudscape-design/components/button'; // Import the Button component
 import toast from 'react-hot-toast';
 import WaveSurfer from 'wavesurfer.js';
 
@@ -93,6 +92,16 @@ export default function SummarizedConcepts({
         }
     }
 
+    function copyToClipboard(text: string) {
+        navigator.clipboard.writeText(text)
+            .then(() => {
+                toast.success('Section text copied to clipboard');
+            })
+            .catch(() => {
+                toast.error('Failed to copy text');
+            });
+    }
+
     return (
         <>
             {summaryData.ClinicalDocumentation.Sections.sort(
@@ -103,10 +112,20 @@ export default function SummarizedConcepts({
                     sectionExtractedHealthData?.ExtractedEntities
                 );
 
+                const sectionText = Summary.map((s) => s.SummarizedSegment).join('\n');
+
                 return (
                     <div key={`insightsSection_${i}`}>
                         <TextContent>
-                            <h3>{toTitleCase(SectionName.replace(/_/g, ' '))}</h3>
+                            <h3>
+                                {toTitleCase(SectionName.replace(/_/g, ' '))}
+                                <Button
+                                    variant="primary"
+                                    onClick={() => copyToClipboard(sectionText)}
+                                >
+                                    Copy Section
+                                </Button>
+                            </h3>
                         </TextContent>
                         <SummaryListDefault
                             sectionName={SectionName}
