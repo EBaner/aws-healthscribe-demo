@@ -3,7 +3,9 @@ import React, { useState } from 'react';
 import Button from '@cloudscape-design/components/button';
 import TextContent from '@cloudscape-design/components/text-content';
 
-// Import the Button component
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faClipboard } from '@fortawesome/free-solid-svg-icons';
+
 import toast from 'react-hot-toast';
 import WaveSurfer from 'wavesurfer.js';
 
@@ -15,10 +17,6 @@ import { HighlightId } from '../types';
 import { SummaryListDefault } from './SummaryList';
 import { SECTION_ORDER } from './sectionOrder';
 import { transformToSegmentExtractedData } from './summarizedConceptsUtils';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faClipboard } from '@fortawesome/free-solid-svg-icons';
-
-
 
 type SummaryData = {
     ClinicalDocumentation: {
@@ -125,12 +123,12 @@ export default function SummarizedConcepts({
                 return (
                     <div key={`insightsSection_${i}`}>
                         <TextContent>
-                        <h3>
-                            {toTitleCase(SectionName.replace(/_/g, ' '))}
-                            <Button variant="primary" onClick={() => copyToClipboard(sectionText)}>
-                                <FontAwesomeIcon icon={faClipboard} />
-                            </Button>
-                        </h3>
+                            <h3>
+                                {toTitleCase(SectionName.replace(/_/g, ' '))}
+                                <Button variant="primary" onClick={() => copyToClipboard(sectionText)}>
+                                    <FontAwesomeIcon icon={faClipboard} />
+                                </Button>
+                            </h3>
                         </TextContent>
                         <SummaryListDefault
                             sectionName={SectionName}
