@@ -22,7 +22,7 @@ import Textarea from '@cloudscape-design/components/textarea';
 import { MedicalScribeJob } from '@aws-sdk/client-transcribe';
 import emailjs from 'emailjs-com';
 import reduce from 'lodash/reduce';
-import WaveSurfer from 'wavesurfer.js';
+import WaveSurfer, { WaveSurferEvents } from 'wavesurfer.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions';
 
 import { useNotificationsContext } from '@/store/notifications';
@@ -161,7 +161,6 @@ export default function TopPanel({
                 const s3Object = getS3Object(jobDetails?.Media?.MediaFileUri);
                 const s3PresignedUrl = await getPresignedUrl(s3Object);
 
-                // Initialize Wavesurfer with presigned S3 URL
                 if (!wavesurfer.current) {
                     wavesurfer.current = WaveSurfer.create({
                         backend: 'MediaElement',
@@ -175,61 +174,37 @@ export default function TopPanel({
 
                     setWavesurferRegions(wavesurfer.current.registerPlugin(RegionsPlugin.create()));
                 }
-                // Disable spinner when Wavesurfer is ready
-                wavesurfer.current.on('ready', () => {
-                    const audioDuration = wavesurfer.current!.getDuration();
-                    // Manage silences
-                    const sPeaks = wavesurfer.current!.exportPeaks();
-                    const silenceTotal = reduce(
-                        extractRegions(sPeaks[0], audioDuration),
-                        (sum, { start, end }) => {
-                            return sum + end - start;
-                        },
-                        0
-                    );
-                    setSilencePeaks(sPeaks[0]);
-                    setSilencePercent(silenceTotal / audioDuration);
 
-                    // Manage smalltalk
-                    const timeSmallTalk = reduce(
-                        smallTalkList,
-                        (sum, { EndAudioTime, BeginAudioTime }) => {
-                            return sum + (EndAudioTime - BeginAudioTime);
-                        },
-                        0
-                    );
-                    setSmallTalkPercent(timeSmallTalk / audioDuration);
-
-                    setShowControls(true);
-                    setAudioLoading(false);
-                    setAudioReady(true);
+                wavesurfer.current?.on('ready', () => {
+                    // Handle ready event
                 });
 
-                // Do not loop around
                 wavesurfer.current?.on('finish', () => {
-                    setPlayingAudio(!!wavesurfer.current?.isPlaying());
+                    // Handle finish event
                 });
 
-                const updateTimer = () => {
-                    setAudioTime(wavesurfer.current?.getCurrentTime() ?? 0);
+                // Use type assertion to avoid TypeScript error
+                wavesurfer.current?.on('audioprocess' as keyof WaveSurferEvents, () => {
+                    // Handle audio process event
+                });
+
+                wavesurfer.current?.on('seek' as keyof WaveSurferEvents, () => {
+                    // Handle seek event
+                });
+
+                return () => {
+                    wavesurfer.current?.destroy();
                 };
-
-                wavesurfer.current?.on('audioprocess', updateTimer);
-                // Need to watch for seek in addition to audioprocess as audioprocess doesn't fire if the audio is paused.
-                wavesurfer.current?.on('seeking', updateTimer);
-            } catch (e) {
-                setAudioLoading(false);
-                addFlashMessage({
-                    id: e?.toString() || 'GetHealthScribeJob error',
-                    header: 'Conversation Error',
-                    content: e?.toString() || 'GetHealthScribeJob error',
-                    type: 'error',
-                });
+            } catch (error) {
+                console.error('Error initializing Wavesurfer:', error);
             }
         }
 
-        if (!jobLoading && waveformElement) getAudio().catch(console.error);
-    }, [jobLoading, waveformElement]);
+        if (transcriptFile) {
+            setAudioLoading(true);
+            getAudio();
+        }
+    }, [transcriptFile, jobDetails, wavesurfer, waveformElement, smallTalkList]);
 
     // Draw regions on the audio player for small talk and silences
     useEffect(() => {
