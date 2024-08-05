@@ -26,6 +26,7 @@
         "ace-builds": "^1.33.0",
         "aws-amplify": "^6.3.8",
         "aws-sdk": "^2.1658.0",
+        "bootstrap-icons": "^1.11.3",
         "crunker": "^2.4.0",
         "dayjs": "^1.11.10",
         "emailjs-com": "^3.2.0",

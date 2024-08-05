@@ -15,6 +15,8 @@ import { HighlightId } from '../types';
 import { SummaryListDefault } from './SummaryList';
 import { SECTION_ORDER } from './sectionOrder';
 import { transformToSegmentExtractedData } from './summarizedConceptsUtils';
+import 'bootstrap-icons/font/bootstrap-icons.css';
+
 
 type SummaryData = {
     ClinicalDocumentation: {
@@ -121,18 +123,17 @@ export default function SummarizedConcepts({
                 return (
                     <div key={`insightsSection_${i}`}>
                         <TextContent>
-                            <h3>
-                                {toTitleCase(SectionName.replace(/_/g, ' '))}
-                                <Button
-                                    variant="icon"
-                                    onClick={() => copyToClipboard(sectionText)}
-                                    className="copy-button"
-                                    aria-label="Copy to clipboard"
-                                    >
-                                    <i className="bi bi-clipboard" />
-                                </Button>
-
-                            </h3>
+                        <h3>
+                            {toTitleCase(SectionName.replace(/_/g, ' '))}
+                            <Button
+                                variant="icon"
+                                onClick={() => copyToClipboard(sectionText)}
+                                className="copy-button"
+                                aria-label="Copy to clipboard"
+                            >
+                                <i className="bi bi-clipboard" />
+                            </Button>
+                        </h3>
                         </TextContent>
                         <SummaryListDefault
                             sectionName={SectionName}
