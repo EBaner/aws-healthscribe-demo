@@ -123,9 +123,15 @@ export default function SummarizedConcepts({
                         <TextContent>
                             <h3>
                                 {toTitleCase(SectionName.replace(/_/g, ' '))}
-                                <Button variant="primary" onClick={() => copyToClipboard(sectionText)}>
-                                    Copy Section
+                                <Button
+                                    variant="icon"
+                                    onClick={() => copyToClipboard(sectionText)}
+                                    className="copy-button"
+                                    aria-label="Copy to clipboard"
+                                    >
+                                    <i className="bi bi-clipboard" />
                                 </Button>
+
                             </h3>
                         </TextContent>
                         <SummaryListDefault

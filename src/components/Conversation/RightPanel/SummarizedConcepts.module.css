@@ -50,3 +50,15 @@
     border: none;
     margin-right: 10px;
 }
+.copy-button {
+    padding: 0;
+    width: 32px; /* Adjust width as needed */
+    height: 32px; /* Adjust height as needed */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.copy-button .bi-clipboard {
+    font-size: 16px; /* Adjust icon size as needed */
+}
