@@ -122,7 +122,7 @@ export default function SummarizedConcepts({
                         <TextContent>
                             <h3>
                                 {toTitleCase(SectionName.replace(/_/g, ' '))}
-                                <Button variant="icon" onClick={() => copyToClipboard(sectionText)}>
+                                <Button variant="normal" onClick={() => copyToClipboard(sectionText)}>
                                     <img
                                         src="/copy-to-clipboard.svg"
                                         alt="Copy to clipboard"
