@@ -22,7 +22,7 @@ import Textarea from '@cloudscape-design/components/textarea';
 import { MedicalScribeJob } from '@aws-sdk/client-transcribe';
 import emailjs from 'emailjs-com';
 import reduce from 'lodash/reduce';
-import WaveSurfer, { WaveSurferEvents } from 'wavesurfer.js';
+import WaveSurfer from 'wavesurfer.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions';
 
 import { useNotificationsContext } from '@/store/notifications';
@@ -60,48 +60,6 @@ type TopPanelProps = {
     setAudioReady: React.Dispatch<React.SetStateAction<boolean>>;
     setShowOutputModal: React.Dispatch<React.SetStateAction<boolean>>;
     clinicalDocument: IAuraClinicalDocOutput | null;
-};
-
-const reformat_json_to_transcript = (json_input: string): string => {
-    // Load JSON data
-    const data = JSON.parse(json_input);
-
-    // Initialize transcript dictionary
-    const transcript = { Transcript: [] as { Speaker: string; Content: string }[] };
-
-    // Extract insights
-    const insights = data?.Conversation?.ClinicalInsights || [];
-
-    // Create a mapping for span content by segment ID
-    const spans_by_segment: { [key: string]: string[] } = {};
-    insights.forEach((insight: { Spans: { SegmentId: string; Content: string }[] }) => {
-        insight.Spans.forEach((span: { SegmentId: string; Content: string }) => {
-            const segment_id = span.SegmentId;
-            if (!spans_by_segment[segment_id]) {
-                spans_by_segment[segment_id] = [];
-            }
-            spans_by_segment[segment_id].push(span.Content);
-        });
-    });
-
-    // Create a structured transcript
-    Object.entries(spans_by_segment).forEach(([segment_id, contents]) => {
-        let speaker = 'Unknown'; // Default speaker
-        // Infer speaker based on the content
-        if (contents.some((content) => ['Doctor', 'Clinician', 'Nurse'].some((word) => content.includes(word)))) {
-            speaker = 'Clinician';
-        } else if (contents.some((content) => ['Patient', 'Client'].some((word) => content.includes(word)))) {
-            speaker = 'Patient';
-        }
-
-        // Add the contents to the transcript
-        transcript.Transcript.push({
-            Speaker: speaker,
-            Content: contents.join(' '),
-        });
-    });
-
-    return JSON.stringify(transcript, null, 2);
 };
 
 export default function TopPanel({
@@ -161,6 +119,7 @@ export default function TopPanel({
                 const s3Object = getS3Object(jobDetails?.Media?.MediaFileUri);
                 const s3PresignedUrl = await getPresignedUrl(s3Object);
 
+                // Initialize Wavesurfer with presigned S3 URL
                 if (!wavesurfer.current) {
                     wavesurfer.current = WaveSurfer.create({
                         backend: 'MediaElement',
@@ -174,37 +133,61 @@ export default function TopPanel({
 
                     setWavesurferRegions(wavesurfer.current.registerPlugin(RegionsPlugin.create()));
                 }
+                // Disable spinner when Wavesurfer is ready
+                wavesurfer.current.on('ready', () => {
+                    const audioDuration = wavesurfer.current!.getDuration();
+                    // Manage silences
+                    const sPeaks = wavesurfer.current!.exportPeaks();
+                    const silenceTotal = reduce(
+                        extractRegions(sPeaks[0], audioDuration),
+                        (sum, { start, end }) => {
+                            return sum + end - start;
+                        },
+                        0
+                    );
+                    setSilencePeaks(sPeaks[0]);
+                    setSilencePercent(silenceTotal / audioDuration);
 
-                wavesurfer.current?.on('ready', () => {
-                    // Handle ready event
+                    // Manage smalltalk
+                    const timeSmallTalk = reduce(
+                        smallTalkList,
+                        (sum, { EndAudioTime, BeginAudioTime }) => {
+                            return sum + (EndAudioTime - BeginAudioTime);
+                        },
+                        0
+                    );
+                    setSmallTalkPercent(timeSmallTalk / audioDuration);
+
+                    setShowControls(true);
+                    setAudioLoading(false);
+                    setAudioReady(true);
                 });
 
+                // Do not loop around
                 wavesurfer.current?.on('finish', () => {
-                    // Handle finish event
+                    setPlayingAudio(!!wavesurfer.current?.isPlaying());
                 });
 
-                // Use type assertion to avoid TypeScript error
-                wavesurfer.current?.on('audioprocess' as keyof WaveSurferEvents, () => {
-                    // Handle audio process event
-                });
-
-                wavesurfer.current?.on('seek' as keyof WaveSurferEvents, () => {
-                    // Handle seek event
-                });
-
-                return () => {
-                    wavesurfer.current?.destroy();
+                const updateTimer = () => {
+                    setAudioTime(wavesurfer.current?.getCurrentTime() ?? 0);
                 };
-            } catch (error) {
-                console.error('Error initializing Wavesurfer:', error);
+
+                wavesurfer.current?.on('audioprocess', updateTimer);
+                // Need to watch for seek in addition to audioprocess as audioprocess doesn't fire if the audio is paused.
+                wavesurfer.current?.on('seeking', updateTimer);
+            } catch (e) {
+                setAudioLoading(false);
+                addFlashMessage({
+                    id: e?.toString() || 'GetHealthScribeJob error',
+                    header: 'Conversation Error',
+                    content: e?.toString() || 'GetHealthScribeJob error',
+                    type: 'error',
+                });
             }
         }
 
-        if (transcriptFile) {
-            setAudioLoading(true);
-            getAudio();
-        }
-    }, [transcriptFile, jobDetails, wavesurfer, waveformElement, smallTalkList]);
+        if (!jobLoading && waveformElement) getAudio().catch(console.error);
+    }, [jobLoading, waveformElement]);
 
     // Draw regions on the audio player for small talk and silences
     useEffect(() => {
@@ -279,10 +262,10 @@ export default function TopPanel({
 
     function AudioHeader() {
         async function openUrl(detail: { id: string }) {
-            let jobUrl;
-            let fileName;
-            let fileType;
-            let content;
+            let jobUrl: string | undefined;
+            let fileName: string;
+            let fileType: string;
+            let content: string | Blob;
 
             const jobName = jobDetails?.MedicalScribeJobName || 'unnamed_job';
             const safeJobName = jobName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
@@ -323,15 +306,8 @@ export default function TopPanel({
                     const presignedUrl = await getPresignedUrl(getS3Object(jobUrl));
                     const response = await fetch(presignedUrl);
                     const blob = await response.blob();
-                    if (detail.id === 'transcript') {
-                        const text = await blob.text();
-                        const formattedText = reformat_json_to_transcript(text);
-                        const file = new Blob([formattedText], { type: fileType });
-                        downloadFile(file, fileName);
-                    } else {
-                        const file = new Blob([blob], { type: fileType });
-                        downloadFile(file, fileName);
-                    }
+                    const file = new Blob([blob], { type: fileType });
+                    downloadFile(file, fileName);
                 } else {
                     throw new Error('Job URL is undefined');
                 }
@@ -345,15 +321,13 @@ export default function TopPanel({
             }
         }
 
-        function downloadFile(blob: Blob, fileName: string) {
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = fileName;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
+        function downloadFile(file: Blob, fileName: string) {
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(file);
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         return (
