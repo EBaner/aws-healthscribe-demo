@@ -187,7 +187,6 @@ export default function TopPanel({
                 wavesurfer.current.on('finish', () => {
                     setPlayingAudio(false);
                 });
-
             } catch (e) {
                 setAudioLoading(false);
                 addFlashMessage({
@@ -205,7 +204,6 @@ export default function TopPanel({
             worker.terminate();
         };
     }, [jobLoading, waveformElement]);
-
 
     useEffect(() => {
         worker.onmessage = (e) => {
