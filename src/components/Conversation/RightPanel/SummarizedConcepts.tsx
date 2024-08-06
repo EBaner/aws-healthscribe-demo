@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 
+import Button from '@cloudscape-design/components/button';
 import TextContent from '@cloudscape-design/components/text-content';
 
 import toast from 'react-hot-toast';
@@ -93,6 +94,17 @@ export default function SummarizedConcepts({
         }
     }
 
+    function copyToClipboard(text: string) {
+        navigator.clipboard
+            .writeText(text)
+            .then(() => {
+                toast.success('Section text copied to clipboard');
+            })
+            .catch(() => {
+                toast.error('Failed to copy text');
+            });
+    }
+
     return (
         <>
             {summaryData.ClinicalDocumentation.Sections.sort(
@@ -103,10 +115,37 @@ export default function SummarizedConcepts({
                     sectionExtractedHealthData?.ExtractedEntities
                 );
 
+                const sectionText = Summary.map((s) => s.SummarizedSegment).join('\n');
+
                 return (
-                    <div key={`insightsSection_${i}`}>
+                    <div key={`insightsSection_${i}  `}>
                         <TextContent>
-                            <h3>{toTitleCase(SectionName.replace(/_/g, ' '))}</h3>
+                            <h3 style={{ display: 'flex', alignItems: 'center' }}>
+                                {toTitleCase(SectionName.replace(/_/g, ' '))}
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        width: '32px', // Button size
+                                        height: '32px', // Button size
+                                        backgroundColor: 'white',
+                                        borderRadius: '50%', // Makes the button a circle
+                                        marginLeft: '8px', // Space between section name and button
+                                        padding: '4px', // Adjust padding to control space inside the circle
+                                    }}
+                                    onClick={() => copyToClipboard(sectionText)}
+                                >
+                                    <img
+                                        src="/copy-to-clipboard.svg"
+                                        alt="Copy to clipboard"
+                                        style={{
+                                            height: '16px',
+                                            width: '16px',
+                                        }}
+                                    />
+                                </div>
+                            </h3>
                         </TextContent>
                         <SummaryListDefault
                             sectionName={SectionName}
