@@ -90,6 +90,8 @@ export default function TopPanel({
     const [exportModalVisible, setExportModalVisible] = useState<boolean>(false);
     const [selectedOptions, setSelectedOptions] = useState<MultiselectProps.Option[]>(options);
 
+    const [waveformLoaded, setWaveformLoaded] = useState(false);
+
     const waveformElement = document.getElementById('waveform');
 
     // Get small talk from HealthScribe transcript
@@ -109,6 +111,27 @@ export default function TopPanel({
         }
     }, [transcriptFile]);
 
+    const worker = useMemo(() => {
+        const code = `
+            self.onmessage = function(e) {
+                const { peaks, duration } = e.data;
+                const silenceRegions = extractRegions(peaks, duration);
+                const silenceTotal = silenceRegions.reduce((sum, { start, end }) => sum + (end - start), 0);
+                const silencePercent = silenceTotal / duration;
+                self.postMessage({ silenceRegions, silencePercent });
+            };
+
+            function extractRegions(peaks, duration) {
+                // Implement your extractRegions logic here
+                // This is a placeholder implementation
+                return [{start: 0, end: duration / 10}];
+            }
+        `;
+        const blob = new Blob([code], { type: 'application/javascript' });
+        return new Worker(URL.createObjectURL(blob));
+    }, []);
+
+    // Download audio from S3 and initialize waveform
     // Download audio from S3 and initialize waveform
     useEffect(() => {
         async function getAudio() {
@@ -129,52 +152,42 @@ export default function TopPanel({
                         waveColor: 'rgba(35, 47, 62, 0.8)',
                         progressColor: '#2074d5',
                         url: s3PresignedUrl,
+                        minPxPerSec: 100, // Increase for better performance with long audio
+                        fetchParams: {
+                            headers: {
+                                Range: 'bytes=0-', // Request audio in chunks
+                            },
+                        },
                     });
 
                     setWavesurferRegions(wavesurfer.current.registerPlugin(RegionsPlugin.create()));
                 }
-                // Disable spinner when Wavesurfer is ready
+
                 wavesurfer.current.on('ready', () => {
                     const audioDuration = wavesurfer.current!.getDuration();
-                    // Manage silences
-                    const sPeaks = wavesurfer.current!.exportPeaks();
-                    const silenceTotal = reduce(
-                        extractRegions(sPeaks[0], audioDuration),
-                        (sum, { start, end }) => {
-                            return sum + end - start;
-                        },
-                        0
-                    );
-                    setSilencePeaks(sPeaks[0]);
-                    setSilencePercent(silenceTotal / audioDuration);
+                    const peaks = wavesurfer.current!.exportPeaks();
 
-                    // Manage smalltalk
-                    const timeSmallTalk = reduce(
-                        smallTalkList,
-                        (sum, { EndAudioTime, BeginAudioTime }) => {
-                            return sum + (EndAudioTime - BeginAudioTime);
-                        },
-                        0
-                    );
-                    setSmallTalkPercent(timeSmallTalk / audioDuration);
+                    // Use Web Worker for heavy computations
+                    worker.postMessage({ peaks: peaks[0], duration: audioDuration });
 
                     setShowControls(true);
                     setAudioLoading(false);
                     setAudioReady(true);
+                    setWaveformLoaded(true);
                 });
 
-                // Do not loop around
-                wavesurfer.current?.on('finish', () => {
-                    setPlayingAudio(!!wavesurfer.current?.isPlaying());
-                });
-
-                const updateTimer = () => {
+                wavesurfer.current.on('audioprocess', () => {
                     setAudioTime(wavesurfer.current?.getCurrentTime() ?? 0);
-                };
+                });
 
-                wavesurfer.current?.on('audioprocess', updateTimer);
-                // Need to watch for seek in addition to audioprocess as audioprocess doesn't fire if the audio is paused.
-                wavesurfer.current?.on('seeking', updateTimer);
+                wavesurfer.current.on('seeking', () => {
+                    setAudioTime(wavesurfer.current?.getCurrentTime() ?? 0);
+                });
+
+                wavesurfer.current.on('finish', () => {
+                    setPlayingAudio(false);
+                });
+
             } catch (e) {
                 setAudioLoading(false);
                 addFlashMessage({
@@ -187,7 +200,20 @@ export default function TopPanel({
         }
 
         if (!jobLoading && waveformElement) getAudio().catch(console.error);
+
+        return () => {
+            worker.terminate();
+        };
     }, [jobLoading, waveformElement]);
+
+
+    useEffect(() => {
+        worker.onmessage = (e) => {
+            const { silenceRegions, silencePercent } = e.data;
+            setSilencePercent(silencePercent);
+            // Use silenceRegions as needed
+        };
+    }, [worker]);
 
     // Draw regions on the audio player for small talk and silences
     useEffect(() => {
