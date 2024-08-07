@@ -153,7 +153,6 @@ export default function TopPanel({
                         progressColor: '#2074d5',
                         url: s3PresignedUrl,
                         minPxPerSec: 100, // Increase for better performance with long audio
-                    
                     });
 
                     setWavesurferRegions(wavesurfer.current.registerPlugin(RegionsPlugin.create()));
@@ -286,10 +285,10 @@ export default function TopPanel({
             let fileName: string;
             let fileType: string;
             let content: string | Blob;
-        
+
             const jobName = jobDetails?.MedicalScribeJobName || 'unnamed_job';
             const safeJobName = jobName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-        
+
             switch (detail.id) {
                 case 'audio':
                     jobUrl = jobDetails?.Media?.MediaFileUri;
@@ -317,7 +316,7 @@ export default function TopPanel({
                     });
                     return;
             }
-        
+
             try {
                 if (detail.id === 'summary') {
                     const file = new Blob([content], { type: fileType });
@@ -342,12 +341,12 @@ export default function TopPanel({
         async function downloadLargeFile(fileUrl: string, fileName: string) {
             try {
                 const response = await fetch(fileUrl);
-                
+
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                
+
                 // Get the content type from the response
                 const contentType = response.headers.get('content-type') || 'application/octet-stream';
-                
+
                 // Create a ReadableStream from the response body
                 const reader = response.body!.getReader();
                 const stream = new ReadableStream({
@@ -363,15 +362,15 @@ export default function TopPanel({
                                 return pump();
                             });
                         }
-                    }
+                    },
                 });
-            
+
                 // Create a new response with the stream
                 const newResponse = new Response(stream);
-            
+
                 // Get the blob from the new response
                 const blob = await newResponse.blob();
-            
+
                 // Create object URL and trigger download
                 const objectUrl = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -392,7 +391,6 @@ export default function TopPanel({
                 }
             }
         }
-        
 
         function downloadFile(file: Blob, fileName: string) {
             const link = document.createElement('a');

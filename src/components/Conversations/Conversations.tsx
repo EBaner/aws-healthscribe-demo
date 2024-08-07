@@ -162,10 +162,11 @@ export default function Conversations() {
                                 const clinicTag = jobDetails?.Tags?.find((tag) => tag.Key === 'Clinic');
 
                                 const isClinicJob = clinicTag?.Value === clinicName;
+                                const isUserJob = userTag?.Value === loginId;
                                 console.log(
                                     `Job: ${job.MedicalScribeJobName}, UserTag: ${userTag?.Value}, ClinicTag: ${clinicTag?.Value}, IsClinicJob: ${isClinicJob}`
                                 );
-                                return isClinicJob ? job : null;
+                                return isClinicJob || isUserJob ? job : null;
                             } catch (error) {
                                 console.error(`Failed to fetch details for job ${job.MedicalScribeJobName}:`, error);
                                 return null;

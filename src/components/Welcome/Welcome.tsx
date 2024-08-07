@@ -23,9 +23,9 @@ function Welcome() {
             return (
                 <TextContent>
                     <p>
-                      Auribus Scribe is an ambient listening scribe solution for veterinarians powered by AWS HealthScribe. 
-                      Our software automatically generates transcripts and clinical summaries for your patient visits, 
-                      empowering veterinarians to focus their time on caring for pets in need.
+                        Auribus Scribe is an ambient listening scribe solution for veterinarians powered by AWS
+                        HealthScribe. Our software automatically generates transcripts and clinical summaries for your
+                        patient visits, empowering veterinarians to focus their time on caring for pets in need.
                     </p>
                     <p>Auribus Scribe Currently Allows you to:</p>
                     <ul>
@@ -36,8 +36,6 @@ function Welcome() {
                             <li>Download the audio, transcript and summary</li>
                             <li>Send customizable discharge notes to patients via email</li>
                         </ul>
-                
-                        
                     </ul>
                 </TextContent>
             );
