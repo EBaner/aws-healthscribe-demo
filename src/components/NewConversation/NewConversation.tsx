@@ -136,7 +136,7 @@ export default function NewConversation() {
         const loadedMb = Math.round((loaded || 1) / 1024 / 1024);
         const totalMb = Math.round((total || 1) / 1024 / 1024);
         updateProgressBar({
-            id: `New HealthScribe Job: ${jobName}`,
+            id: `New HealthScribe Job: ${jobName.replace(/\s+/g, '_')}`,
             value: value,
             description: `Uploaded part ${part}, ${loadedMb}MB / ${totalMb}MB`,
         });
@@ -195,7 +195,7 @@ export default function NewConversation() {
                           },
                       };
 
-            const uploadLocation = getUploadMetadata(jobName);
+            const uploadLocation = getUploadMetadata(jobName.replace(/\s+/g, '_'));
             const s3Location = {
                 Bucket: uploadLocation.bucket,
                 Key: `${uploadLocation.key}/${(filePath as File).name}`,
@@ -207,7 +207,7 @@ export default function NewConversation() {
             };
 
             const jobParams: StartMedicalScribeJobRequest = {
-                MedicalScribeJobName: jobName,
+                MedicalScribeJobName: jobName.replace(/\s+/g, '_'),
                 DataAccessRoleArn: amplifyCustom.healthScribeServiceRole,
                 OutputBucketName: outputBucket,
                 Media: {
@@ -229,7 +229,7 @@ export default function NewConversation() {
 
             // Add initial progress flash message
             updateProgressBar({
-                id: `New HealthScribe Job: ${jobName}`,
+                id: `New HealthScribe Job: ${jobName.replace(/\s+/g, '_')}`,
                 value: 0,
                 description: 'Upload to S3 in progress...',
             });
@@ -243,7 +243,7 @@ export default function NewConversation() {
                 });
             } catch (e) {
                 updateProgressBar({
-                    id: `New HealthScribe Job: ${jobName}`,
+                    id: `New HealthScribe Job: ${jobName.replace(/\s+/g, '_')}`,
                     type: 'error',
                     value: 0,
                     description: 'Uploading files to S3 failed',
@@ -258,7 +258,7 @@ export default function NewConversation() {
                 const startJob = await startMedicalScribeJob(jobParams);
                 if (startJob?.MedicalScribeJob?.MedicalScribeJobStatus) {
                     updateProgressBar({
-                        id: `New HealthScribe Job: ${jobName}`,
+                        id: `New HealthScribe Job: ${jobName.replace(/\s+/g, '_')}`,
                         type: 'success',
                         value: 100,
                         description: 'HealthScribe job submitted',
@@ -270,7 +270,7 @@ export default function NewConversation() {
                     navigate('/conversations');
                 } else {
                     updateProgressBar({
-                        id: `New HealthScribe Job: ${jobName}`,
+                        id: `New HealthScribe Job: ${jobName.replace(/\s+/g, '_')}`,
                         type: 'info',
                         value: 100,
                         description: 'Unable to confirm HealthScribe job submission',
@@ -279,7 +279,7 @@ export default function NewConversation() {
                 }
             } catch (e) {
                 updateProgressBar({
-                    id: `New HealthScribe Job: ${jobName}`,
+                    id: `New HealthScribe Job: ${jobName.replace(/\s+/g, '_')}`,
                     type: 'error',
                     value: 0,
                     description: 'Submitting job to HealthScribe failed',
