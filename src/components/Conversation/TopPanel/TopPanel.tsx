@@ -153,11 +153,7 @@ export default function TopPanel({
                         progressColor: '#2074d5',
                         url: s3PresignedUrl,
                         minPxPerSec: 100, // Increase for better performance with long audio
-                        fetchParams: {
-                            headers: {
-                                Range: 'bytes=0-', // Request audio in chunks
-                            },
-                        },
+                    
                     });
 
                     setWavesurferRegions(wavesurfer.current.registerPlugin(RegionsPlugin.create()));
@@ -290,15 +286,15 @@ export default function TopPanel({
             let fileName: string;
             let fileType: string;
             let content: string | Blob;
-
+        
             const jobName = jobDetails?.MedicalScribeJobName || 'unnamed_job';
             const safeJobName = jobName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-
+        
             switch (detail.id) {
                 case 'audio':
                     jobUrl = jobDetails?.Media?.MediaFileUri;
                     fileName = `${safeJobName}_audio.mp3`;
-                    fileType = 'audio/mpeg';
+                    fileType = 'audio/mpeg'; // We'll detect the actual type from the response
                     content = new Blob();
                     break;
                 case 'transcript':
@@ -321,29 +317,82 @@ export default function TopPanel({
                     });
                     return;
             }
-
+        
             try {
                 if (detail.id === 'summary') {
                     const file = new Blob([content], { type: fileType });
                     downloadFile(file, fileName);
                 } else if (jobUrl) {
                     const presignedUrl = await getPresignedUrl(getS3Object(jobUrl));
-                    const response = await fetch(presignedUrl);
-                    const blob = await response.blob();
-                    const file = new Blob([blob], { type: fileType });
-                    downloadFile(file, fileName);
+                    await downloadLargeFile(presignedUrl, fileName);
                 } else {
                     throw new Error('Job URL is undefined');
                 }
             } catch (error) {
+                console.error('Download error:', error);
                 addFlashMessage({
                     id: 'download-error',
                     header: 'Download Failed',
-                    content: `Failed to download ${fileName}. Please try again.`,
+                    content: `Failed to download ${fileName}. Please try again. Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
                     type: 'error',
                 });
             }
         }
+
+        async function downloadLargeFile(fileUrl: string, fileName: string) {
+            try {
+                const response = await fetch(fileUrl);
+                
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                // Get the content type from the response
+                const contentType = response.headers.get('content-type') || 'application/octet-stream';
+                
+                // Create a ReadableStream from the response body
+                const reader = response.body!.getReader();
+                const stream = new ReadableStream({
+                    start(controller) {
+                        return pump();
+                        function pump(): Promise<void> {
+                            return reader.read().then(({ done, value }) => {
+                                if (done) {
+                                    controller.close();
+                                    return;
+                                }
+                                controller.enqueue(value);
+                                return pump();
+                            });
+                        }
+                    }
+                });
+            
+                // Create a new response with the stream
+                const newResponse = new Response(stream);
+            
+                // Get the blob from the new response
+                const blob = await newResponse.blob();
+            
+                // Create object URL and trigger download
+                const objectUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = objectUrl;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(objectUrl);
+                document.body.removeChild(a);
+            } catch (error) {
+                if (error instanceof Error) {
+                    console.error('Download error:', error.message);
+                    throw error;
+                } else {
+                    console.error('An unknown error occurred');
+                    throw new Error('An unknown error occurred during download');
+                }
+            }
+        }
+        
 
         function downloadFile(file: Blob, fileName: string) {
             const link = document.createElement('a');
