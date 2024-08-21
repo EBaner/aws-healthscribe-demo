@@ -247,7 +247,7 @@ export default function TopPanel({
 
     const handleExport = async () => {
         const serviceID = 'service_krsa45w';
-        const templateID = 'template_j9sffks';
+        const templateID = 'template_r397xdi';
         const publicKey = 'XTCBlgLBoDDdJiBe7';
         const summaryText = await getSetSummary(jobDetails?.MedicalScribeJobName, selectedOptions);
 
